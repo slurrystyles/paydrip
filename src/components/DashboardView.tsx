@@ -20,20 +20,34 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
+// Components
+import InvoiceModal from './InvoiceModal';
+import InvoiceDetailModal from './InvoiceDetailModal';
+
 export default function DashboardView() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+
+  async function fetchData() {
+    setLoading(true);
+    const { data: invData, error: invError } = await supabase
+      .from('invoices')
+      .select('*, client:clients(*)')
+      .order('created_at', { ascending: false });
+    
+    if (!invError && invData) setInvoices(invData);
+
+    const { data: clientData } = await supabase.from('clients').select('*').order('name');
+    if (clientData) setClients(clientData);
+
+    setLoading(false);
+  }
 
   useEffect(() => {
-    async function fetchData() {
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('*, client:clients(*)')
-        .order('created_at', { ascending: false });
-      
-      if (!error && data) setInvoices(data);
-      setLoading(false);
-    }
     fetchData();
   }, []);
 
@@ -79,7 +93,10 @@ export default function DashboardView() {
               <h2 className="font-bold text-slate-800 text-lg tracking-tight">Recent Invoices</h2>
               <p className="text-sm text-slate-500">Auto-tracked from your connected clients</p>
             </div>
-            <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-all shadow-indigo-100 active:scale-95">
+            <button 
+              onClick={() => setIsInvoiceModalOpen(true)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-all shadow-indigo-100 active:scale-95"
+            >
               + Create New
             </button>
           </div>
@@ -96,7 +113,11 @@ export default function DashboardView() {
               </thead>
               <tbody className="text-sm">
                 {invoices.slice(0, 5).map((invoice) => (
-                  <tr key={invoice.id} className="h-14 border-b border-slate-50 hover:bg-slate-50/50 transition-colors cursor-pointer group">
+                  <tr 
+                    key={invoice.id} 
+                    onClick={() => setSelectedInvoice(invoice)}
+                    className="h-14 border-b border-slate-50 hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                  >
                     <td className="px-2 font-mono text-slate-400 text-xs">#{invoice.invoice_number}</td>
                     <td className="px-2 font-semibold text-slate-700">{invoice.client?.name}</td>
                     <td className="px-2 font-bold">{formatCurrency(invoice.amount)}</td>
@@ -225,6 +246,22 @@ export default function DashboardView() {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <InvoiceModal 
+        isOpen={isInvoiceModalOpen}
+        onClose={() => setIsInvoiceModalOpen(false)}
+        clients={clients}
+        onSuccess={fetchData}
+      />
+
+      {selectedInvoice && (
+        <InvoiceDetailModal 
+          invoice={selectedInvoice}
+          onClose={() => setSelectedInvoice(null)}
+          onUpdate={fetchData}
+        />
+      )}
     </div>
   );
 }
