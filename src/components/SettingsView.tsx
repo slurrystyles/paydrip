@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
-import { Save, User, Building, CreditCard, Shield, Zap, ExternalLink } from 'lucide-react';
+import { Save, User, Building, CreditCard, Shield, Zap, ExternalLink, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { usePlan } from '../contexts/PlanContext';
 import UpgradeModal from './UpgradeModal';
+import imageCompression from 'browser-image-compression';
 
 export default function SettingsView() {
   const { plan, profile, refreshPlanData } = usePlan();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   // Form fields
@@ -30,6 +32,61 @@ export default function SettingsView() {
       setLoading(false);
     }
   }, [profile]);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (plan === 'free') {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    setUploading(true);
+    setMessage(null);
+
+    try {
+      const options = {
+        maxSizeMB: 0.2, // 200KB limit
+        maxWidthOrHeight: 1024,
+        useWebWorker: true,
+        fileType: 'image/webp' as const
+      };
+
+      const compressedFile = await imageCompression(file, options);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Unauthorized');
+
+      const now = new Date();
+      const monthYear = `${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}`;
+      const fileName = `${user.id}-${Date.now()}.webp`;
+      const filePath = `logos/${monthYear}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('client')
+        .upload(filePath, compressedFile);
+
+      if (uploadError) {
+        if (uploadError.message.includes('bucket not found')) {
+          throw new Error('Storage bucket "client" not found. Please create it in your Supabase dashboard.');
+        }
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('client')
+        .getPublicUrl(filePath);
+
+      setLogoUrl(publicUrl);
+      setMessage({ type: 'success', text: 'Identity token (logo) optimized and stored.' });
+    } catch (error) {
+      console.error('Upload error:', error);
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Error uploading logo' });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -111,7 +168,63 @@ export default function SettingsView() {
 
             <div className={cn("space-y-4 transition-all", plan === 'free' && "opacity-40 grayscale pointer-events-none")}>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Business Logo URL</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-4">Business Logo</label>
+                
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                  <div className="relative group shrink-0">
+                    {logoUrl ? (
+                      <img 
+                        src={logoUrl} 
+                        alt="Logo" 
+                        className="w-24 h-24 rounded-2xl object-cover shadow-lg border-2 border-white ring-8 ring-slate-100"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-2xl bg-white flex items-center justify-center text-slate-300 border-2 border-dashed border-slate-200 ring-8 ring-slate-100">
+                        <ImageIcon size={32} />
+                      </div>
+                    )}
+                    
+                    {uploading && (
+                      <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] rounded-2xl flex items-center justify-center">
+                        <Loader2 className="animate-spin text-indigo-600" size={24} />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-3 w-full">
+                    <div className="flex flex-wrap gap-2">
+                      <label className={cn(
+                        "flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-slate-900 transition-all shadow-lg active:scale-95 disabled:opacity-50",
+                        uploading && "opacity-50 cursor-not-allowed"
+                      )}>
+                        <Upload size={14} />
+                        {uploading ? 'Processing...' : 'Upload Logo'}
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleLogoUpload} 
+                          className="hidden" 
+                          disabled={uploading}
+                        />
+                      </label>
+                      {logoUrl && (
+                        <button 
+                          type="button"
+                          onClick={() => setLogoUrl('')}
+                          className="px-6 py-3 bg-white text-slate-400 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-red-500 hover:border-red-100 transition-all"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-medium">WebP preferred. Auto-compressed to max 200KB.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Logo Remote URL (Fallback)</label>
                 <div className="relative group">
                   <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
                   <input 
@@ -121,7 +234,6 @@ export default function SettingsView() {
                     placeholder="https://your-server.com/logo.png"
                   />
                 </div>
-                <p className="text-[10px] text-gray-400 mt-2 font-medium">Shown on public invoice pages and PDFs.</p>
               </div>
             </div>
             
