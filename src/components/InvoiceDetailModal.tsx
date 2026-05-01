@@ -180,12 +180,94 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     doc.save(`Invoice_${invoice.invoice_number}.pdf`);
   };
 
-  const getWhatsAppMessage = (type: 'polite' | 'firm' | 'final') => {
+  const generateReceipt = () => {
+    const doc = new jsPDF() as any;
+    const margin = 20;
+
+    // Header
+    doc.setFontSize(24);
+    doc.setTextColor(0);
+    doc.text('PAYMENT RECEIPT', margin, 30);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text(`Reference: RCPT-${invoice.invoice_number}-${Date.now().toString().slice(-4)}`, margin, 40);
+    doc.text(`Date Issued: ${new Date().toLocaleDateString()}`, margin, 45);
+
+    // Business Info
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text(userProfile?.business_name || 'Business Name', margin, 65);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`UPI: ${userProfile?.upi_id || 'N/A'}`, margin, 72);
+
+    // Client Info
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text('BILL TO', 120, 65);
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(clientInfo.name || 'Client', 120, 75);
+
+    // "PAID" Badge if fully settled
+    if (isFullyPaid) {
+      doc.setDrawColor(34, 197, 94); // Green 500
+      doc.setLineWidth(1);
+      doc.rect(150, 20, 40, 15);
+      doc.setTextColor(34, 197, 94);
+      doc.setFontSize(16);
+      doc.text('PAID', 160, 30);
+    }
+
+    // Payment Table
+    const tableBody = payments.map(p => [
+      new Date(p.paid_at).toLocaleDateString(),
+      p.method.toUpperCase(),
+      formatCurrency(p.amount)
+    ]);
+
+    (doc as any).autoTable({
+      startY: 90,
+      head: [['Date', 'Method', 'Amount']],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: { fillColor: [34, 197, 94] }, // Green 500
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY || 110;
+
+    // Summary
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Original Invoice Amount: ${formatCurrency(invoice.amount)}`, 120, finalY + 20);
+    doc.setTextColor(34, 197, 94);
+    doc.setFontSize(14);
+    doc.text(`Total Paid: ${formatCurrency(totalPaid)}`, 120, finalY + 30);
+    
+    if (remainingBalance > 0) {
+      doc.setTextColor(239, 68, 68); // Red 500
+      doc.text(`Outstanding: ${formatCurrency(remainingBalance)}`, 120, finalY + 40);
+    }
+
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text('This is a computer generated receipt.', margin, finalY + 60);
+
+    doc.save(`Receipt_${invoice.invoice_number}.pdf`);
+  };
+
+  const getWhatsAppMessage = (type: 'polite' | 'firm' | 'final' | 'receipt') => {
     const businessName = userProfile?.business_name || 'My Business';
     const amount = formatCurrency(remainingBalance);
+    const paidAmount = formatCurrency(totalPaid);
     const invNum = invoice.invoice_number;
     const upi = userProfile?.upi_id ? `\n\nPay via UPI: ${userProfile.upi_id}` : '';
     const publicLink = `\n\nView Secure Invoice: ${window.location.origin}/v/${invoice.public_token}`;
+
+    if (type === 'receipt') {
+      return encodeURIComponent(`Hi ${clientInfo.name}, thank you for your payment of ${paidAmount} toward invoice #${invNum}. ${isFullyPaid ? 'Your balance is now fully settled!' : `Remaining balance: ${amount}.`} View your updated receipt here: ${window.location.origin}/v/${invoice.public_token} - ${businessName}`);
+    }
 
     const templates = {
       polite: `Hi ${clientInfo.name}, hope you're well! Just a friendly reminder about invoice #${invNum}. Remaining balance: ${amount}. Let me know if you need anything else! - ${businessName}${publicLink}${upi}`,
@@ -196,8 +278,8 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     return encodeURIComponent(templates[type]);
   };
 
-  const openWhatsApp = async (type: 'polite' | 'firm' | 'final') => {
-    if (isFullyPaid) return;
+  const openWhatsApp = async (type: 'polite' | 'firm' | 'final' | 'receipt') => {
+    if (type !== 'receipt' && isFullyPaid) return;
     
     const phone = (clientInfo.phone || '').replace(/\D/g, '');
     if (!phone) {
@@ -497,6 +579,30 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                   <span className="text-xs font-black uppercase tracking-widest">Download Ledger</span>
                 </div>
               </button>
+
+              {totalPaid > 0 && (
+                <>
+                  <button 
+                    onClick={generateReceipt}
+                    className="w-full flex items-center justify-between p-4 bg-green-50/50 hover:bg-green-600 hover:text-white rounded-2xl transition-all group border border-green-100 hover:border-green-700"
+                  >
+                    <div className="flex items-center">
+                      <FileText size={18} className="mr-3 text-green-600 group-hover:text-white" />
+                      <span className="text-xs font-black uppercase tracking-widest">Download Receipt</span>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={() => openWhatsApp('receipt')}
+                    className="w-full flex items-center justify-between p-4 bg-green-50/30 hover:bg-green-500 hover:text-white rounded-2xl transition-all group border border-green-100/50"
+                  >
+                    <div className="flex items-center">
+                      <Smartphone size={18} className="mr-3 text-green-500 group-hover:text-white" />
+                      <span className="text-xs font-black uppercase tracking-widest">Share Receipt Link</span>
+                    </div>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 

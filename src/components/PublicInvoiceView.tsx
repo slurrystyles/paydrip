@@ -6,6 +6,7 @@ import { formatCurrency, cn } from '../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
 import { Download, Shield, Landmark, CheckCircle, ArrowDown } from 'lucide-react';
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { motion } from 'motion/react';
 
 export default function PublicInvoiceView() {
@@ -68,23 +69,83 @@ export default function PublicInvoiceView() {
 
   const downloadPDF = () => {
     if (!invoice || !userProfile) return;
-    const clientName = invoice.snapshot_json?.name || 'Client';
-    const doc = new jsPDF();
+    const doc = new jsPDF() as any;
+    const margin = 20;
+
+    // Decide if it's an Invoice or Receipt
+    const isReceipt = totalPaid > 0;
+    const title = isReceipt ? (isFullyPaid ? 'PAYMENT RECEIPT' : 'PAYMENT LEDGER') : 'TAX INVOICE';
+    
     doc.setFontSize(22);
-    doc.text(userProfile.business_name, 20, 20);
+    doc.setTextColor(0);
+    doc.text(userProfile.business_name, margin, 30);
+    
     doc.setFontSize(10);
-    doc.text(`Invoice #: ${invoice.invoice_number}`, 20, 30);
-    doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, 20, 35);
-    doc.line(20, 40, 190, 40);
-    doc.text('Bill To:', 20, 50);
-    doc.text(clientName, 20, 55);
-    doc.setFontSize(16);
-    doc.text(`Total Amount: ${formatCurrency(invoice.amount)}`, 20, 80);
-    if (totalPaid > 0) {
-      doc.text(`Amount Paid: ${formatCurrency(totalPaid)}`, 20, 90);
-      doc.text(`Balance Due: ${formatCurrency(remainingBalance)}`, 20, 100);
+    doc.setTextColor(150);
+    doc.text(`${title} #${invoice.invoice_number}`, margin, 40);
+    doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, margin, 45);
+
+    doc.setTextColor(0);
+    doc.setFontSize(12);
+    doc.text('BILL TO', margin, 65);
+    doc.setFontSize(14);
+    doc.text(clientName, margin, 75);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(clientEmail, margin, 80);
+
+    if (isFullyPaid) {
+      doc.setDrawColor(34, 197, 94);
+      doc.setTextColor(34, 197, 94);
+      doc.rect(150, 20, 40, 15);
+      doc.text('PAID', 160, 30);
     }
-    doc.save(`Invoice_${invoice.invoice_number}.pdf`);
+
+    if (isReceipt && payments.length > 0) {
+      // Payment Breakdown for Receipts
+      const tableBody = payments.map(p => [
+        new Date(p.paid_at).toLocaleDateString(),
+        p.method.toUpperCase(),
+        formatCurrency(p.amount)
+      ]);
+
+      (doc as any).autoTable({
+        startY: 95,
+        head: [['Payment Date', 'Method', 'Amount']],
+        body: tableBody,
+        theme: 'striped',
+        headStyles: { fillColor: [34, 197, 94] },
+      });
+    } else {
+      // Standard Invoice Table
+      (doc as any).autoTable({
+        startY: 95,
+        head: [['Description', 'Amount']],
+        body: [['Professional Services Rendered', formatCurrency(invoice.amount)]],
+        theme: 'striped',
+        headStyles: { fillColor: [79, 70, 229] },
+      });
+    }
+
+    const finalY = (doc as any).lastAutoTable.finalY || 110;
+
+    doc.setFontSize(16);
+    doc.setTextColor(0);
+    if (isReceipt) {
+      doc.text(`Total Invoice: ${formatCurrency(invoice.amount)}`, 130, finalY + 20);
+      doc.setTextColor(34, 197, 94);
+      doc.text(`Total Paid: ${formatCurrency(totalPaid)}`, 130, finalY + 30);
+      doc.setTextColor(0);
+      doc.text(`Balance Due: ${formatCurrency(remainingBalance)}`, 130, finalY + 40);
+    } else {
+      doc.text(`Total Due: ${formatCurrency(invoice.amount)}`, 130, finalY + 20);
+    }
+
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text('Generated via Paydrip Secure Ledger.', margin, finalY + 60);
+
+    doc.save(`${isReceipt ? 'Receipt' : 'Invoice'}_${invoice.invoice_number}.pdf`);
   };
 
   if (loading) {

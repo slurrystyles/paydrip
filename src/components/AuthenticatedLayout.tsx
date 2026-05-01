@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { User } from '@supabase/supabase-js';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -49,8 +50,15 @@ function NavItem({ icon, label, path, active }: NavItemProps) {
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+  }, []);
 
   const navItems = [
     { icon: <LayoutDashboard size={18} />, label: 'Dashboard', path: '/dashboard' },
@@ -197,10 +205,12 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
               
               <div className="absolute top-full right-0 mt-4 w-64 bg-white rounded-[2rem] shadow-2xl border border-slate-50 p-6 opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 font-black italic shadow-inner">U</div>
+                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 font-black italic shadow-inner">
+                    {user?.email?.[0].toUpperCase() || 'U'}
+                  </div>
                   <div>
                     <p className="text-xs font-black text-slate-900 uppercase tracking-tighter">Verified Node</p>
-                    <p className="text-[10px] text-slate-400 font-mono italic">slurrystyles@gmail.com</p>
+                    <p className="text-[10px] text-slate-400 font-mono italic truncate max-w-[140px]">{user?.email}</p>
                   </div>
                 </div>
                 <div className="space-y-2">

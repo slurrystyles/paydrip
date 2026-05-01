@@ -71,12 +71,10 @@ export default function DashboardView() {
   }, []);
 
   const totalOutstanding = invoices
-    .filter(i => i.status !== 'paid')
-    .reduce((sum, i) => sum + i.amount, 0);
+    .reduce((sum, i) => sum + (i.remainingBalance ?? i.amount), 0);
 
   const totalPaid = invoices
-    .filter(i => i.status === 'paid')
-    .reduce((sum, i) => sum + i.amount, 0);
+    .reduce((sum, i) => sum + (i.totalPaid || 0), 0);
 
   // Business Rule: Computed Overdue Status
   const now = new Date();
