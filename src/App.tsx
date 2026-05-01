@@ -44,7 +44,7 @@ export default function App() {
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage user={user} />} />
+        <Route path="/" element={<LandingPage user={user} />} />
         <Route path="/v/:token" element={<PublicInvoiceView />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />

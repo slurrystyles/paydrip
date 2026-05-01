@@ -25,9 +25,12 @@ export default function InfoPageLayout({
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
             Back Home
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black italic">P</div>
-            <span className="font-black tracking-tighter italic">Paydrip</span>
+          <div 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 cursor-pointer group"
+          >
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black italic group-hover:bg-indigo-700 transition-colors">P</div>
+            <span className="font-black tracking-tighter italic group-hover:text-indigo-600 transition-colors">Paydrip</span>
           </div>
         </div>
       </nav>
