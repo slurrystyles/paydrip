@@ -185,11 +185,12 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     const amount = formatCurrency(remainingBalance);
     const invNum = invoice.invoice_number;
     const upi = userProfile?.upi_id ? `\n\nPay via UPI: ${userProfile.upi_id}` : '';
+    const publicLink = `\n\nView Secure Invoice: ${window.location.origin}/v/${invoice.public_token}`;
 
     const templates = {
-      polite: `Hi ${clientInfo.name}, hope you're well! Just a friendly reminder about invoice #${invNum}. Remaining balance: ${amount}. Let me know if you need anything else! - ${businessName}${upi}`,
-      firm: `Hi ${clientInfo.name}, invoice #${invNum} balance of ${amount} is now overdue. Please settle this at your earliest convenience to avoid any service interruption. Thanks! - ${businessName}${upi}`,
-      final: `URGENT: Hi ${clientInfo.name}, invoice #${invNum} (${amount}) is critically overdue. This is a final notice for payment. Please settle immediately via UPI. - ${businessName}${upi}`
+      polite: `Hi ${clientInfo.name}, hope you're well! Just a friendly reminder about invoice #${invNum}. Remaining balance: ${amount}. Let me know if you need anything else! - ${businessName}${publicLink}${upi}`,
+      firm: `Hi ${clientInfo.name}, invoice #${invNum} balance of ${amount} is now overdue. Please settle this at your earliest convenience to avoid any service interruption. Thanks! - ${businessName}${publicLink}${upi}`,
+      final: `URGENT: Hi ${clientInfo.name}, invoice #${invNum} (${amount}) is critically overdue. This is a final notice for payment. Please settle immediately. - ${businessName}${publicLink}${upi}`
     };
 
     return encodeURIComponent(templates[type]);

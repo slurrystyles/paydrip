@@ -25,7 +25,7 @@ import InvoiceModal from './InvoiceModal';
 import InvoiceDetailModal from './InvoiceDetailModal';
 
 export default function DashboardView() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -39,7 +39,26 @@ export default function DashboardView() {
       .select('*, client:clients(*)')
       .order('created_at', { ascending: false });
     
-    if (!invError && invData) setInvoices(invData);
+    if (!invError && invData) {
+      // Fetch payments for these invoices to calculate balances
+      const invoiceIds = invData.map(i => i.id);
+      const { data: paymentsData } = await supabase
+        .from('payments')
+        .select('*')
+        .in('invoice_id', invoiceIds);
+
+      const computedInvoices = invData.map(inv => {
+        const invPayments = paymentsData?.filter(p => p.invoice_id === inv.id) || [];
+        const totalPaid = invPayments.reduce((sum, p) => sum + p.amount, 0);
+        return {
+          ...inv,
+          totalPaid,
+          remainingBalance: Math.max(0, inv.amount - totalPaid)
+        };
+      });
+
+      setInvoices(computedInvoices);
+    }
 
     const { data: clientData } = await supabase.from('clients').select('*').order('name');
     if (clientData) setClients(clientData);
@@ -104,11 +123,12 @@ export default function DashboardView() {
             <table className="w-full text-left">
               <thead className="text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100 tracking-widest font-mono">
                 <tr className="h-10">
-                  <th className="px-2">Invoice ID</th>
-                  <th className="px-2">Client</th>
-                  <th className="px-2">Amount</th>
-                  <th className="px-2">Due Date</th>
-                  <th className="px-2">Status</th>
+                  <th className="px-4">Invoice ID</th>
+                  <th className="px-4">Client</th>
+                  <th className="px-4">Total</th>
+                  <th className="px-4">Paid</th>
+                  <th className="px-4">Balance</th>
+                  <th className="px-4">Status</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
@@ -121,7 +141,8 @@ export default function DashboardView() {
                     <td className="px-4 font-mono text-slate-300 text-[10px] font-black tracking-widest">#{invoice.invoice_number}</td>
                     <td className="px-4 font-black text-slate-900 text-sm tracking-tight">{invoice.client?.name}</td>
                     <td className="px-4 font-black text-slate-900 text-sm">{formatCurrency(invoice.amount)}</td>
-                    <td className="px-4 text-[10px] font-black uppercase text-slate-400 tracking-tighter">{new Date(invoice.due_date).toLocaleDateString()}</td>
+                    <td className="px-4 font-bold text-green-600 text-xs">+{formatCurrency(invoice.totalPaid || 0)}</td>
+                    <td className="px-4 font-black text-indigo-600 text-sm">{formatCurrency(invoice.remainingBalance ?? invoice.amount)}</td>
                     <td className="px-4">
                        <span className={cn(
                          "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm",
@@ -136,13 +157,16 @@ export default function DashboardView() {
                 ))}
                 {invoices.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-20 text-center">
+                    <td colSpan={6} className="py-20 text-center">
                       <div className="flex flex-col items-center">
                         <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mb-4 border border-slate-100 border-dashed">
                           <FileText size={32} />
                         </div>
                         <p className="text-slate-400 italic mb-4">No ledgers in flight.</p>
-                        <button className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-xl shadow-indigo-100 active:scale-95 transition-all">
+                        <button 
+                          onClick={() => setIsInvoiceModalOpen(true)}
+                          className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-xl shadow-indigo-100 active:scale-95 transition-all"
+                        >
                           Create Your First Invoice
                         </button>
                       </div>

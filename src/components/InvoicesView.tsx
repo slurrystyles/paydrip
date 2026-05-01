@@ -19,7 +19,7 @@ import InvoiceModal from './InvoiceModal';
 import InvoiceDetailModal from './InvoiceDetailModal';
 
 export default function InvoicesView() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -36,7 +36,24 @@ export default function InvoicesView() {
       supabase.from('clients').select('*').order('name')
     ]);
     
-    if (!invRes.error && invRes.data) setInvoices(invRes.data);
+    if (!invRes.error && invRes.data) {
+      const invoiceIds = invRes.data.map(i => i.id);
+      const { data: paymentsData } = await supabase
+        .from('payments')
+        .select('*')
+        .in('invoice_id', invoiceIds);
+
+      const computedInvoices = invRes.data.map(inv => {
+        const invPayments = paymentsData?.filter(p => p.invoice_id === inv.id) || [];
+        const totalPaid = invPayments.reduce((sum, p) => sum + p.amount, 0);
+        return {
+          ...inv,
+          totalPaid,
+          remainingBalance: Math.max(0, inv.amount - totalPaid)
+        };
+      });
+      setInvoices(computedInvoices);
+    }
     if (!cliRes.error && cliRes.data) setClients(cliRes.data);
     setLoading(false);
   }
@@ -77,7 +94,9 @@ export default function InvoicesView() {
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Invoice Code</th>
                 <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Client Identity</th>
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Total Amount</th>
+                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Total</th>
+                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Paid</th>
+                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Balance</th>
                 <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Current Status</th>
                 <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Target Date</th>
                 <th className="px-6 py-4"></th>
@@ -99,6 +118,12 @@ export default function InvoicesView() {
                   </td>
                   <td className="px-6 py-5 font-black text-slate-900 text-sm">
                     {formatCurrency(invoice.amount)}
+                  </td>
+                  <td className="px-6 py-5 font-bold text-green-600 text-[10px]">
+                    +{formatCurrency(invoice.totalPaid || 0)}
+                  </td>
+                  <td className="px-6 py-5 font-black text-indigo-600 text-sm">
+                    {formatCurrency(invoice.remainingBalance ?? invoice.amount)}
                   </td>
                   <td className="px-6 py-5 uppercase tracking-widest text-[9px] font-black">
                     <span className={cn(
@@ -122,7 +147,7 @@ export default function InvoicesView() {
               ))}
               {filteredInvoices.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center text-slate-400 italic text-sm">
+                  <td colSpan={8} className="px-6 py-20 text-center text-slate-400 italic text-sm">
                     No matching ledger entries found.
                   </td>
                 </tr>

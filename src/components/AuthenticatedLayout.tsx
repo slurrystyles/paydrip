@@ -69,15 +69,18 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       {/* Desktop Sidebar */}
       <aside className="w-72 border-r border-slate-100 bg-white hidden lg:flex flex-col sticky top-0 h-screen z-30">
         <div className="p-10">
-          <div className="flex items-center gap-3">
+          <div 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-3 cursor-pointer group"
+          >
             <motion.div 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-indigo-100 italic"
+              className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-indigo-100 italic group-hover:bg-indigo-700 transition-colors"
             >
               P
             </motion.div>
-            <span className="text-xl font-black tracking-tighter text-slate-900 italic">Paydrip</span>
+            <span className="text-xl font-black tracking-tighter text-slate-900 italic group-hover:text-indigo-600 transition-colors">Paydrip</span>
           </div>
         </div>
 
@@ -105,8 +108,11 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       </aside>
 
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 flex items-center justify-between z-40">
-        <div className="flex items-center gap-2">
+        <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 flex items-center justify-between z-40">
+        <div 
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 cursor-pointer"
+        >
           <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-indigo-100">P</div>
           <span className="font-black tracking-tighter">Paydrip</span>
         </div>
@@ -183,8 +189,35 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
               <Bell size={18} />
               <div className="absolute top-3 right-3 w-2 h-2 bg-indigo-600 rounded-full border-2 border-white"></div>
             </button>
-            <div className="h-10 w-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xs font-black text-white italic shadow-xl shadow-slate-200">
-              U
+            
+            <div className="relative group">
+              <div className="h-10 w-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xs font-black text-white italic shadow-xl shadow-slate-200 cursor-pointer hover:bg-slate-800 transition-all">
+                U
+              </div>
+              
+              <div className="absolute top-full right-0 mt-4 w-64 bg-white rounded-[2rem] shadow-2xl border border-slate-50 p-6 opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 font-black italic shadow-inner">U</div>
+                  <div>
+                    <p className="text-xs font-black text-slate-900 uppercase tracking-tighter">Verified Node</p>
+                    <p className="text-[10px] text-slate-400 font-mono italic">slurrystyles@gmail.com</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <button 
+                    onClick={() => navigate('/settings')}
+                    className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
+                  >
+                    Manage Profile
+                  </button>
+                  <button 
+                    onClick={handleSignOut}
+                    className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                  >
+                    Secure Logout
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </header>
