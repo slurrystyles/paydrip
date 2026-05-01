@@ -5,6 +5,8 @@ export interface UserProfile {
   business_name: string;
   upi_id?: string;
   bank_details?: string;
+  plan?: 'free' | 'pro' | 'unlimited';
+  logo_url?: string;
   created_at: string;
 }
 

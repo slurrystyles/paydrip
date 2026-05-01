@@ -14,6 +14,7 @@ import AuthenticatedLayout from './components/AuthenticatedLayout';
 import PrivacyPage from './components/PrivacyPage';
 import TermsPage from './components/TermsPage';
 import ContactPage from './components/ContactPage';
+import { PlanProvider } from './contexts/PlanContext';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -52,24 +53,26 @@ export default function App() {
 
   return (
     <Router>
-      <ScrollToTop />
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage user={user} />} />
-        <Route path="/v/:token" element={<PublicInvoiceView />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        
-        {/* Protected Routes */}
-        <Route path="/dashboard" element={user ? <AuthenticatedLayout><DashboardView /></AuthenticatedLayout> : <Navigate to="/" />} />
-        <Route path="/invoices" element={user ? <AuthenticatedLayout><InvoicesView /></AuthenticatedLayout> : <Navigate to="/" />} />
-        <Route path="/clients" element={user ? <AuthenticatedLayout><ClientsView /></AuthenticatedLayout> : <Navigate to="/" />} />
-        <Route path="/settings" element={user ? <AuthenticatedLayout><SettingsView /></AuthenticatedLayout> : <Navigate to="/" />} />
-        
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+      <PlanProvider>
+        <ScrollToTop />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage user={user} />} />
+          <Route path="/v/:token" element={<PublicInvoiceView />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          
+          {/* Protected Routes */}
+          <Route path="/dashboard" element={user ? <AuthenticatedLayout><DashboardView /></AuthenticatedLayout> : <Navigate to="/" />} />
+          <Route path="/invoices" element={user ? <AuthenticatedLayout><InvoicesView /></AuthenticatedLayout> : <Navigate to="/" />} />
+          <Route path="/clients" element={user ? <AuthenticatedLayout><ClientsView /></AuthenticatedLayout> : <Navigate to="/" />} />
+          <Route path="/settings" element={user ? <AuthenticatedLayout><SettingsView /></AuthenticatedLayout> : <Navigate to="/" />} />
+          
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </PlanProvider>
     </Router>
   );
 }

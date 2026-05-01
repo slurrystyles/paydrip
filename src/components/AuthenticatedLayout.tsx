@@ -9,13 +9,16 @@ import {
   Menu,
   X,
   Search,
-  ArrowUpRight
+  ArrowUpRight,
+  Zap
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from '@supabase/supabase-js';
+import { usePlan } from '../contexts/PlanContext';
+import UpgradeModal from './UpgradeModal';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -52,9 +55,11 @@ function NavItem({ icon, label, path, active }: NavItemProps) {
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { plan } = usePlan();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -76,6 +81,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
 
   return (
     <div className="flex min-h-screen bg-[#FDFDFF] font-sans selection:bg-indigo-100 selection:text-indigo-900">
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+      
       {/* Desktop Sidebar */}
       <aside className="w-72 border-r border-slate-100 bg-white hidden lg:flex flex-col sticky top-0 h-screen z-30">
         <div className="p-10">
@@ -104,6 +111,16 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
               active={location.pathname === item.path}
             />
           ))}
+
+          {plan === 'free' && (
+            <button 
+              onClick={() => setShowUpgradeModal(true)}
+              className="flex items-center w-full px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 bg-indigo-50/50 rounded-2xl hover:bg-indigo-100 transition-all group mt-8 border border-indigo-100"
+            >
+              <Zap size={14} className="mr-4 fill-indigo-600 animate-pulse" />
+              Upgrade to Pro
+            </button>
+          )}
         </nav>
 
         <div className="p-6 border-t border-slate-50">
@@ -229,7 +246,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                           {user?.email?.[0].toUpperCase() || 'U'}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1 italic">Verified Node</p>
+                          <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1 italic">{plan === 'free' ? 'Verified Node' : `${plan} Access`}</p>
                           <p className="text-sm font-black text-slate-900 truncate tracking-tight">{user?.email?.split('@')[0]}</p>
                           <p className="text-[9px] text-slate-400 font-mono truncate">{user?.email}</p>
                         </div>

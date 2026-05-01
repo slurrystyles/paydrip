@@ -13,17 +13,22 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  FileText
+  FileText,
+  Zap
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import InvoiceModal from './InvoiceModal';
 import InvoiceDetailModal from './InvoiceDetailModal';
+import UpgradeModal from './UpgradeModal';
+import { usePlan } from '../contexts/PlanContext';
 
 export default function InvoicesView() {
+  const { isLimitReached, refreshPlanData } = usePlan();
   const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [filters, setFilters] = useState<InvoiceStatus | 'all'>('all');
 
@@ -32,6 +37,7 @@ export default function InvoicesView() {
   }, []);
 
   async function fetchData() {
+    await refreshPlanData();
     const [invRes, cliRes] = await Promise.all([
       supabase.from('invoices').select('*, client:clients(*)').order('created_at', { ascending: false }),
       supabase.from('clients').select('*').order('name')
@@ -94,13 +100,29 @@ export default function InvoicesView() {
         </div>
         {/* SECTION 5: PRIMARY ACTION */}
         <button 
-          onClick={() => setIsNewModalOpen(true)}
-          className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 hover:bg-slate-900 transition-all shadow-2xl shadow-indigo-100 active:scale-95 w-full sm:w-auto"
+          onClick={() => {
+            if (isLimitReached) {
+              setShowUpgradeModal(true);
+            } else {
+              setIsNewModalOpen(true);
+            }
+          }}
+          className={cn(
+            "px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 transition-all shadow-2xl active:scale-95 w-full sm:w-auto",
+            isLimitReached 
+              ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
+              : "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100"
+          )}
         >
-          <Plus size={16} />
-          <span>Create Invoice</span>
+          {isLimitReached ? <Zap size={16} /> : <Plus size={16} />}
+          <span>{isLimitReached ? 'Upgrade to Create' : 'Create Invoice'}</span>
         </button>
       </div>
+
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)} 
+      />
 
       <div className="bento-card overflow-hidden">
         <div className="overflow-x-auto">

@@ -8,7 +8,8 @@ import {
   AlertCircle, 
   CheckCircle2,
   ChevronRight,
-  FileText
+  FileText,
+  Zap
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -25,17 +26,22 @@ import {
 // Components
 import InvoiceModal from './InvoiceModal';
 import InvoiceDetailModal from './InvoiceDetailModal';
+import UpgradeModal from './UpgradeModal';
+import { usePlan } from '../contexts/PlanContext';
 
 export default function DashboardView() {
+  const { plan, isLimitReached, refreshPlanData } = usePlan();
   const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   async function fetchData() {
     setLoading(true);
+    await refreshPlanData();
     const { data: invData, error: invError } = await supabase
       .from('invoices')
       .select('*, client:clients(*)')
@@ -200,13 +206,63 @@ export default function DashboardView() {
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Sorting: Priority (Overdue/Upcoming)</p>
             </div>
             {/* SECTION 5: BUTTON HIERARCHY - PRIMARY */}
-            <button 
-              onClick={() => setIsInvoiceModalOpen(true)}
-              className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-900 shadow-2xl transition-all shadow-indigo-100 active:scale-95 w-full sm:w-auto"
-            >
-              + Create Invoice
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              {plan === 'free' && (
+                <div className="px-6 py-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Free Tier Limit</p>
+                    <p className="text-[9px] text-slate-400 font-mono mt-0.5">{invoices.length} / 3 Invoices used</p>
+                  </div>
+                  <button 
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100"
+                  >
+                    <Zap size={14} className="fill-white" />
+                  </button>
+                </div>
+              )}
+              <button 
+                onClick={() => {
+                  if (isLimitReached) {
+                    setShowUpgradeModal(true);
+                  } else {
+                    setIsInvoiceModalOpen(true);
+                  }
+                }}
+                className={cn(
+                  "px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 w-full sm:w-auto flex items-center justify-center gap-2",
+                  isLimitReached 
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
+                    : "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100"
+                )}
+              >
+                + Create Invoice
+                {isLimitReached && <Clock size={14} />}
+              </button>
+            </div>
           </div>
+
+          {isLimitReached && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-6 bg-red-50 border border-red-100 rounded-[2rem] flex items-center gap-4"
+            >
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center">
+                <AlertCircle size={24} />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight italic">You’ve reached your free limit</h4>
+                <p className="text-xs text-slate-500 font-medium mt-1 italic">Upgrade to Pro to create more invoices and keep chasing payments.</p>
+              </div>
+              <button 
+                onClick={() => setShowUpgradeModal(true)}
+                className="px-6 py-3 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 active:scale-95"
+              >
+                Upgrade Now
+              </button>
+            </motion.div>
+          )}
 
           {/* SECTION 6: INVOICE TABLE IMPROVEMENTS */}
           <div className="flex-1 overflow-x-auto -mx-6 sm:mx-0">
@@ -312,6 +368,11 @@ export default function DashboardView() {
         onClose={() => setIsInvoiceModalOpen(false)}
         clients={clients}
         onSuccess={fetchData}
+      />
+      
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
       />
 
       {selectedInvoice && (

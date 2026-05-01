@@ -128,6 +128,9 @@ export default function PublicInvoiceView() {
     }
 
     const finalY = (doc as any).lastAutoTable.finalY || 110;
+    const footerText = userProfile.plan === 'free' 
+      ? 'Generated via Paydrip Secure Ledger.' 
+      : `${userProfile.business_name} Secure Settlement Record.`;
 
     doc.setFontSize(16);
     doc.setTextColor(0);
@@ -143,7 +146,7 @@ export default function PublicInvoiceView() {
 
     doc.setFontSize(10);
     doc.setTextColor(150);
-    doc.text('Generated via Paydrip Secure Ledger.', margin, finalY + 60);
+    doc.text(footerText, margin, finalY + 60);
 
     doc.save(`${isReceipt ? 'Receipt' : 'Invoice'}_${invoice.invoice_number}.pdf`);
   };
@@ -193,7 +196,16 @@ export default function PublicInvoiceView() {
           className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-10"
         >
           <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black italic text-2xl shadow-xl shadow-indigo-100">P</div>
+             {userProfile.plan !== 'free' && userProfile.logo_url ? (
+               <img 
+                 src={userProfile.logo_url} 
+                 alt={userProfile.business_name} 
+                 className="w-12 h-12 rounded-2xl object-cover shadow-lg border border-slate-100"
+                 referrerPolicy="no-referrer"
+               />
+             ) : (
+               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black italic text-2xl shadow-xl shadow-indigo-100">P</div>
+             )}
              <div>
                <h1 className="text-2xl font-black tracking-tighter text-slate-900">{userProfile.business_name}</h1>
                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] leading-none mt-1">Verified Payment Request</p>
@@ -342,10 +354,16 @@ export default function PublicInvoiceView() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -z-0" />
             <div className="relative z-10">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Enterprise Settlement Protocol</p>
-              <div className="flex items-center justify-center gap-3">
-                <div className="w-6 h-6 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black italic text-[10px]">P</div>
-                <span className="text-lg font-black text-white tracking-tighter">Paydrip</span>
-              </div>
+              {userProfile.plan === 'free' ? (
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-6 h-6 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black italic text-[10px]">P</div>
+                  <span className="text-lg font-black text-white tracking-tighter">Paydrip</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-lg font-black text-white tracking-tighter italic">{userProfile.business_name} Internal Portal</span>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

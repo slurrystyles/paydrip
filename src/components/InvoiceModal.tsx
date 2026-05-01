@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Client } from '../types';
 import { X, Calendar, FileText, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { usePlan } from '../contexts/PlanContext';
 
 interface Props {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Props) {
+  const { isLimitReached } = usePlan();
   const [clientId, setClientId] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -21,6 +23,10 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isLimitReached) {
+      setError("Free plan limit reached (3 invoices). Please upgrade to continue.");
+      return;
+    }
     setLoading(true);
     setError(null);
 
