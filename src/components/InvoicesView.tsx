@@ -63,10 +63,10 @@ export default function InvoicesView() {
         </div>
         <button 
           onClick={() => setIsNewModalOpen(true)}
-          className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center space-x-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95"
+          className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-100 active:scale-95"
         >
-          <Plus size={18} />
-          <span>New Invoice</span>
+          <Plus size={16} />
+          <span>Generate Ledger</span>
         </button>
       </div>
 
@@ -94,20 +94,20 @@ export default function InvoicesView() {
                     #{invoice.invoice_number}
                   </td>
                   <td className="px-6 py-5">
-                    <p className="font-bold text-slate-800">{invoice.client?.name}</p>
-                    <p className="text-[10px] text-slate-400 font-mono uppercase">{invoice.client?.email}</p>
+                    <p className="font-black text-slate-900 tracking-tight">{invoice.client?.name || invoice.snapshot_json?.name}</p>
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none mt-1">{invoice.client?.email || invoice.snapshot_json?.email}</p>
                   </td>
-                  <td className="px-6 py-5 font-extrabold text-slate-900">
+                  <td className="px-6 py-5 font-black text-slate-900 text-sm">
                     {formatCurrency(invoice.amount)}
                   </td>
-                  <td className="px-6 py-5 uppercase tracking-tighter text-[10px] font-bold">
+                  <td className="px-6 py-5 uppercase tracking-widest text-[9px] font-black">
                     <span className={cn(
-                      "status-chip",
-                      invoice.status === 'paid' ? 'bg-green-100 text-green-700' :
-                      invoice.status === 'overdue' ? 'bg-red-100 text-red-700' :
-                      invoice.status === 'sent' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+                      "px-3 py-1 rounded-full shadow-sm border",
+                      invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100' :
+                      invoice.status === 'overdue' ? 'bg-red-50 text-red-600 border-red-100' :
+                      invoice.status === 'sent' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-400 border-slate-100'
                     )}>
-                      {invoice.status}
+                      {invoice.status === 'paid' ? 'Settled' : invoice.status}
                     </span>
                   </td>
                   <td className="px-6 py-5 text-xs font-medium text-slate-500 italic">

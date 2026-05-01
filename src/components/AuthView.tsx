@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { LogIn, UserPlus, Mail, Lock } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 export default function AuthView({ onClose }: { onClose?: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
