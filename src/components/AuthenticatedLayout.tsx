@@ -34,13 +34,13 @@ function NavItem({ icon, label, path, active }: NavItemProps) {
     <button
       onClick={() => navigate(path)}
       className={cn(
-        "flex items-center w-full px-6 py-4 text-xs font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-300 relative group overflow-hidden",
+        "flex items-center w-full px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-300 relative group overflow-hidden",
         active 
           ? "bg-slate-900 text-white shadow-2xl shadow-slate-200" 
           : "text-slate-400 hover:text-slate-900 hover:bg-slate-50"
       )}
     >
-      <span className={cn("mr-4 transition-colors z-10", active ? "text-indigo-400" : "text-slate-300 group-hover:text-indigo-600")}>{icon}</span>
+      <span className={cn("mr-3 transition-colors z-10", active ? "text-indigo-400" : "text-slate-300 group-hover:text-indigo-600")}>{icon}</span>
       <span className="z-10">{label}</span>
       {active && (
         <motion.div 
@@ -84,8 +84,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
       
       {/* Desktop Sidebar */}
-      <aside className="w-72 border-r border-slate-100 bg-white hidden lg:flex flex-col sticky top-0 h-screen z-30">
-        <div className="p-10">
+      <aside className="w-64 border-r border-slate-100 bg-white hidden lg:flex flex-col sticky top-0 h-screen z-30">
+        <div className="p-6">
           <div 
             onClick={() => navigate('/')}
             className="flex items-center gap-3 cursor-pointer group"
@@ -93,15 +93,15 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
             <motion.div 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-indigo-100 italic group-hover:bg-indigo-700 transition-colors"
+              className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-indigo-100 italic group-hover:bg-indigo-700 transition-colors"
             >
               P
             </motion.div>
-            <span className="text-xl font-black tracking-tighter text-slate-900 italic group-hover:text-indigo-600 transition-colors">Paydrip</span>
+            <span className="text-lg font-black tracking-tighter text-slate-900 italic group-hover:text-indigo-600 transition-colors">Paydrip</span>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-4 space-y-2">
+        <nav className="flex-1 px-3 py-2 space-y-1">
           {navItems.map((item) => (
             <NavItem 
               key={item.path}
@@ -200,20 +200,20 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Desktop Header */}
-        <header className="h-20 bg-white/5 backdrop-blur-sm border-b border-slate-50 hidden lg:flex items-center justify-between px-10 sticky top-0 z-20">
+        <header className="h-16 bg-white/5 backdrop-blur-sm border-b border-slate-50 hidden lg:flex items-center justify-between px-8 sticky top-0 z-20">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 px-4 py-2 bg-indigo-50/50 border border-indigo-100 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 shadow-sm">
+            <div className="flex items-center gap-2.5 px-3 py-1.5 bg-indigo-50/50 border border-indigo-100 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-indigo-600 shadow-sm">
               <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
-              Node Status: High Availability
+              Node: High Availability
             </div>
           </div>
-          <div className="flex items-center gap-8">
-            <div className="hidden xl:flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl w-80 group focus-within:border-indigo-200 transition-all">
-              <Search size={14} className="text-slate-400 group-focus-within:text-indigo-600" />
-              <input type="text" placeholder="Global Ledger Search..." className="bg-transparent border-none outline-none text-xs font-bold text-slate-600 w-full placeholder:text-slate-300" />
+          <div className="flex items-center gap-6">
+            <div className="hidden xl:flex items-center gap-3 px-4 py-1.5 bg-slate-50 border border-slate-100 rounded-xl w-64 group focus-within:border-indigo-200 transition-all">
+              <Search size={12} className="text-slate-400 group-focus-within:text-indigo-600" />
+              <input type="text" placeholder="Ledger Search..." className="bg-transparent border-none outline-none text-[11px] font-bold text-slate-600 w-full placeholder:text-slate-300" />
             </div>
-            <button className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-indigo-600 hover:shadow-xl hover:shadow-indigo-50 transition-all shadow-sm relative">
-              <Bell size={18} />
+            <button className="p-2.5 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 hover:shadow-xl hover:shadow-indigo-50 transition-all shadow-sm relative">
+              <Bell size={16} />
               <div className="absolute top-3 right-3 w-2 h-2 bg-indigo-600 rounded-full border-2 border-white"></div>
             </button>
             
@@ -279,7 +279,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
           </div>
         </header>
 
-        <main className="flex-1 p-6 lg:p-12 pt-28 lg:pt-12 overflow-y-auto custom-scrollbar">
+        <main className="flex-1 p-6 lg:p-8 pt-24 lg:pt-8 overflow-y-auto custom-scrollbar">
           <div className="max-w-7xl mx-auto">
              <motion.div
                key={location.pathname}
