@@ -8,7 +8,8 @@ import {
   Bell,
   Menu,
   X,
-  Search
+  Search,
+  ArrowUpRight
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
@@ -50,6 +51,7 @@ function NavItem({ icon, label, path, active }: NavItemProps) {
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -198,36 +200,64 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
               <div className="absolute top-3 right-3 w-2 h-2 bg-indigo-600 rounded-full border-2 border-white"></div>
             </button>
             
-            <div className="relative group">
-              <div className="h-10 w-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xs font-black text-white italic shadow-xl shadow-slate-200 cursor-pointer hover:bg-slate-800 transition-all">
-                U
-              </div>
+            <div className="relative">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsProfileOpen(!isProfileOpen);
+                }}
+                className="h-10 w-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xs font-black text-white italic shadow-xl shadow-slate-200 cursor-pointer hover:bg-slate-800 transition-all active:scale-95"
+              >
+                {user?.email?.[0].toUpperCase() || 'U'}
+              </button>
               
-              <div className="absolute top-full right-0 mt-4 w-64 bg-white rounded-[2rem] shadow-2xl border border-slate-50 p-6 opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 font-black italic shadow-inner">
-                    {user?.email?.[0].toUpperCase() || 'U'}
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-slate-900 uppercase tracking-tighter">Verified Node</p>
-                    <p className="text-[10px] text-slate-400 font-mono italic truncate max-w-[140px]">{user?.email}</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <button 
-                    onClick={() => navigate('/settings')}
-                    className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
-                  >
-                    Manage Profile
-                  </button>
-                  <button 
-                    onClick={handleSignOut}
-                    className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                  >
-                    Secure Logout
-                  </button>
-                </div>
-              </div>
+              <AnimatePresence>
+                {isProfileOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsProfileOpen(false)}
+                    />
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full right-0 mt-4 w-72 bg-white rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-slate-100 p-8 z-50"
+                    >
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 font-black text-xl italic shadow-inner">
+                          {user?.email?.[0].toUpperCase() || 'U'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1 italic">Verified Node</p>
+                          <p className="text-sm font-black text-slate-900 truncate tracking-tight">{user?.email?.split('@')[0]}</p>
+                          <p className="text-[9px] text-slate-400 font-mono truncate">{user?.email}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <button 
+                          onClick={() => {
+                            navigate('/settings');
+                            setIsProfileOpen(false);
+                          }}
+                          className="w-full text-left px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-2xl transition-all flex items-center justify-between group"
+                        >
+                          Manage Profile
+                          <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-all" />
+                        </button>
+                        <div className="h-px bg-slate-50 mx-2" />
+                        <button 
+                          onClick={handleSignOut}
+                          className="w-full text-left px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all"
+                        >
+                          Secure Logout
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>
