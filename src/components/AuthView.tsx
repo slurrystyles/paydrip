@@ -51,12 +51,12 @@ export default function AuthView({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className={cn("flex flex-col items-center justify-center bg-[#FDFDFF]", !onClose ? "min-h-screen p-4" : "p-0")}>
-      <div className="w-full max-w-sm py-12 px-6">
-        <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-4xl shadow-2xl shadow-indigo-100 mx-auto mb-6 italic">
+      <div className={cn("w-full max-w-sm", onClose ? "py-6 px-4" : "py-12 px-6")}>
+        <div className={cn("text-center", onClose ? "mb-6" : "mb-10")}>
+          <div className={cn("bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-2xl shadow-indigo-100 mx-auto italic", onClose ? "w-12 h-12 text-2xl mb-4" : "w-16 h-16 text-4xl mb-6")}>
             P
           </div>
-          <h1 className="text-3xl font-black tracking-tighter text-slate-900">
+          <h1 className={cn("font-black tracking-tighter text-slate-900 italic", onClose ? "text-2xl" : "text-3xl")}>
             Paydrip Portal
           </h1>
           <p className="text-slate-400 mt-2 font-mono text-[10px] uppercase tracking-[0.2em] font-black">
@@ -64,7 +64,7 @@ export default function AuthView({ onClose }: { onClose?: () => void }) {
           </p>
         </div>
 
-        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100">
+        <div className={cn("bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100", onClose ? "p-8" : "p-10")}>
           <form onSubmit={handleAuth} className="space-y-6">
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1 font-mono">

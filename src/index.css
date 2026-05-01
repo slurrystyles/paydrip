@@ -11,6 +11,14 @@
   --radius-xl: 24px;
 }
 
+@utility scrollbar-hide {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 body {
   @apply bg-[#F8FAFC] text-slate-900 font-sans antialiased;
 }

@@ -304,17 +304,19 @@ export default function LandingPage({ user }: { user: User | null }) {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#FDFDFF] rounded-[2.5rem] shadow-2xl"
+              className="relative z-10 w-full max-w-sm max-h-[95vh] overflow-hidden bg-[#FDFDFF] rounded-[3rem] shadow-2xl flex flex-col"
             >
-              <div className="sticky top-6 right-6 flex justify-end px-6 z-20 pointer-events-none">
+              <div className="absolute top-6 right-6 z-20">
                 <button 
                   onClick={() => setShowAuth(false)} 
-                  className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors pointer-events-auto"
+                  className="p-2 bg-slate-100 text-slate-400 rounded-full hover:bg-slate-200 hover:text-slate-900 transition-all pointer-events-auto active:scale-90 shadow-sm"
                 >
-                  <Plus className="rotate-45" size={20} />
+                  <Plus className="rotate-45" size={18} />
                 </button>
               </div>
-              <AuthView onClose={() => setShowAuth(false)} />
+              <div className="overflow-y-auto flex-1 scrollbar-hide">
+                 <AuthView onClose={() => setShowAuth(false)} />
+              </div>
             </motion.div>
           </div>
         )}
