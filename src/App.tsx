@@ -11,6 +11,9 @@ import SettingsView from './components/SettingsView';
 import LandingPage from './components/LandingPage';
 import PublicInvoiceView from './components/PublicInvoiceView';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
+import PrivacyPage from './components/PrivacyPage';
+import TermsPage from './components/TermsPage';
+import ContactPage from './components/ContactPage';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -43,6 +46,9 @@ export default function App() {
         {/* Public Routes */}
         <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage user={user} />} />
         <Route path="/v/:token" element={<PublicInvoiceView />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         
         {/* Protected Routes */}
         <Route path="/dashboard" element={user ? <AuthenticatedLayout><DashboardView /></AuthenticatedLayout> : <Navigate to="/" />} />

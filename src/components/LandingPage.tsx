@@ -15,7 +15,7 @@ import { cn } from '../lib/utils';
 import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'motion/react';
 import AuthView from './AuthView';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function LandingPage({ user }: { user: User | null }) {
   const [showAuth, setShowAuth] = useState(false);
@@ -282,9 +282,9 @@ export default function LandingPage({ user }: { user: User | null }) {
             <span className="text-lg font-black tracking-tight">Paydrip</span>
           </div>
           <div className="flex gap-8 text-[10px] text-slate-400">
-            <a href="#" className="hover:text-indigo-600 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-indigo-600 transition-colors">Terms</a>
-            <a href="#" className="hover:text-indigo-600 transition-colors">Contact</a>
+            <Link to="/privacy" className="hover:text-indigo-600 transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-indigo-600 transition-colors">Terms</Link>
+            <Link to="/contact" className="hover:text-indigo-600 transition-colors">Contact</Link>
           </div>
         </div>
       </footer>
