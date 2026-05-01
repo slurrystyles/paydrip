@@ -304,10 +304,13 @@ export default function LandingPage({ user }: { user: User | null }) {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative z-10 w-full max-w-md"
+              className="relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#FDFDFF] rounded-[2.5rem] shadow-2xl"
             >
-              <div className="absolute top-6 right-6 z-20">
-                <button onClick={() => setShowAuth(false)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
+              <div className="sticky top-6 right-6 flex justify-end px-6 z-20 pointer-events-none">
+                <button 
+                  onClick={() => setShowAuth(false)} 
+                  className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors pointer-events-auto"
+                >
                   <Plus className="rotate-45" size={20} />
                 </button>
               </div>

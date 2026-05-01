@@ -50,8 +50,8 @@ export default function AuthView({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <div className={cn("min-h-screen flex items-center justify-center bg-[#FDFDFF]", !onClose && "p-4")}>
-      <div className="w-full max-w-sm">
+    <div className={cn("flex flex-col items-center justify-center bg-[#FDFDFF]", !onClose ? "min-h-screen p-4" : "p-0")}>
+      <div className="w-full max-w-sm py-12 px-6">
         <div className="text-center mb-10">
           <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-4xl shadow-2xl shadow-indigo-100 mx-auto mb-6 italic">
             P

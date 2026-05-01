@@ -45,10 +45,30 @@ export default function InfoPageLayout({
           <p className="text-xl text-slate-400 font-medium">{subtitle}</p>
         </header>
 
-        <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-16 shadow-2xl shadow-indigo-100/20 prose prose-slate prose-indigo max-w-none">
+        <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-16 shadow-2xl shadow-indigo-100/20 prose prose-slate prose-indigo max-w-none mb-20">
           {children}
         </div>
+
+        <div className="text-center py-20 border-t border-slate-100">
+          <h2 className="text-3xl font-black tracking-tighter mb-8 italic">Ready to stop chasing payments?</h2>
+          <button 
+            onClick={() => navigate('/')}
+            className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100 active:scale-95"
+          >
+            Go to Platform
+          </button>
+        </div>
       </motion.div>
+
+      <footer className="py-12 px-6 border-t border-slate-100 font-bold uppercase tracking-widest bg-white">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic">P</div>
+            <span className="text-lg font-black tracking-tight italic">Paydrip</span>
+          </div>
+          <p className="text-[9px] text-slate-400 font-mono">© 2026 Paydrip Protocol • All rights reserved</p>
+        </div>
+      </footer>
     </div>
   );
 }
