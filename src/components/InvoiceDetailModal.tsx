@@ -28,7 +28,7 @@ interface Props {
 export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
-
+  const isPaid = invoice.status === "paid";
   const [reminderLogs, setReminderLogs] = useState<any[]>([]);
 
   useEffect(() => {
@@ -341,18 +341,21 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                 <WhatsAppTemplateButton 
                   label="Polite Reminder" 
                   description="Pre-due / On-due"
+                  disabled={isPaid}
                   onClick={() => openWhatsApp('polite')}
                   icon={<Shield size={16} className="text-green-500" />}
                 />
                 <WhatsAppTemplateButton 
                   label="Firm Request" 
                   description="3-5 days overdue"
+                  disabled={isPaid}
                   onClick={() => openWhatsApp('firm')}
                   icon={<AlertCircle size={16} className="text-orange-500" />}
                 />
                 <WhatsAppTemplateButton 
                   label="Final Notice" 
                   description="Critical overdue"
+                  disabled={isPaid}
                   onClick={() => openWhatsApp('final')}
                   icon={<Zap size={16} className="text-red-500" />}
                 />
