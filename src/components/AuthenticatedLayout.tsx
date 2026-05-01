@@ -7,11 +7,13 @@ import {
   LogOut,
   Bell,
   Menu,
-  X
+  X,
+  Search
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -27,14 +29,20 @@ function NavItem({ icon, label, path, active }: NavItemProps) {
     <button
       onClick={() => navigate(path)}
       className={cn(
-        "flex items-center w-full px-4 py-3 text-sm font-bold rounded-2xl transition-all duration-300",
+        "flex items-center w-full px-6 py-4 text-xs font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-300 relative group overflow-hidden",
         active 
-          ? "bg-indigo-600 text-white shadow-xl shadow-indigo-200" 
-          : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+          ? "bg-slate-900 text-white shadow-2xl shadow-slate-200" 
+          : "text-slate-400 hover:text-slate-900 hover:bg-slate-50"
       )}
     >
-      <span className={cn("mr-3 transition-colors", active ? "text-white" : "text-slate-400")}>{icon}</span>
-      {label}
+      <span className={cn("mr-4 transition-colors z-10", active ? "text-indigo-400" : "text-slate-300 group-hover:text-indigo-600")}>{icon}</span>
+      <span className="z-10">{label}</span>
+      {active && (
+        <motion.div 
+          layoutId="nav-active"
+          className="absolute right-0 top-0 bottom-0 w-1 bg-indigo-500"
+        />
+      )}
     </button>
   );
 }
@@ -43,13 +51,12 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const user = supabase.auth.getUser(); // This is async but we assume session is handled in App.tsx
 
   const navItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <FileText size={20} />, label: 'Invoices', path: '/invoices' },
-    { icon: <Users size={20} />, label: 'Clients', path: '/clients' },
-    { icon: <SettingsIcon size={20} />, label: 'Settings', path: '/settings' },
+    { icon: <LayoutDashboard size={18} />, label: 'Dashboard', path: '/dashboard' },
+    { icon: <FileText size={18} />, label: 'Invoices', path: '/invoices' },
+    { icon: <Users size={18} />, label: 'Clients', path: '/clients' },
+    { icon: <SettingsIcon size={18} />, label: 'Settings', path: '/settings' },
   ];
 
   const handleSignOut = async () => {
@@ -58,15 +65,19 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC]">
+    <div className="flex min-h-screen bg-[#FDFDFF] font-sans selection:bg-indigo-100 selection:text-indigo-900">
       {/* Desktop Sidebar */}
-      <aside className="w-64 border-r border-slate-200 bg-white hidden lg:flex flex-col sticky top-0 h-screen z-30">
-        <div className="p-8">
+      <aside className="w-72 border-r border-slate-100 bg-white hidden lg:flex flex-col sticky top-0 h-screen z-30">
+        <div className="p-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-100 italic">
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-indigo-100 italic"
+            >
               P
-            </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">Paydrip</span>
+            </motion.div>
+            <span className="text-xl font-black tracking-tighter text-slate-900 italic">Paydrip</span>
           </div>
         </div>
 
@@ -82,78 +93,112 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-6 border-t border-slate-50">
           <button 
             onClick={handleSignOut}
-            className="flex items-center w-full px-4 py-3 text-sm font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all duration-200"
+            className="flex items-center w-full px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-red-600 hover:bg-red-50/50 rounded-2xl transition-all duration-300"
           >
-            <LogOut size={18} className="mr-3" />
-            Sign Out
+            <LogOut size={16} className="mr-4" />
+            End Session
           </button>
         </div>
       </aside>
 
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 flex items-center justify-between z-40">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 flex items-center justify-between z-40">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">P</div>
-          <span className="font-bold">Paydrip</span>
+          <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-indigo-100">P</div>
+          <span className="font-black tracking-tighter">Paydrip</span>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 text-slate-600"
+          className="p-3 bg-slate-50 rounded-xl text-slate-600"
         >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
       {/* Mobile Sidebar Overlay */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40" onClick={() => setIsMobileMenuOpen(false)}>
-          <div className="w-64 h-full bg-white p-6" onClick={e => e.stopPropagation()}>
-             <nav className="space-y-2 mt-12">
-               {navItems.map((item) => (
-                 <NavItem 
-                   key={item.path}
-                   icon={item.icon}
-                   label={item.label}
-                   path={item.path}
-                   active={location.pathname === item.path}
-                 />
-               ))}
-               <button 
-                 onClick={handleSignOut}
-                 className="flex items-center w-full px-4 py-3 text-sm font-bold text-slate-500 rounded-2xl"
-               >
-                 <LogOut size={18} className="mr-3" />
-                 Sign Out
-               </button>
-             </nav>
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 overflow-hidden">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" 
+              onClick={() => setIsMobileMenuOpen(false)} 
+            />
+            <motion.div 
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="absolute left-0 top-0 bottom-0 w-80 bg-white p-10 shadow-2xl" 
+              onClick={e => e.stopPropagation()}
+            >
+               <div className="flex items-center gap-3 mb-16">
+                 <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic">P</div>
+                 <span className="text-xl font-black tracking-tighter">Paydrip</span>
+               </div>
+               <nav className="space-y-4">
+                 {navItems.map((item) => (
+                   <NavItem 
+                     key={item.path}
+                     icon={item.icon}
+                     label={item.label}
+                     path={item.path}
+                     active={location.pathname === item.path}
+                   />
+                 ))}
+                 <button 
+                   onClick={handleSignOut}
+                   className="flex items-center w-full px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400"
+                 >
+                   <LogOut size={16} className="mr-4" />
+                   End Session
+                 </button>
+               </nav>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Desktop Header */}
-        <header className="h-20 bg-white/50 backdrop-blur-sm border-b border-slate-100 hidden lg:flex items-center justify-between px-10 sticky top-0 z-20">
-          <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 border border-green-100 rounded-full text-[10px] font-bold uppercase tracking-widest">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-            End-to-End Encrypted
+        <header className="h-20 bg-white/5 backdrop-blur-sm border-b border-slate-50 hidden lg:flex items-center justify-between px-10 sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 px-4 py-2 bg-indigo-50/50 border border-indigo-100 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 shadow-sm">
+              <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
+              Node Status: High Availability
+            </div>
           </div>
-          <div className="flex items-center gap-6">
-            <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-              <Bell size={20} />
+          <div className="flex items-center gap-8">
+            <div className="hidden xl:flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl w-80 group focus-within:border-indigo-200 transition-all">
+              <Search size={14} className="text-slate-400 group-focus-within:text-indigo-600" />
+              <input type="text" placeholder="Global Ledger Search..." className="bg-transparent border-none outline-none text-xs font-bold text-slate-600 w-full placeholder:text-slate-300" />
+            </div>
+            <button className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-indigo-600 hover:shadow-xl hover:shadow-indigo-50 transition-all shadow-sm relative">
+              <Bell size={18} />
+              <div className="absolute top-3 right-3 w-2 h-2 bg-indigo-600 rounded-full border-2 border-white"></div>
             </button>
-            <div className="h-10 w-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-sm font-bold text-slate-700">
+            <div className="h-10 w-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xs font-black text-white italic shadow-xl shadow-slate-200">
               U
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-6 lg:p-10 pt-24 lg:pt-10 overflow-y-auto">
-          <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {children}
+        <main className="flex-1 p-6 lg:p-12 pt-28 lg:pt-12 overflow-y-auto custom-scrollbar">
+          <div className="max-w-7xl mx-auto">
+             <motion.div
+               key={location.pathname}
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.5, ease: [0, 0, 0.2, 1] }}
+             >
+               {children}
+             </motion.div>
           </div>
         </main>
       </div>

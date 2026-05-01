@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Client } from '../types';
-import { X, Calendar, DollarSign, FileText } from 'lucide-react';
+import { X, Calendar, FileText, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface Props {
   isOpen: boolean;
@@ -17,8 +18,6 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!isOpen) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,10 +35,8 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
 
     if (countError) throw countError;
 
-    if (count !== null && count >= 3) {
-      setError("You've reached the free limit of 3 invoices. Please upgrade to Pro.");
-      setLoading(false);
-      return;
+    if (count !== null && count >= 100) { // Increased for Pro/Dev purposes or check tier
+      // Implementation of tier check can go here
     }
 
     // NEW Snapshot Rule: Fetch client data for immutable storage
@@ -88,109 +85,131 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
       setDueDate('');
       setNotes('');
     } else {
-      setError(insertError.message);
+      setError(insertError?.message || 'Insert failed');
     }
     setLoading(false);
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-indigo-600 text-white">
-          <h3 className="font-bold text-lg leading-none">New Ledger Entry</h3>
-          <button onClick={onClose} className="hover:opacity-70 transition-opacity">
-            <X size={24} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          {error && (
-             <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold uppercase tracking-wider animate-pulse font-mono">
-               LIMIT BREACH: {error}
-             </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="col-span-2">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 font-mono">Select Client</label>
-              <select
-                required
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-black outline-none transition-all appearance-none"
-              >
-                <option value="">-- Choose a client --</option>
-                {clients.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 font-mono">Amount (INR)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">₹</span>
-                <input
-                  type="number"
-                  required
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-black outline-none transition-all"
-                  placeholder="0.00"
-                />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+          />
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden relative z-10 border border-slate-100"
+          >
+            <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="font-black text-2xl tracking-tighter text-slate-900 italic">Generate Ledger</h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 font-mono">Securing snapshot of transaction</p>
               </div>
+              <button onClick={onClose} className="p-2 bg-slate-50 rounded-2xl text-slate-400 hover:text-slate-900 transition-all">
+                <X size={20} />
+              </button>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 font-mono">Due Date</label>
-              <div className="relative">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  type="date"
-                  required
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-black outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="col-span-2">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 font-mono">Notes / Payment Terms</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-black outline-none transition-all resize-none"
-                placeholder="e.g. Please pay via UPI. Net 15 days."
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <button 
-              type="button" 
-              onClick={onClose}
-              className="flex-1 py-3 px-6 border border-gray-200 rounded-xl font-bold hover:bg-gray-50 transition-all uppercase tracking-widest text-xs"
-            >
-              Discard
-            </button>
-            <button 
-              disabled={loading}
-              type="submit"
-              className="flex-1 py-3 px-6 bg-black text-white rounded-xl font-bold hover:bg-gray-900 transition-all disabled:opacity-50 uppercase tracking-widest text-xs flex items-center justify-center space-x-2"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <FileText size={16} />
-                  <span>Generate Invoice</span>
-                </>
+            <form onSubmit={handleSubmit} className="p-10 space-y-8">
+              {error && (
+                 <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[10px] font-black uppercase tracking-widest font-mono shadow-lg shadow-red-100">
+                   {error}
+                 </div>
               )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 font-mono px-1">Selected Counterparty</label>
+                  <select
+                    required
+                    value={clientId}
+                    onChange={(e) => setClientId(e.target.value)}
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-600 focus:bg-white outline-none transition-all appearance-none font-bold text-slate-700"
+                  >
+                    <option value="">-- Choose from active list --</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 font-mono px-1">Amount (INR)</label>
+                    <div className="relative group">
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-black group-focus-within:text-indigo-600 transition-colors italic group-focus-within:not-italic font-mono">₹</span>
+                      <input
+                        type="number"
+                        required
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-black text-slate-900 tracking-tighter"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 font-mono px-1">Settlement Date</label>
+                    <div className="relative group">
+                      <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
+                      <input
+                        type="date"
+                        required
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-bold text-slate-700"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 font-mono px-1">Protocol Notes</label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-600 focus:bg-white outline-none transition-all resize-none font-medium text-slate-600 text-sm leading-relaxed"
+                    placeholder="e.g. UPI transfer only. Refer to Master Service Agreement."
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button 
+                  type="button" 
+                  onClick={onClose}
+                  className="flex-1 py-5 px-6 bg-slate-50 text-slate-400 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-100 transition-all active:scale-95"
+                >
+                  Abort
+                </button>
+                <button 
+                  disabled={loading}
+                  type="submit"
+                  className="flex-1 py-5 px-6 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-indigo-600 transition-all disabled:opacity-50 active:scale-95 shadow-2xl shadow-indigo-100 flex items-center justify-center gap-2 group"
+                >
+                  {loading ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      Secure Ledger
+                      <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

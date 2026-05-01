@@ -41,7 +41,7 @@ export default function App() {
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
+        <Route path="/" element={<LandingPage user={user} />} />
         <Route path="/v/:token" element={<PublicInvoiceView />} />
         
         {/* Protected Routes */}

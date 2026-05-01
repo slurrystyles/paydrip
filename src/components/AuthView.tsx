@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { LogIn, UserPlus, Mail, Lock } from 'lucide-react';
 
-export default function AuthView() {
+export default function AuthView({ onClose }: { onClose?: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,21 +49,21 @@ export default function AuthView() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4">
+    <div className={cn("min-h-screen flex items-center justify-center bg-[#FDFDFF]", !onClose && "p-4")}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-4xl shadow-xl shadow-indigo-100 mx-auto mb-6">
-            A
+          <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-4xl shadow-2xl shadow-indigo-100 mx-auto mb-6 italic">
+            P
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            AutoInvoice
+          <h1 className="text-3xl font-black tracking-tighter text-slate-900">
+            Paydrip Portal
           </h1>
-          <p className="text-slate-500 mt-2 font-mono text-[10px] uppercase tracking-widest font-bold">
-            {isLogin ? 'Private Access Restricted' : 'Secure Registration'}
+          <p className="text-slate-400 mt-2 font-mono text-[10px] uppercase tracking-[0.2em] font-black">
+            {isLogin ? 'Security Verification' : 'Open Active Ledger'}
           </p>
         </div>
 
-        <div className="bg-white p-10 rounded-3xl shadow-xl border border-slate-200">
+        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100">
           <form onSubmit={handleAuth} className="space-y-6">
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1 font-mono">

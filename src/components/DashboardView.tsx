@@ -90,14 +90,14 @@ export default function DashboardView() {
         <div className="col-span-12 lg:col-span-8 bento-card p-6 flex flex-col min-h-[400px]">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="font-bold text-slate-800 text-lg tracking-tight">Recent Invoices</h2>
-              <p className="text-sm text-slate-500">Auto-tracked from your connected clients</p>
+              <h2 className="font-black text-slate-900 text-2xl tracking-tighter italic">Ledger Overview</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Real-time sync active</p>
             </div>
             <button 
               onClick={() => setIsInvoiceModalOpen(true)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-all shadow-indigo-100 active:scale-95"
+              className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 shadow-xl transition-all shadow-slate-200 active:scale-95"
             >
-              + Create New
+              + Create Ledger
             </button>
           </div>
           <div className="flex-1 overflow-x-auto">
@@ -116,20 +116,20 @@ export default function DashboardView() {
                   <tr 
                     key={invoice.id} 
                     onClick={() => setSelectedInvoice(invoice)}
-                    className="h-14 border-b border-slate-50 hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                    className="h-16 border-b border-slate-50 hover:bg-indigo-50/30 transition-all cursor-pointer group"
                   >
-                    <td className="px-2 font-mono text-slate-400 text-xs">#{invoice.invoice_number}</td>
-                    <td className="px-2 font-semibold text-slate-700">{invoice.client?.name}</td>
-                    <td className="px-2 font-bold">{formatCurrency(invoice.amount)}</td>
-                    <td className="px-2 text-slate-500">{new Date(invoice.due_date).toLocaleDateString()}</td>
-                    <td className="px-2">
+                    <td className="px-4 font-mono text-slate-300 text-[10px] font-black tracking-widest">#{invoice.invoice_number}</td>
+                    <td className="px-4 font-black text-slate-900 text-sm tracking-tight">{invoice.client?.name}</td>
+                    <td className="px-4 font-black text-slate-900 text-sm">{formatCurrency(invoice.amount)}</td>
+                    <td className="px-4 text-[10px] font-black uppercase text-slate-400 tracking-tighter">{new Date(invoice.due_date).toLocaleDateString()}</td>
+                    <td className="px-4">
                        <span className={cn(
-                         "status-chip",
-                         invoice.status === 'paid' ? 'bg-green-100 text-green-700' :
-                         isOverdue(invoice) ? 'bg-red-100 text-red-700' :
-                         invoice.status === 'sent' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+                         "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm",
+                         invoice.status === 'paid' ? 'bg-green-50 text-green-600 border border-green-100' :
+                         isOverdue(invoice) ? 'bg-red-50 text-red-600 border border-red-100' :
+                         invoice.status === 'sent' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-slate-50 text-slate-500 border border-slate-100'
                        )}>
-                         {invoice.status === 'paid' ? 'paid' : (isOverdue(invoice) ? 'overdue' : invoice.status)}
+                         {invoice.status === 'paid' ? 'Settled' : (isOverdue(invoice) ? 'Critical' : invoice.status)}
                        </span>
                     </td>
                   </tr>
@@ -181,18 +181,18 @@ export default function DashboardView() {
         <div className="col-span-12 md:col-span-6 lg:col-span-4 bento-card p-6 flex flex-col justify-between group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Collection Rate</p>
-              <h3 className="text-3xl font-extrabold text-slate-900 mt-2 tracking-tighter">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Total Liquidity</p>
+              <h3 className="text-4xl font-black text-slate-900 mt-2 tracking-tighter italic">
                 {totalPaid + totalOutstanding > 0 ? Math.round((totalPaid / (totalPaid + totalOutstanding)) * 100) : 0}%
               </h3>
             </div>
-            <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform duration-300">
-               <CheckCircle2 size={20} />
+            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform duration-500 shadow-xl shadow-green-100/50 italic font-black">
+               %
             </div>
           </div>
-          <div className="w-full bg-slate-100 h-2 rounded-full mt-6 overflow-hidden">
+          <div className="w-full bg-slate-100 h-2.5 rounded-full mt-8 overflow-hidden shadow-inner">
             <div 
-              className="bg-green-500 h-full rounded-full transition-all duration-1000" 
+              className="bg-green-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_20px_rgba(34,197,94,0.4)]" 
               style={{ width: `${totalPaid + totalOutstanding > 0 ? (totalPaid / (totalPaid + totalOutstanding)) * 100 : 0}%` }}
             ></div>
           </div>
