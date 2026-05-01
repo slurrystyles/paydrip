@@ -108,13 +108,13 @@ export default function InvoicesView() {
             }
           }}
           className={cn(
-            "px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 transition-all shadow-2xl active:scale-95 w-full sm:w-auto",
+            "px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 transition-all shadow-2xl active:scale-95 w-full sm:w-auto",
             isLimitReached 
               ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
               : "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100"
           )}
         >
-          {isLimitReached ? <Zap size={16} /> : <Plus size={16} />}
+          {isLimitReached ? <Zap size={14} /> : <Plus size={14} />}
           <span>{isLimitReached ? 'Upgrade to Create' : 'Create Invoice'}</span>
         </button>
       </div>
@@ -129,41 +129,40 @@ export default function InvoicesView() {
           <table className="w-full text-left min-w-[800px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Client Name</th>
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Amount</th>
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Due Date</th>
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
-                <th className="px-6 py-4"></th>
+                <th className="px-6 py-3 text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">Client Name</th>
+                <th className="px-6 py-3 text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">Amount</th>
+                <th className="px-6 py-3 text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">Due Date</th>
+                <th className="px-6 py-3 text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
+                <th className="px-6 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {sortedInvoices.map((invoice) => (
                 <tr 
                   key={invoice.id} 
-                  className="hover:bg-indigo-50/20 transition-colors group cursor-pointer h-24"
+                  className="hover:bg-indigo-50/20 transition-colors group cursor-pointer h-16"
                   onClick={() => setSelectedInvoice(invoice)}
                 >
-                  <td className="px-6 py-5">
-                    <p className="font-black text-slate-900 tracking-tight text-lg leading-none">{invoice.client?.name || invoice.snapshot_json?.name}</p>
-                    <p className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest mt-1.5 leading-none">#{invoice.invoice_number}</p>
+                  <td className="px-6 py-3">
+                    <p className="font-black text-slate-900 tracking-tight text-sm leading-none">{invoice.client?.name || invoice.snapshot_json?.name}</p>
+                    <p className="text-[9px] text-slate-400 font-mono font-bold uppercase tracking-widest mt-1 leading-none">#{invoice.invoice_number}</p>
                   </td>
-                  <td className="px-6 py-5">
-                    <p className="font-black text-slate-900 text-base">{formatCurrency(invoice.amount)}</p>
+                  <td className="px-6 py-3">
+                    <p className="font-black text-slate-900 text-sm">{formatCurrency(invoice.amount)}</p>
                     {invoice.totalPaid && invoice.totalPaid > 0 && (
-                      <p className="text-[10px] text-green-600 font-black uppercase mt-1 leading-none">{formatCurrency(invoice.totalPaid)} Paid</p>
+                      <p className="text-[9px] text-green-600 font-black uppercase mt-0.5 leading-none">{formatCurrency(invoice.totalPaid)}</p>
                     )}
                   </td>
                   <td className={cn(
-                    "px-6 py-5 text-xs font-black uppercase tracking-widest",
+                    "px-6 py-3 text-[10px] font-black uppercase tracking-widest",
                     isOverdue(invoice) ? "text-red-500 italic" : "text-slate-500"
                   )}>
                     {new Date(invoice.due_date).toLocaleDateString()}
-                    {isOverdue(invoice) && <span className="block text-[8px] font-bold mt-1">OVERDUE</span>}
                   </td>
-                  <td className="px-6 py-5 text-center">
+                  <td className="px-6 py-3 text-center">
                     {/* SECTION 4: INVOICE STATUS SYSTEM */}
                     <span className={cn(
-                      "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                      "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
                       invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100 shadow-sm' :
                       isOverdue(invoice) ? 'bg-red-50 text-red-600 border-red-100 shadow-sm' :
                       invoice.status === 'sent' ? 'bg-yellow-50 text-yellow-600 border-yellow-100 shadow-sm' :
@@ -172,9 +171,9 @@ export default function InvoicesView() {
                       {invoice.status === 'paid' ? 'Settled' : invoice.status}
                     </span>
                   </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                      <ChevronRight size={18} />
+                  <td className="px-6 py-3 text-right">
+                    <div className="inline-flex items-center justify-center p-2 rounded-xl bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                      <ChevronRight size={14} />
                     </div>
                   </td>
                 </tr>
