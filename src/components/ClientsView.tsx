@@ -131,14 +131,14 @@ export default function ClientsView() {
             <tbody className="divide-y divide-slate-50">
               {filteredClients.map((client) => (
                 <tr key={client.id} className="hover:bg-indigo-50/30 transition-all group">
-                  <td className="px-6 py-6">
+                  <td className="px-6 py-6 tracking-tighter">
                     <div className="flex items-center space-x-4">
-                      <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-xs font-black text-white italic shadow-lg shadow-slate-200">
+                      <div className="h-12 w-12 rounded-2xl bg-slate-900 flex items-center justify-center text-sm font-black text-white italic shadow-xl shadow-slate-200 group-hover:scale-110 transition-transform">
                         {client.name[0].toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-black text-slate-900 tracking-tight leading-none">{client.name}</p>
-                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1 italic">Node Active Since {new Date(client.created_at).getFullYear()}</p>
+                        <p className="font-black text-slate-900 tracking-tight text-lg leading-none">{client.name}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1.5 italic">Counterparty Node</p>
                       </div>
                     </div>
                   </td>
@@ -157,27 +157,40 @@ export default function ClientsView() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end space-x-2">
+                    <div className="flex items-center justify-end space-x-3">
                       <button 
                         onClick={() => openModal(client)}
-                        className="p-2 text-gray-400 hover:text-black transition-colors"
+                        className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-100"
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={18} />
                       </button>
                       <button 
                         onClick={() => deleteClient(client.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                        className="p-3 text-slate-400 hover:text-red-600 hover:bg-white rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-100"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
+              {/* SECTION 2: EMPTY STATE */}
               {filteredClients.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-gray-400 italic">
-                    {searchTerm ? 'No clients match your search.' : 'No clients added yet.'}
+                  <td colSpan={3} className="py-24 px-6 text-center">
+                    <div className="flex flex-col items-center max-w-xs mx-auto">
+                      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 border border-slate-100 border-dashed mb-6">
+                        <Mail size={32} />
+                      </div>
+                      <h3 className="text-xl font-black text-slate-900 mb-2 italic">No clients yet</h3>
+                      <p className="text-slate-400 text-sm font-medium mb-8">Add your first client to start invoicing</p>
+                      <button 
+                        onClick={() => openModal()}
+                        className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-50 hover:bg-slate-900 transition-all"
+                      >
+                        Add Client
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )}

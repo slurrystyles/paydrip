@@ -10,6 +10,8 @@ import {
   ChevronRight,
   FileText
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { 
   BarChart, 
   Bar, 
@@ -76,193 +78,228 @@ export default function DashboardView() {
   const totalPaid = invoices
     .reduce((sum, i) => sum + (i.totalPaid || 0), 0);
 
+  const navigate = useNavigate();
+
   // Business Rule: Computed Overdue Status
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   
-  const overdueCount = invoices.filter(i => {
-    const dueDate = new Date(i.due_date);
-    return i.status !== 'paid' && dueDate < now;
-  }).length;
-
   const isOverdue = (invoice: Invoice) => {
     const dueDate = new Date(invoice.due_date);
     return invoice.status !== 'paid' && dueDate < now;
   };
 
-  const chartData = [
-    { name: 'Paid', amount: totalPaid },
-    { name: 'Outstanding', amount: totalOutstanding },
-  ];
+  const totalOverall = totalPaid + totalOutstanding;
+  const collectionRate = totalOverall > 0 ? Math.round((totalPaid / totalOverall) * 100) : 0;
+  const overdueAmount = invoices.filter(isOverdue).reduce((sum, i) => sum + (i.remainingBalance ?? i.amount), 0);
 
-  if (loading) return <div className="animate-pulse flex flex-col space-y-4">
-    <div className="h-32 bg-gray-100 rounded-xl"></div>
-    <div className="h-64 bg-gray-100 rounded-xl"></div>
-  </div>;
+  if (loading) return (
+    <div className="animate-pulse space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map(i => <div key={i} className="h-32 bg-slate-100 rounded-3xl" />)}
+      </div>
+      <div className="h-96 bg-slate-50 rounded-3xl" />
+    </div>
+  );
+
+  // SECTION 1: ONBOARDING EXPERIENCE
+  if (invoices.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-xl w-full bento-card p-12 bg-white shadow-2xl shadow-indigo-100/50"
+        >
+          <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center text-white mx-auto mb-8 shadow-xl shadow-indigo-200">
+            <FileText size={40} />
+          </div>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-4 italic">Get your first payment faster</h2>
+          <p className="text-slate-500 font-medium mb-12">Create and send your first invoice in under a minute.</p>
+          
+          <div className="space-y-6 text-left mb-12 max-w-sm mx-auto flex flex-col">
+            {[
+              "Update your System Settings",
+              "Add a client",
+              "Create an invoice",
+              "Send via WhatsApp"
+            ].map((step, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-sm">{i + 1}</div>
+                <span className="font-bold text-slate-700">{step}</span>
+              </div>
+            ))}
+          </div>
+
+          <button 
+            onClick={() => setIsInvoiceModalOpen(true)}
+            className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-slate-900 transition-all shadow-xl shadow-indigo-200 active:scale-95"
+          >
+            Create First Invoice
+          </button>
+          <p className="mt-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">No setup required</p>
+        </motion.div>
+
+        <InvoiceModal 
+          isOpen={isInvoiceModalOpen}
+          onClose={() => setIsInvoiceModalOpen(false)}
+          clients={clients}
+          onSuccess={fetchData}
+        />
+      </div>
+    );
+  }
+
+  // Define sorting rules: overdue first, then upcoming (due date closest to now), then paid
+  const sortedInvoices = [...invoices].sort((a, b) => {
+    const isAOverdue = isOverdue(a);
+    const isBOverdue = isOverdue(b);
+    
+    if (isAOverdue && !isBOverdue) return -1;
+    if (!isAOverdue && isBOverdue) return 1;
+    
+    if (a.status === 'paid' && b.status !== 'paid') return 1;
+    if (a.status !== 'paid' && b.status === 'paid') return -1;
+    
+    return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-12">
+      {/* SECTION 3: DASHBOARD CLARITY - TOP METRICS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <MetricCard 
+          label="Money in Flight" 
+          value={formatCurrency(totalOutstanding)} 
+          subtext="Total Pending"
+          color="neutral"
+          icon={<Clock size={20} />}
+        />
+        <MetricCard 
+          label="Settled Funds" 
+          value={formatCurrency(totalPaid)} 
+          subtext="Total Paid"
+          color="green"
+          icon={<CheckCircle2 size={20} />}
+        />
+        <MetricCard 
+          label="Risk Exposure" 
+          value={formatCurrency(overdueAmount)} 
+          subtext="Overdue Amount"
+          color="red"
+          icon={<AlertCircle size={20} />}
+        />
+      </div>
+
       <div className="grid grid-cols-12 gap-6">
         {/* Main Invoices Card */}
-        <div className="col-span-12 lg:col-span-8 bento-card p-6 flex flex-col min-h-[400px]">
-          <div className="flex justify-between items-center mb-6">
+        <div className="col-span-12 lg:col-span-8 bento-card p-8 flex flex-col min-h-[500px]">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
             <div>
-              <h2 className="font-black text-slate-900 text-2xl tracking-tighter italic">Ledger Overview</h2>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Real-time sync active</p>
+              <h2 className="font-black text-slate-900 text-3xl tracking-tighter italic">Ledger Overview</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Sorting: Priority (Overdue/Upcoming)</p>
             </div>
+            {/* SECTION 5: BUTTON HIERARCHY - PRIMARY */}
             <button 
               onClick={() => setIsInvoiceModalOpen(true)}
-              className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 shadow-xl transition-all shadow-slate-200 active:scale-95"
+              className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-900 shadow-2xl transition-all shadow-indigo-100 active:scale-95 w-full sm:w-auto"
             >
-              + Create Ledger
+              + Create Invoice
             </button>
           </div>
-          <div className="flex-1 overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100 tracking-widest font-mono">
-                <tr className="h-10">
-                  <th className="px-4">Invoice ID</th>
-                  <th className="px-4">Client</th>
-                  <th className="px-4">Total</th>
-                  <th className="px-4">Paid</th>
-                  <th className="px-4">Balance</th>
-                  <th className="px-4">Status</th>
+
+          {/* SECTION 6: INVOICE TABLE IMPROVEMENTS */}
+          <div className="flex-1 overflow-x-auto -mx-6 sm:mx-0">
+            <table className="w-full text-left min-w-[700px]">
+              <thead className="text-[10px] font-black text-slate-400 uppercase border-b border-slate-100 tracking-[0.2em] font-mono">
+                <tr className="h-12">
+                  <th className="px-6">Identity</th>
+                  <th className="px-6">Total</th>
+                  <th className="px-6">Balance</th>
+                  <th className="px-6">Due Date</th>
+                  <th className="px-6">Status</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
-                {invoices.slice(0, 5).map((invoice) => (
+                {sortedInvoices.slice(0, 8).map((invoice) => (
                   <tr 
                     key={invoice.id} 
                     onClick={() => setSelectedInvoice(invoice)}
-                    className="h-16 border-b border-slate-50 hover:bg-indigo-50/30 transition-all cursor-pointer group"
+                    className="h-20 border-b border-slate-50 hover:bg-indigo-50/20 transition-all cursor-pointer group"
                   >
-                    <td className="px-4 font-mono text-slate-300 text-[10px] font-black tracking-widest">#{invoice.invoice_number}</td>
-                    <td className="px-4 font-black text-slate-900 text-sm tracking-tight">{invoice.client?.name}</td>
-                    <td className="px-4 font-black text-slate-900 text-sm">{formatCurrency(invoice.amount)}</td>
-                    <td className="px-4 font-bold text-green-600 text-xs">+{formatCurrency(invoice.totalPaid || 0)}</td>
-                    <td className="px-4 font-black text-indigo-600 text-sm">{formatCurrency(invoice.remainingBalance ?? invoice.amount)}</td>
-                    <td className="px-4">
-                       <span className={cn(
-                         "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm",
-                         invoice.status === 'paid' ? 'bg-green-50 text-green-600 border border-green-100' :
-                         isOverdue(invoice) ? 'bg-red-50 text-red-600 border border-red-100' :
-                         invoice.status === 'sent' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-slate-50 text-slate-500 border border-slate-100'
-                       )}>
-                         {invoice.status === 'paid' ? 'Settled' : (isOverdue(invoice) ? 'Critical' : invoice.status)}
-                       </span>
+                    <td className="px-6">
+                      <p className="font-black text-slate-900 text-base tracking-tight leading-none">{invoice.client?.name}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase mt-1.5 tracking-widest font-mono">#{invoice.invoice_number}</p>
+                    </td>
+                    <td className="px-6 font-black text-slate-900">{formatCurrency(invoice.amount)}</td>
+                    <td className={`px-6 font-black ${invoice.remainingBalance === 0 ? 'text-slate-300' : 'text-indigo-600'}`}>
+                      {formatCurrency(invoice.remainingBalance ?? invoice.amount)}
+                    </td>
+                    <td className={`px-6 text-[10px] font-black uppercase tracking-widest ${isOverdue(invoice) ? 'text-red-500 italic' : 'text-slate-400'}`}>
+                      {new Date(invoice.due_date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6">{/* SECTION 4: INVOICE STATUS SYSTEM */}
+                       <StatusBadge status={invoice.status} isOverdue={isOverdue(invoice)} />
                     </td>
                   </tr>
                 ))}
-                {invoices.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-20 text-center">
-                      <div className="flex flex-col items-center">
-                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mb-4 border border-slate-100 border-dashed">
-                          <FileText size={32} />
-                        </div>
-                        <p className="text-slate-400 italic mb-4">No ledgers in flight.</p>
-                        <button 
-                          onClick={() => setIsInvoiceModalOpen(true)}
-                          className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-xl shadow-indigo-100 active:scale-95 transition-all"
-                        >
-                          Create Your First Invoice
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
-          {invoices.length > 5 && (
-            <button className="mt-4 text-xs font-bold text-indigo-600 hover:text-indigo-700 flex justify-center items-center gap-1 group">
-              View All History
+          
+          {invoices.length > 8 && (
+            <button 
+              onClick={() => navigate('/invoices')}
+              className="mt-8 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 hover:text-slate-900 flex justify-center items-center gap-2 group mx-auto"
+            >
+              Full Ledger Vault
               <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </button>
           )}
         </div>
 
-        {/* Top Right: Outstanding */}
-        <div className="col-span-12 md:col-span-6 lg:col-span-4 bento-card p-6 flex flex-col justify-between group">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Outstanding</p>
-              <h3 className="text-3xl font-extrabold text-slate-900 mt-2 tracking-tighter">{formatCurrency(totalOutstanding)}</h3>
-            </div>
-            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
-              <Clock size={20} />
-            </div>
-          </div>
-          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">
-            <span>+{Math.round((totalOutstanding/(totalPaid+totalOutstanding || 1))*100)}% of total volume</span>
-            <span className="text-indigo-600 cursor-pointer hover:underline">Remind All</span>
-          </div>
-        </div>
-
-        {/* Middle Right: Collection Rate */}
-        <div className="col-span-12 md:col-span-6 lg:col-span-4 bento-card p-6 flex flex-col justify-between group">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Total Liquidity</p>
-              <h3 className="text-4xl font-black text-slate-900 mt-2 tracking-tighter italic">
-                {totalPaid + totalOutstanding > 0 ? Math.round((totalPaid / (totalPaid + totalOutstanding)) * 100) : 0}%
-              </h3>
-            </div>
-            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform duration-500 shadow-xl shadow-green-100/50 italic font-black">
-               %
-            </div>
-          </div>
-          <div className="w-full bg-slate-100 h-2.5 rounded-full mt-8 overflow-hidden shadow-inner">
-            <div 
-              className="bg-green-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_20px_rgba(34,197,94,0.4)]" 
-              style={{ width: `${totalPaid + totalOutstanding > 0 ? (totalPaid / (totalPaid + totalOutstanding)) * 100 : 0}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Bottom Left: Revenue Chart */}
-        <div className="col-span-12 md:col-span-6 lg:col-span-4 bento-card p-6">
-          <h4 className="font-bold text-sm text-slate-700 mb-6 flex justify-between items-center group">
-            Revenue Metrics
-             <TrendingUp size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
-          </h4>
-          <div className="flex items-end gap-2 h-32 mb-4">
-            <div className="flex-1 bg-slate-100 rounded h-[40%] transition-all hover:bg-slate-200"></div>
-            <div className="flex-1 bg-slate-100 rounded h-[60%] transition-all hover:bg-slate-200"></div>
-            <div className="flex-1 bg-slate-100 rounded h-[35%] transition-all hover:bg-slate-200"></div>
-            <div className="flex-1 bg-slate-100 rounded h-[80%] transition-all hover:bg-slate-200"></div>
-            <div className="flex-1 bg-indigo-500 rounded h-[95%] shadow-lg shadow-indigo-100"></div>
-            <div className="flex-1 bg-slate-200 rounded h-[70%]"></div>
-            <div className="flex-1 bg-slate-100 rounded h-[50%]"></div>
-          </div>
-          <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-widest font-mono">
-            <span>May</span><span>Jun</span><span className="text-indigo-600">Jul</span><span>Aug</span>
-          </div>
-        </div>
-
-        {/* Bottom Center: System Integrity */}
-        <div className="col-span-12 md:col-span-6 lg:col-span-4 bento-card bg-slate-900 border-none p-6 text-white group">
-          <h4 className="font-bold text-sm mb-1">System Integrity</h4>
-          <p className="text-[10px] text-slate-400 font-mono mb-6 uppercase">Sync stable • 24ms latency</p>
-          <div className="space-y-5">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-indigo-500 group-hover:rotate-12 transition-all duration-300">
-                <CheckCircle2 size={18} className="text-indigo-400 group-hover:text-white" />
+        {/* Right Rail */}
+        <div className="col-span-12 lg:col-span-4 space-y-6">
+          {/* Collection Rate */}
+          <div className="bento-card p-8 group">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-2">Liquidity Ratio</p>
+            <div className="flex justify-between items-end mb-4">
+              <h3 className="text-5xl font-black text-slate-900 tracking-tighter italic">{collectionRate}%</h3>
+              <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 shadow-xl shadow-green-100/30">
+                 <TrendingUp size={24} />
               </div>
-              <div className="flex-1">
-                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-400 w-full rounded-full animate-pulse"></div>
+            </div>
+            <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden shadow-inner">
+              <div 
+                className="bg-green-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_20px_rgba(34,197,94,0.3)]" 
+                style={{ width: `${collectionRate}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* System Status */}
+          <div className="bento-card bg-slate-900 border-none p-8 text-white group overflow-hidden relative" id="system-status-card">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+            <h4 className="font-black text-xs uppercase tracking-widest mb-1 italic">Security Protocol</h4>
+            <p className="text-[9px] text-slate-500 font-mono mb-8 uppercase tracking-widest">Node Status: Operational</p>
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center">
+                  <CheckCircle2 size={18} className="text-indigo-400" />
                 </div>
-                <p className="text-[10px] mt-1.5 text-slate-400 font-mono uppercase">Security Layer Active</p>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest leading-none">End-to-End Encryption</p>
+                  <p className="text-[9px] text-slate-500 mt-1 font-mono uppercase">AES-256 Standard Active</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                <TrendingUp size={18} className="text-green-400" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-bold leading-none">Supabase Cloud</p>
-                <p className="text-[10px] text-green-400 mt-1 font-mono uppercase italic">Operational Status</p>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center">
+                  <TrendingUp size={18} className="text-green-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest leading-none">Global Ledger Sync</p>
+                  <p className="text-[9px] text-green-500/50 mt-1 font-mono uppercase">0.02ms Propagation</p>
+                </div>
               </div>
             </div>
           </div>
@@ -288,25 +325,65 @@ export default function DashboardView() {
   );
 }
 
-function StatCard({ title, value, icon, trend }: { 
-  title: string, 
-  value: string, 
-  icon: React.ReactNode,
-  trend: string
+function MetricCard({ label, value, subtext, color, icon }: { 
+  label: string; 
+  value: string; 
+  subtext: string;
+  color: 'neutral' | 'green' | 'red';
+  icon: React.ReactNode;
 }) {
+  const colors = {
+    neutral: 'bg-slate-50 text-slate-400 border-slate-100',
+    green: 'bg-green-50 text-green-600 border-green-100',
+    red: 'bg-red-50 text-red-600 border-red-100'
+  };
+
+  const iconColors = {
+    neutral: 'bg-slate-100 text-slate-600',
+    green: 'bg-green-100 text-green-700',
+    red: 'bg-red-100 text-red-700'
+  };
+
   return (
-    <div className="card p-6 group hover:border-black transition-all duration-300">
-      <div className="flex items-center justify-between mb-4">
-        <span className="p-2 bg-gray-50 rounded-lg group-hover:bg-black group-hover:text-white transition-colors">
+    <div className="bento-card p-8 group relative overflow-hidden">
+      <div className={`absolute top-0 right-0 w-24 h-24 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-700 opacity-10 ${iconColors[color].split(' ')[0]}`}></div>
+      <div className="flex justify-between items-start relative z-10 mb-6">
+        <div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono">{label}</p>
+          <h3 className="text-3xl font-black text-slate-900 mt-2 tracking-tighter italic">{value}</h3>
+        </div>
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 duration-300 ${iconColors[color]}`}>
           {icon}
-        </span>
-        <TrendingUp size={16} className="text-gray-300" />
+        </div>
       </div>
-      <div>
-        <p className="text-sm font-medium text-gray-500 uppercase tracking-wider font-mono">{title}</p>
-        <h4 className="text-2xl font-bold tracking-tight mt-1">{value}</h4>
-        <p className="text-[10px] text-gray-400 mt-2 font-mono">{trend}</p>
+      <div className="flex items-center gap-2 relative z-10">
+        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${colors[color]}`}>
+          {subtext}
+        </span>
       </div>
     </div>
+  );
+}
+
+function StatusBadge({ status, isOverdue }: { status: string, isOverdue: boolean }) {
+  if (status === 'paid') return (
+    <span className="px-3 py-1 bg-green-50 text-green-600 border border-green-100 rounded-full text-[10px] font-black uppercase tracking-widest">
+      Settled
+    </span>
+  );
+  if (isOverdue) return (
+    <span className="px-3 py-1 bg-red-50 text-red-600 border border-red-100 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">
+      Overdue
+    </span>
+  );
+  if (status === 'sent') return (
+    <span className="px-3 py-1 bg-yellow-50 text-yellow-600 border border-yellow-100 rounded-full text-[10px] font-black uppercase tracking-widest">
+      Sent
+    </span>
+  );
+  return (
+    <span className="px-3 py-1 bg-slate-50 text-slate-400 border border-slate-100 rounded-full text-[10px] font-black uppercase tracking-widest">
+      Draft
+    </span>
   );
 }

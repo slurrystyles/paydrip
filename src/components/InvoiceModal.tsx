@@ -187,20 +187,20 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
                 <button 
                   type="button" 
                   onClick={onClose}
-                  className="flex-1 py-5 px-6 bg-slate-50 text-slate-400 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-100 transition-all active:scale-95"
+                  className="flex-1 py-5 px-6 bg-slate-50 text-slate-500 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-100 transition-all active:scale-95 border border-slate-200"
                 >
-                  Abort
+                  Cancel
                 </button>
                 <button 
                   disabled={loading}
                   type="submit"
-                  className="flex-1 py-5 px-6 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-indigo-600 transition-all disabled:opacity-50 active:scale-95 shadow-2xl shadow-indigo-100 flex items-center justify-center gap-2 group"
+                  className="flex-1 py-5 px-6 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-900 transition-all disabled:opacity-50 active:scale-95 shadow-2xl shadow-indigo-100 flex items-center justify-center gap-2 group"
                 >
                   {loading ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     <>
-                      Secure Ledger
+                      Create Invoice
                       <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </>
                   )}

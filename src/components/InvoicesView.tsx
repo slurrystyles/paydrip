@@ -12,7 +12,8 @@ import {
   Eye,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import InvoiceModal from './InvoiceModal';
@@ -62,93 +63,117 @@ export default function InvoicesView() {
     filters === 'all' ? true : inv.status === filters
   );
 
-  const statusIcons = {
-    paid: <CheckCircle className="text-green-500" size={14} />,
-    overdue: <AlertCircle className="text-red-500" size={14} />,
-    sent: <Send className="text-blue-500" size={14} />,
-    draft: <Clock className="text-gray-400" size={14} />,
-  };
+  // SECTION 6: SORTING
+  // Default: overdue first -> upcoming (by due date) -> paid
+  const sortedInvoices = [...filteredInvoices].sort((a, b) => {
+    const isOverdueA = (inv: Invoice) => inv.status !== 'paid' && new Date(inv.due_date) < new Date();
+    const isOverdueB = (inv: Invoice) => inv.status !== 'paid' && new Date(inv.due_date) < new Date();
+    
+    const overdueA = isOverdueA(a);
+    const overdueB = isOverdueB(b);
+
+    if (overdueA && !overdueB) return -1;
+    if (!overdueA && overdueB) return 1;
+
+    if (a.status === 'paid' && b.status !== 'paid') return 1;
+    if (a.status !== 'paid' && b.status === 'paid') return -1;
+
+    return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+  });
+
+  const isOverdue = (inv: Invoice) => inv.status !== 'paid' && new Date(inv.due_date) < new Date();
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-1 bg-white border border-slate-200 p-1.5 rounded-xl shadow-sm">
+        <div className="flex items-center space-x-1 bg-white border border-slate-200 p-1.5 rounded-xl shadow-sm overflow-x-auto">
           <FilterButton active={filters === 'all'} onClick={() => setFilters('all')}>All</FilterButton>
           <FilterButton active={filters === 'paid'} onClick={() => setFilters('paid')}>Paid</FilterButton>
           <FilterButton active={filters === 'sent'} onClick={() => setFilters('sent')}>Sent</FilterButton>
-          <FilterButton active={filters === 'overdue'} onClick={() => setFilters('overdue')}>Overdue</FilterButton>
+          <FilterButton active={filters === 'draft'} onClick={() => setFilters('draft')}>Draft</FilterButton>
         </div>
+        {/* SECTION 5: PRIMARY ACTION */}
         <button 
           onClick={() => setIsNewModalOpen(true)}
-          className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-100 active:scale-95"
+          className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 hover:bg-slate-900 transition-all shadow-2xl shadow-indigo-100 active:scale-95 w-full sm:w-auto"
         >
           <Plus size={16} />
-          <span>Generate Ledger</span>
+          <span>Create Invoice</span>
         </button>
       </div>
 
       <div className="bento-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left min-w-[800px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Invoice Code</th>
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Client Identity</th>
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Total</th>
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Paid</th>
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Balance</th>
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Current Status</th>
-                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Target Date</th>
+                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Client Name</th>
+                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Amount</th>
+                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Due Date</th>
+                <th className="px-6 py-4 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filteredInvoices.map((invoice) => (
+              {sortedInvoices.map((invoice) => (
                 <tr 
                   key={invoice.id} 
-                  className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                  className="hover:bg-indigo-50/20 transition-colors group cursor-pointer h-24"
                   onClick={() => setSelectedInvoice(invoice)}
                 >
-                  <td className="px-6 py-5 font-mono text-xs text-slate-500 tracking-tighter">
-                    #{invoice.invoice_number}
+                  <td className="px-6 py-5">
+                    <p className="font-black text-slate-900 tracking-tight text-lg leading-none">{invoice.client?.name || invoice.snapshot_json?.name}</p>
+                    <p className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest mt-1.5 leading-none">#{invoice.invoice_number}</p>
                   </td>
                   <td className="px-6 py-5">
-                    <p className="font-black text-slate-900 tracking-tight">{invoice.client?.name || invoice.snapshot_json?.name}</p>
-                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none mt-1">{invoice.client?.email || invoice.snapshot_json?.email}</p>
+                    <p className="font-black text-slate-900 text-base">{formatCurrency(invoice.amount)}</p>
+                    {invoice.totalPaid && invoice.totalPaid > 0 && (
+                      <p className="text-[10px] text-green-600 font-black uppercase mt-1 leading-none">{formatCurrency(invoice.totalPaid)} Paid</p>
+                    )}
                   </td>
-                  <td className="px-6 py-5 font-black text-slate-900 text-sm">
-                    {formatCurrency(invoice.amount)}
+                  <td className={cn(
+                    "px-6 py-5 text-xs font-black uppercase tracking-widest",
+                    isOverdue(invoice) ? "text-red-500 italic" : "text-slate-500"
+                  )}>
+                    {new Date(invoice.due_date).toLocaleDateString()}
+                    {isOverdue(invoice) && <span className="block text-[8px] font-bold mt-1">OVERDUE</span>}
                   </td>
-                  <td className="px-6 py-5 font-bold text-green-600 text-[10px]">
-                    +{formatCurrency(invoice.totalPaid || 0)}
-                  </td>
-                  <td className="px-6 py-5 font-black text-indigo-600 text-sm">
-                    {formatCurrency(invoice.remainingBalance ?? invoice.amount)}
-                  </td>
-                  <td className="px-6 py-5 uppercase tracking-widest text-[9px] font-black">
+                  <td className="px-6 py-5 text-center">
+                    {/* SECTION 4: INVOICE STATUS SYSTEM */}
                     <span className={cn(
-                      "px-3 py-1 rounded-full shadow-sm border",
-                      invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100' :
-                      invoice.status === 'overdue' ? 'bg-red-50 text-red-600 border-red-100' :
-                      invoice.status === 'sent' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-400 border-slate-100'
+                      "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                      invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100 shadow-sm' :
+                      isOverdue(invoice) ? 'bg-red-50 text-red-600 border-red-100 shadow-sm' :
+                      invoice.status === 'sent' ? 'bg-yellow-50 text-yellow-600 border-yellow-100 shadow-sm' :
+                      'bg-slate-50 text-slate-400 border-slate-100 shadow-sm'
                     )}>
                       {invoice.status === 'paid' ? 'Settled' : invoice.status}
                     </span>
                   </td>
-                  <td className="px-6 py-5 text-xs font-medium text-slate-500 italic">
-                    {new Date(invoice.due_date).toLocaleDateString()}
-                  </td>
                   <td className="px-6 py-5 text-right">
-                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
-                      <ChevronRight size={16} />
+                    <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                      <ChevronRight size={18} />
                     </div>
                   </td>
                 </tr>
               ))}
-              {filteredInvoices.length === 0 && (
+              {/* SECTION 2: EMPTY STATE */}
+              {sortedInvoices.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-20 text-center text-slate-400 italic text-sm">
-                    No matching ledger entries found.
+                  <td colSpan={5} className="py-24 px-6 text-center">
+                    <div className="flex flex-col items-center max-w-xs mx-auto">
+                      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 border border-slate-100 border-dashed mb-6">
+                        <FileText size={32} />
+                      </div>
+                      <h3 className="text-xl font-black text-slate-900 mb-2 italic">No invoices created</h3>
+                      <p className="text-slate-400 text-sm font-medium mb-8">Create your first invoice and start tracking payments</p>
+                      <button 
+                        onClick={() => setIsNewModalOpen(true)}
+                        className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-50 hover:bg-slate-900 transition-all"
+                      >
+                        Create Invoice
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -156,6 +181,7 @@ export default function InvoicesView() {
           </table>
         </div>
       </div>
+
 
       <InvoiceModal 
         isOpen={isNewModalOpen} 

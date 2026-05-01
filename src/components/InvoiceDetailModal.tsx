@@ -13,7 +13,8 @@ import {
   AlertCircle,
   Zap,
   Plus,
-  History
+  History,
+  FileText
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
@@ -452,9 +453,9 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                  {!isFullyPaid && (
                     <button 
                       onClick={() => updateStatus('paid')}
-                      className="text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white px-4 py-2 rounded-xl transition-all hover:bg-indigo-600 active:scale-95 shadow-md"
+                      className="text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white px-4 py-2 rounded-xl transition-all hover:bg-slate-900 active:scale-95 shadow-lg shadow-indigo-100"
                     >
-                      Instant Settle
+                      Mark Paid
                     </button>
                  )}
                </div>
@@ -491,9 +492,9 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                       <button 
                         onClick={() => recordPayment(parseFloat(paymentAmount))}
                         disabled={loading || !paymentAmount}
-                        className="w-full py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-50 hover:bg-indigo-600 transition-all active:scale-95 shadow-md"
+                        className="w-full py-4 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-50 hover:bg-slate-900 transition-all active:scale-95 shadow-xl shadow-indigo-100"
                       >
-                        {loading ? 'Processing...' : 'Confirm Payment'}
+                        {loading ? 'Processing...' : 'Record Payment'}
                       </button>
                     </motion.div>
                   )}
@@ -572,34 +573,37 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
             <div className="space-y-3">
               <button 
                 onClick={generatePDF}
-                className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-2xl transition-all group border border-transparent hover:border-slate-800"
+                className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl transition-all group border border-slate-200 shadow-sm"
               >
                 <div className="flex items-center">
-                  <Download size={18} className="mr-3 text-indigo-600 group-hover:text-white" />
-                  <span className="text-xs font-black uppercase tracking-widest">Download Ledger</span>
+                  <Download size={18} className="mr-3 text-indigo-600" />
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-700 font-mono">Invoice Document</span>
                 </div>
+                <ChevronRight size={14} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
               </button>
 
               {totalPaid > 0 && (
                 <>
                   <button 
                     onClick={generateReceipt}
-                    className="w-full flex items-center justify-between p-4 bg-green-50/50 hover:bg-green-600 hover:text-white rounded-2xl transition-all group border border-green-100 hover:border-green-700"
+                    className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl transition-all group border border-slate-200 shadow-sm"
                   >
                     <div className="flex items-center">
-                      <FileText size={18} className="mr-3 text-green-600 group-hover:text-white" />
-                      <span className="text-xs font-black uppercase tracking-widest">Download Receipt</span>
+                      <FileText size={18} className="mr-3 text-green-600" />
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-700 font-mono">Payment Receipt</span>
                     </div>
+                    <ChevronRight size={14} className="text-slate-300 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
                   </button>
 
                   <button 
                     onClick={() => openWhatsApp('receipt')}
-                    className="w-full flex items-center justify-between p-4 bg-green-50/30 hover:bg-green-500 hover:text-white rounded-2xl transition-all group border border-green-100/50"
+                    className="w-full flex items-center justify-between p-4 bg-green-50/20 hover:bg-green-50 rounded-2xl transition-all group border border-green-100/50"
                   >
                     <div className="flex items-center">
-                      <Smartphone size={18} className="mr-3 text-green-500 group-hover:text-white" />
-                      <span className="text-xs font-black uppercase tracking-widest">Share Receipt Link</span>
+                      <Smartphone size={18} className="mr-3 text-green-500" />
+                      <span className="text-xs font-black uppercase tracking-widest text-green-700 font-mono">Share Receipt</span>
                     </div>
+                    <Share2 size={14} className="text-green-300 group-hover:text-green-600 transition-all" />
                   </button>
                 </>
               )}
@@ -609,10 +613,10 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
           <div className="p-6 border-t border-slate-100">
              <button 
                onClick={deleteInvoice}
-               className="w-full flex items-center justify-center p-4 text-slate-400 hover:text-red-600 hover:bg-red-50/50 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest group"
+               className="w-full flex items-center justify-center p-4 text-slate-400 hover:text-red-600 hover:bg-red-50/50 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest group border border-transparent hover:border-red-100"
              >
                <Trash2 size={16} className="mr-2" />
-               Purge Record
+               Delete Invoice
              </button>
           </div>
         </div>
