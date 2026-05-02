@@ -84,30 +84,30 @@ export default function LandingPage({ user }: { user: User | null }) {
         animate="visible"
       >
         {/* SECTION 1: HERO (ABOVE THE FOLD) */}
-        <section className="pt-24 pb-32 px-6 relative overflow-hidden">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+        <section className="pt-16 pb-20 px-6 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-7 text-left">
-              <motion.h1 variants={itemVariants} className="text-6xl md:text-8xl font-black tracking-[-0.04em] text-slate-900 leading-[0.9] mb-8">
+              <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-black tracking-[-0.04em] text-slate-900 leading-[1.05] mb-6">
                 Get paid faster. <br />
-                <span className="text-slate-200">Without chasing clients.</span>
+                <span className="text-indigo-600/40">Without chasing clients.</span>
               </motion.h1>
               
-              <motion.p variants={itemVariants} className="text-xl md:text-2xl text-slate-500 max-w-xl mb-12 leading-relaxed font-medium">
+              <motion.p variants={itemVariants} className="text-lg md:text-xl text-slate-600 max-w-xl mb-10 leading-relaxed font-medium">
                 Send invoices, track payments, and remind clients on WhatsApp — all in one place.
               </motion.p>
               
               <motion.div variants={itemVariants} className="space-y-6">
-                <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="flex flex-col sm:flex-row items-center gap-5">
                   <button 
                     onClick={() => user ? navigate('/dashboard') : setShowAuth(true)}
-                    className="w-full sm:w-auto px-12 py-6 bg-indigo-600 text-white rounded-2xl text-lg font-black tracking-tight hover:bg-slate-900 transition-all shadow-2xl shadow-indigo-100 flex items-center justify-center gap-3 group active:scale-95"
+                    className="w-full sm:w-auto px-10 py-5 bg-indigo-600 text-white rounded-2xl text-base font-black tracking-tight hover:bg-slate-900 transition-all shadow-2xl shadow-indigo-100 flex items-center justify-center gap-3 group active:scale-95"
                   >
                     Start Free
-                    <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                   </button>
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No credit card required</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No credit card required</p>
                 </div>
-                <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] italic">Used by freelancers across India</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">Used by freelancers across India</p>
               </motion.div>
             </div>
             
@@ -140,38 +140,38 @@ export default function LandingPage({ user }: { user: User | null }) {
         </section>
 
         {/* SECTION 2: PROBLEM → SOLUTION */}
-        <section className="py-32 px-6 bg-slate-50">
+        <section className="py-24 px-6 bg-slate-50 border-y border-slate-100">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-24">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
               {/* Problem Block */}
-              <div className="space-y-12">
-                <h2 className="text-4xl font-black tracking-tighter text-slate-900 italic">Still chasing payments manually?</h2>
-                <div className="space-y-6">
+              <div className="space-y-8">
+                <h2 className="text-3xl font-black tracking-tighter text-slate-900 italic">Manual chasing is broken.</h2>
+                <div className="space-y-4">
                   {["Copy-pasting messages on WhatsApp", "Forgetting who owes what", "Awkward follow-ups"].map((point, i) => (
-                    <div key={i} className="flex items-center gap-6 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
-                      <div className="w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
-                        <Plus className="rotate-45" size={20} />
+                    <div key={i} className="flex items-center gap-5 p-5 bg-white rounded-2xl border border-slate-200/50 shadow-sm opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all border-l-4 border-l-red-100">
+                      <div className="w-8 h-8 bg-red-50 text-red-500 rounded-full flex items-center justify-center shrink-0">
+                        <Plus className="rotate-45" size={16} />
                       </div>
-                      <span className="text-lg font-bold text-slate-500">{point}</span>
+                      <span className="text-base font-bold text-slate-700">{point}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Solution Block */}
-              <div className="space-y-12">
-                <h2 className="text-4xl font-black tracking-tighter text-indigo-600 italic">Paydrip does it for you</h2>
-                <div className="space-y-6">
+              <div className="space-y-8">
+                <h2 className="text-3xl font-black tracking-tighter text-indigo-600 italic">Paydrip automates the flow.</h2>
+                <div className="space-y-4">
                   {[
-                    { title: "Create invoice", icon: <Plus size={20} /> },
-                    { title: "Send via WhatsApp", icon: <MessageSquare size={20} /> },
-                    { title: "Get paid", icon: <Check size={20} /> }
+                    { title: "Create invoice", icon: <Plus size={18} /> },
+                    { title: "Send via WhatsApp", icon: <MessageSquare size={18} /> },
+                    { title: "Get paid", icon: <Check size={18} /> }
                   ].map((step, i) => (
-                    <div key={i} className="flex items-center gap-6 p-6 bg-indigo-600 text-white rounded-3xl shadow-xl shadow-indigo-100 scale-105 first:scale-110">
-                      <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <div key={i} className="flex items-center gap-5 p-5 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-100 transition-transform hover:scale-[1.02] border-l-4 border-l-white/20">
+                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
                         {step.icon}
                       </div>
-                      <span className="text-xl font-black uppercase tracking-widest">{step.title}</span>
+                      <span className="text-lg font-black uppercase tracking-widest">{step.title}</span>
                     </div>
                   ))}
                 </div>
@@ -181,26 +181,26 @@ export default function LandingPage({ user }: { user: User | null }) {
         </section>
 
         {/* SECTION 3: CORE FEATURES */}
-        <section className="py-32 px-6">
+        <section className="py-24 px-6">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <FeatureCard 
-                icon={<Smartphone size={24} />}
+                icon={<Smartphone size={22} />}
                 title="WhatsApp Reminders"
                 description="Send polite to final reminders instantly without typing a single word."
               />
               <FeatureCard 
-                icon={<Zap size={24} />}
+                icon={<Zap size={22} />}
                 title="UPI-Ready Invoices"
                 description="Embed QR codes for GPay, PhonePe, and Paytm. Clients pay in seconds."
               />
               <FeatureCard 
-                icon={<BarChart3 size={24} />}
+                icon={<BarChart3 size={22} />}
                 title="Track Everything"
                 description="Know exactly who paid, who hasn't, and who is ignoring your messages."
               />
               <FeatureCard 
-                icon={<ExternalLink size={24} />}
+                icon={<ExternalLink size={22} />}
                 title="Public Invoice Link"
                 description="No boring PDFs. Send a secure public link that looks professional on mobile."
               />
@@ -209,14 +209,14 @@ export default function LandingPage({ user }: { user: User | null }) {
         </section>
 
         {/* SECTION 5: PRICING */}
-        <section id="pricing" className="py-32 px-6 bg-slate-900 text-white">
+        <section id="pricing" className="py-24 px-6 bg-slate-900 text-white">
           <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-20">
-              <h2 className="text-5xl font-black tracking-tighter mb-4 italic">Simple, transparent pricing.</h2>
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No hidden fees. Indian freelancers first.</p>
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-black tracking-tighter mb-4 italic">Simple, transparent pricing.</h2>
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No hidden fees. Indian freelancers first.</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
               <PricingCard 
                 name="Free"
                 price="0"
@@ -270,12 +270,12 @@ export default function LandingPage({ user }: { user: User | null }) {
         </section>
 
         {/* SECTION 6: FINAL CTA */}
-        <section className="py-32 px-6 text-center">
+        <section className="py-24 px-6 text-center bg-indigo-50 border-y border-indigo-100/50">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-slate-900 mb-8 italic">Stop chasing. <br />Start getting paid.</h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 mb-8 italic">Stop chasing. <br />Start getting paid.</h2>
             <button 
               onClick={() => user ? navigate('/dashboard') : setShowAuth(true)}
-              className="px-12 py-6 bg-indigo-600 text-white rounded-2xl text-xl font-black tracking-tight hover:bg-slate-900 transition-all shadow-2xl shadow-indigo-100 active:scale-95"
+              className="px-10 py-5 bg-indigo-600 text-white rounded-2xl text-lg font-black tracking-tight hover:bg-slate-900 transition-all shadow-2xl shadow-indigo-200 active:scale-95"
             >
               Create your first invoice
             </button>
@@ -342,12 +342,12 @@ export default function LandingPage({ user }: { user: User | null }) {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="p-10 bg-white border border-slate-100 rounded-[2.5rem] hover:border-indigo-100 hover:shadow-2xl hover:shadow-indigo-50 transition-all group">
-      <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+    <div className="p-8 bg-white border border-slate-100 rounded-[2rem] hover:border-indigo-100 hover:shadow-2xl hover:shadow-indigo-50 transition-all group">
+      <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
         {icon}
       </div>
-      <h3 className="text-xl font-black mb-4 uppercase tracking-tighter italic">{title}</h3>
-      <p className="text-slate-400 leading-relaxed font-medium text-sm">{description}</p>
+      <h3 className="text-lg font-black mb-3 uppercase tracking-tighter italic">{title}</h3>
+      <p className="text-slate-600 leading-relaxed font-medium text-xs">{description}</p>
     </div>
   );
 }
@@ -355,22 +355,22 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
 function PricingCard({ name, price, features, cta, onCta, isPro }: any) {
   return (
     <div className={cn(
-      "relative p-12 rounded-[2.5rem] flex flex-col justify-between transition-all h-full",
+      "relative p-10 rounded-[2.2rem] flex flex-col justify-between transition-all h-full",
       isPro ? "bg-white text-slate-900 shadow-2xl" : "bg-white/5 border border-white/10"
     )}>
       <div>
         <h3 className={cn(
-          "text-xs font-black uppercase tracking-[0.2em] mb-8",
+          "text-[10px] font-black uppercase tracking-[0.2em] mb-6",
           isPro ? "text-indigo-600" : "text-slate-500"
         )}>{name}</h3>
-        <div className="text-6xl font-black tracking-tighter flex items-end mb-10 italic">
-          ₹{price} <span className="text-sm font-bold uppercase tracking-widest opacity-40 mb-2 ml-2">/mo</span>
+        <div className="text-5xl font-black tracking-tighter flex items-end mb-8 italic">
+          ₹{price} <span className="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2 ml-2">/mo</span>
         </div>
-        <ul className="space-y-5 mb-12">
+        <ul className="space-y-4 mb-10">
           {features.map((f: string) => (
-            <li key={f} className="flex items-center gap-4 text-sm font-black uppercase tracking-widest leading-none">
-              <Check size={16} className={isPro ? "text-indigo-600" : "text-indigo-400"} />
-              <span className={isPro ? "text-slate-600" : "text-slate-400"}>{f}</span>
+            <li key={f} className="flex items-center gap-3 text-[11px] font-black uppercase tracking-widest leading-none">
+              <Check size={14} className={isPro ? "text-indigo-600" : "text-indigo-400"} />
+              <span className={isPro ? "text-slate-700" : "text-slate-400"}>{f}</span>
             </li>
           ))}
         </ul>
@@ -378,7 +378,7 @@ function PricingCard({ name, price, features, cta, onCta, isPro }: any) {
       <button 
         onClick={onCta}
         className={cn(
-          "w-full py-5 rounded-2xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-xl",
+          "w-full py-4 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 shadow-xl",
           isPro ? "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100" : "bg-white text-slate-900 hover:bg-slate-100 shadow-white/5"
         )}
       >
