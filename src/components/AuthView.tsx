@@ -51,21 +51,21 @@ export default function AuthView({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className={cn("flex flex-col items-center justify-center", !onClose ? "min-h-screen p-4 bg-[#FDFDFF]" : "p-0")}>
-      <div className={cn("w-full max-w-sm", onClose ? "py-4 px-4" : "py-10 px-6")}>
-        <div className={cn("text-center", onClose ? "mb-4" : "mb-8")}>
-          <div className={cn("bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-2xl shadow-indigo-100 mx-auto italic", onClose ? "w-10 h-10 text-xl mb-3" : "w-14 h-14 text-3xl mb-5")}>
+      <div className={cn("w-full max-w-sm", onClose ? "py-2 px-4" : "py-8 px-6")}>
+        <div className={cn("text-center", onClose ? "mb-3" : "mb-6")}>
+          <div className={cn("bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-2xl shadow-indigo-100 mx-auto italic", onClose ? "w-8 h-8 text-lg mb-2" : "w-12 h-12 text-2xl mb-4")}>
             P
           </div>
-          <h1 className={cn("font-black tracking-tighter text-slate-900 italic", onClose ? "text-xl" : "text-2xl")}>
+          <h1 className={cn("font-black tracking-tighter text-slate-900 italic", onClose ? "text-lg leading-tight" : "text-2xl font-black italic tracking-tighter")}>
             Paydrip Portal
           </h1>
-          <p className="text-slate-500 mt-1.5 font-mono text-[9px] uppercase tracking-[0.2em] font-black">
+          <p className="text-slate-400 mt-1 font-mono text-[8px] uppercase tracking-[0.2em] font-black">
             {isLogin ? 'Security Verification' : 'Open Active Ledger'}
           </p>
         </div>
 
-        <div className={cn("bg-white rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-slate-100", onClose ? "p-6" : "p-8")}>
-          <form onSubmit={handleAuth} className="space-y-4">
+        <div className={cn("bg-white rounded-[1.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100", onClose ? "p-5" : "p-8")}>
+          <form onSubmit={handleAuth} className="space-y-3.5">
             <div>
               <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1 font-mono">
                 Identity Code / Email

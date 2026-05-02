@@ -55,6 +55,7 @@ function NavItem({ icon, label, path, active }: NavItemProps) {
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
@@ -210,7 +211,13 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
           <div className="flex items-center gap-5">
             <div className="hidden xl:flex items-center gap-2.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-xl w-56 group focus-within:border-indigo-200 transition-all">
               <Search size={11} className="text-slate-400 group-focus-within:text-indigo-600" />
-              <input type="text" placeholder="Ledger Search..." className="bg-transparent border-none outline-none text-[10px] font-bold text-slate-600 w-full placeholder:text-slate-300" />
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Ledger Search..." 
+                className="bg-transparent border-none outline-none text-[10px] font-bold text-slate-600 w-full placeholder:text-slate-300" 
+              />
             </div>
             <button className="p-2 bg-white border border-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-all shadow-sm relative">
               <Bell size={14} />

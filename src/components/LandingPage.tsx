@@ -16,13 +16,23 @@ import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'motion/react';
 import AuthView from './AuthView';
 import UpgradeModal from './UpgradeModal';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { usePlan } from '../contexts/PlanContext';
 
 export default function LandingPage({ user }: { user: User | null }) {
   const [showAuth, setShowAuth] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [targetPlan, setTargetPlan] = useState<'pro' | 'unlimited'>('pro');
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
+  const { plan } = usePlan();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+    setIsProfileOpen(false);
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -55,20 +65,72 @@ export default function LandingPage({ user }: { user: User | null }) {
             </motion.div>
             <span className="text-xl font-black tracking-tighter text-slate-900">Paydrip</span>
           </div>
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6">
             {user ? (
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition-all active:scale-95 shadow-xl shadow-indigo-100 flex items-center gap-2"
-              >
-                Go to Dashboard
-                <ArrowUpRight size={14} />
-              </button>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => navigate('/dashboard')}
+                  className="hidden sm:flex px-5 py-2.5 bg-slate-50 border border-slate-100 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 flex items-center gap-2"
+                >
+                  Go to Dashboard
+                  <ArrowUpRight size={14} />
+                </button>
+                
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-xs font-black text-white italic shadow-lg shadow-slate-200 cursor-pointer hover:bg-indigo-600 transition-all active:scale-95"
+                  >
+                    {user?.email?.[0].toUpperCase() || 'U'}
+                  </button>
+                  
+                  <AnimatePresence>
+                    {isProfileOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute top-full right-0 mt-4 w-64 bg-white rounded-[1.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] border border-slate-100 p-6 z-50"
+                        >
+                          <div className="mb-6">
+                            <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-1 italic">{plan === 'free' ? 'Standard Node' : `${plan} Access`}</p>
+                            <p className="text-sm font-black text-slate-900 truncate tracking-tight mb-0.5">{user?.email?.split('@')[0]}</p>
+                            <p className="text-[9px] text-slate-400 font-mono truncate">{user?.email}</p>
+                          </div>
+                          
+                          <div className="space-y-1.5 border-t border-slate-50 pt-4">
+                            <button 
+                              onClick={() => { navigate('/dashboard'); setIsProfileOpen(false); }}
+                              className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all"
+                            >
+                              Open Dashboard
+                            </button>
+                            <button 
+                              onClick={() => { navigate('/settings'); setIsProfileOpen(false); }}
+                              className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all"
+                            >
+                              Node Settings
+                            </button>
+                            <button 
+                              onClick={handleSignOut}
+                              className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                            >
+                              Exit Session
+                            </button>
+                          </div>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
             ) : (
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setShowAuth(true)}
-                  className="px-6 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all active:scale-95 shadow-xl shadow-slate-100"
+                  className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all active:scale-95 shadow-xl shadow-slate-100"
                 >
                   Sign In
                 </button>
@@ -313,7 +375,7 @@ export default function LandingPage({ user }: { user: User | null }) {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative z-10 w-full max-w-sm max-h-[95vh] overflow-hidden bg-[#FDFDFF] rounded-[3rem] shadow-2xl flex flex-col"
+              className="relative z-10 w-full max-w-sm max-h-[95vh] overflow-hidden bg-white rounded-[2rem] shadow-2xl flex flex-col"
             >
               <div className="absolute top-6 right-6 z-20">
                 <button 
