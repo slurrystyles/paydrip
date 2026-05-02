@@ -18,7 +18,7 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
     setSelectedPlan(initialPlan);
   }, [initialPlan]);
 
-  const upiId = "suresh.roshanlal@okicici";
+  const upiId = "paydrip@upi"; // Example UPI ID
 
   const copyUpi = () => {
     navigator.clipboard.writeText(upiId);
@@ -112,7 +112,7 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
               {/* Actions */}
               <div className="grid grid-cols-1 gap-1.5">
                 <a 
-                  href={`https://wa.me/918522091817?text=Hi, I want to upgrade to Paydrip ${selectedPlan}`}
+                  href={`https://wa.me/910000000000?text=Hi, I want to upgrade to Paydrip ${selectedPlan}`}
                   target="_blank"
                   rel="noreferrer"
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-widest text-[8px] hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100 active:scale-95"
@@ -121,7 +121,7 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
                   WhatsApp Upgrade
                 </a>
                 <a 
-                  href={`mailto:suresh.roshanlal@gmail.com?subject=Upgrade to Paydrip ${selectedPlan}`}
+                  href={`mailto:upgrade@paydrip.io?subject=Upgrade to Paydrip ${selectedPlan}`}
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-400 rounded-lg font-black uppercase tracking-widest text-[8px] hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95 border border-slate-100"
                 >
                   <Mail size={10} />

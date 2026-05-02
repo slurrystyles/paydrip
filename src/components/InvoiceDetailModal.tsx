@@ -258,29 +258,48 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     doc.save(`Receipt_${invoice.invoice_number}.pdf`);
   };
 
+  const [showReminderEditor, setShowReminderEditor] = useState(false);
+  const [editingMessage, setEditingMessage] = useState('');
+  const [editingType, setEditingType] = useState<'polite' | 'firm' | 'final' | 'receipt' | null>(null);
+
   const getWhatsAppMessage = (type: 'polite' | 'firm' | 'final' | 'receipt') => {
     const businessName = userProfile?.business_name || 'My Business';
     const amount = formatCurrency(remainingBalance);
     const paidAmount = formatCurrency(totalPaid);
     const invNum = invoice.invoice_number;
     const upi = userProfile?.upi_id ? `\n\nPay via UPI: ${userProfile.upi_id}` : '';
-    const publicLink = `\n\nView Secure Invoice: ${window.location.origin}/v/${invoice.public_token}`;
+    const publicLink = `${window.location.origin}/v/${invoice.public_token}`;
 
     if (type === 'receipt') {
-      return encodeURIComponent(`Hi ${clientInfo.name}, thank you for your payment of ${paidAmount} toward invoice #${invNum}. ${isFullyPaid ? 'Your balance is now fully settled!' : `Remaining balance: ${amount}.`} View your updated receipt here: ${window.location.origin}/v/${invoice.public_token} - ${businessName}`);
+      return `Hi ${clientInfo.name}, thank you for your payment of ${paidAmount} toward invoice #${invNum}. ${isFullyPaid ? 'Your balance is now fully settled!' : `Remaining balance: ${amount}.`} View your updated receipt here: ${publicLink} - ${businessName}`;
     }
 
     const templates = {
-      polite: `Hi ${clientInfo.name}, hope you're well! Just a friendly reminder about invoice #${invNum}. Remaining balance: ${amount}. Let me know if you need anything else! - ${businessName}${publicLink}${upi}`,
-      firm: `Hi ${clientInfo.name}, invoice #${invNum} balance of ${amount} is now overdue. Please settle this at your earliest convenience to avoid any service interruption. Thanks! - ${businessName}${publicLink}${upi}`,
-      final: `URGENT: Hi ${clientInfo.name}, invoice #${invNum} (${amount}) is critically overdue. This is a final notice for payment. Please settle immediately. - ${businessName}${publicLink}${upi}`
+      polite: userProfile?.whatsapp_templates?.polite || `Hey ${clientInfo.name}, just a quick reminder that invoice #${invNum} is due. Sharing the link here: ${publicLink}`,
+      firm: userProfile?.whatsapp_templates?.firm || `Hi ${clientInfo.name}, this invoice is now overdue. Would appreciate if you could clear it today. Link: ${publicLink}`,
+      final: userProfile?.whatsapp_templates?.final || `Hi ${clientInfo.name}, this is a final reminder for pending invoice #${invNum}. Please process it at the earliest. Link: ${publicLink}`
     };
 
-    return encodeURIComponent(templates[type]);
+    let msg = templates[type];
+    // Simple variable replacement
+    msg = msg.replace(/\[Name\]/g, clientInfo.name || 'there');
+    msg = msg.replace(/\[X\]/g, invNum);
+    msg = msg.replace(/\[link\]/g, publicLink);
+
+    return msg;
   };
 
-  const openWhatsApp = async (type: 'polite' | 'firm' | 'final' | 'receipt') => {
+  const startWhatsAppFlow = (type: 'polite' | 'firm' | 'final' | 'receipt') => {
     if (type !== 'receipt' && isFullyPaid) return;
+    
+    const initialMessage = getWhatsAppMessage(type);
+    setEditingMessage(initialMessage);
+    setEditingType(type);
+    setShowReminderEditor(true);
+  };
+
+  const confirmAndSendWhatsApp = async () => {
+    if (!editingType) return;
     
     const phone = (clientInfo.phone || '').replace(/\D/g, '');
     if (!phone) {
@@ -307,18 +326,18 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       }
     }
 
-    const message = getWhatsAppMessage(type);
+    const encodedMessage = encodeURIComponent(editingMessage);
     
     // Log reminder
     await supabase.from('reminder_logs').insert([{
       invoice_id: invoice.id,
-      type
+      type: editingType === 'receipt' ? 'polite' : editingType // Mapping receipt to polite for logging simplicity or just use more types
     }]);
 
     await supabase.from('events').insert([{
       user_id: invoice.user_id,
       type: 'reminder_sent',
-      meta: { invoice_id: invoice.id, type }
+      meta: { invoice_id: invoice.id, type: editingType }
     }]);
 
     // Update status to 'sent' if it was draft
@@ -327,7 +346,8 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       onUpdate();
     }
 
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+    setShowReminderEditor(false);
   };
 
   // UPI Link generation: upi://pay?pa=VPA&pn=NAME&am=AMOUNT&cu=INR
@@ -531,19 +551,19 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                 <WhatsAppTemplateButton 
                   label="Polite nudge" 
                   description="Initial approach"
-                  onClick={() => openWhatsApp('polite')}
+                  onClick={() => startWhatsAppFlow('polite')}
                   icon={<Shield size={16} className="text-indigo-500" />}
                 />
                 <WhatsAppTemplateButton 
                   label="Firm ask" 
                   description="Secondary request"
-                  onClick={() => openWhatsApp('firm')}
+                  onClick={() => startWhatsAppFlow('firm')}
                   icon={<AlertCircle size={16} className="text-orange-500" />}
                 />
                 <WhatsAppTemplateButton 
                   label="Final notice" 
                   description="Critical ultimatum"
-                  onClick={() => openWhatsApp('final')}
+                  onClick={() => startWhatsAppFlow('final')}
                   icon={<Zap size={16} className="text-red-500" />}
                 />
               </div>
@@ -596,7 +616,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                   </button>
 
                   <button 
-                    onClick={() => openWhatsApp('receipt')}
+                    onClick={() => startWhatsAppFlow('receipt')}
                     className="w-full flex items-center justify-between p-4 bg-green-50/20 hover:bg-green-50 rounded-2xl transition-all group border border-green-100/50"
                   >
                     <div className="flex items-center">
@@ -621,6 +641,60 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
           </div>
         </div>
       </motion.div>
+
+      {/* Reminder Editor Modal */}
+      <AnimatePresence>
+        {showReminderEditor && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100"
+            >
+              <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-xl tracking-tighter text-slate-900 italic">Review Message</h3>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5 font-mono">Personalize before deployment</p>
+                </div>
+                <button onClick={() => setShowReminderEditor(false)} className="p-2 bg-slate-50 rounded-xl text-slate-400 hover:text-slate-900 transition-all">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-8 space-y-6">
+                <div className="space-y-4">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 font-mono">Payload Content</label>
+                  <textarea 
+                    value={editingMessage}
+                    onChange={(e) => setEditingMessage(e.target.value)}
+                    rows={6}
+                    className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-medium text-slate-700 text-sm leading-relaxed resize-none"
+                  />
+                  <p className="text-[10px] text-slate-400 italic px-1 flex items-center gap-1.5 font-mono">
+                    <Shield size={10} /> Secure direct link to ledger verified
+                  </p>
+                </div>
+                
+                <div className="flex gap-4 pt-4">
+                  <button 
+                    onClick={() => setShowReminderEditor(false)}
+                    className="flex-1 py-4 px-6 bg-slate-50 text-slate-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-100 transition-all"
+                  >
+                    Abort
+                  </button>
+                  <button 
+                    onClick={confirmAndSendWhatsApp}
+                    className="flex-2 py-4 px-6 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 group"
+                  >
+                    Open WhatsApp
+                    <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,3 +1,9 @@
+export interface WhatsAppTemplates {
+  polite?: string;
+  firm?: string;
+  final?: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -7,6 +13,7 @@ export interface UserProfile {
   bank_details?: string;
   plan?: 'free' | 'pro' | 'unlimited';
   logo_url?: string;
+  whatsapp_templates?: WhatsAppTemplates;
   created_at: string;
 }
 

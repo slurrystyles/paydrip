@@ -21,6 +21,11 @@ export default function SettingsView() {
   const [upiId, setUpiId] = useState('');
   const [bankDetails, setBankDetails] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [templates, setTemplates] = useState<{ polite: string; firm: string; final: string }>({
+    polite: '',
+    firm: '',
+    final: ''
+  });
 
   useEffect(() => {
     if (profile) {
@@ -29,6 +34,11 @@ export default function SettingsView() {
       setUpiId(profile.upi_id || '');
       setBankDetails(profile.bank_details || '');
       setLogoUrl(profile.logo_url || '');
+      setTemplates({
+        polite: profile.whatsapp_templates?.polite || '',
+        firm: profile.whatsapp_templates?.firm || '',
+        final: profile.whatsapp_templates?.final || ''
+      });
       setLoading(false);
     }
   }, [profile]);
@@ -106,6 +116,7 @@ export default function SettingsView() {
         upi_id: upiId,
         bank_details: bankDetails,
         logo_url: logoUrl,
+        whatsapp_templates: templates
       });
 
     if (error) {
@@ -313,6 +324,64 @@ export default function SettingsView() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* WhatsApp Templates Section (Gated) */}
+          <div className="space-y-4 pt-2 border-t border-slate-50">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
+              WhatsApp Templates
+              {plan === 'free' && (
+                <span className="flex items-center gap-1 text-[8px] text-indigo-500 font-black tracking-widest">
+                  <Shield size={10} /> PRO FEATURE
+                </span>
+              )}
+            </h3>
+
+            <div className={cn("space-y-5 transition-all", plan === 'free' && "opacity-40 grayscale pointer-events-none")}>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Polite Nudge</label>
+                <textarea 
+                  value={templates.polite}
+                  onChange={(e) => setTemplates(prev => ({ ...prev, polite: e.target.value }))}
+                  rows={2}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all text-[11px] font-medium leading-relaxed"
+                  placeholder="The system will use default if left empty."
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Firm Ask</label>
+                <textarea 
+                  value={templates.firm}
+                  onChange={(e) => setTemplates(prev => ({ ...prev, firm: e.target.value }))}
+                  rows={2}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all text-[11px] font-medium leading-relaxed"
+                  placeholder="The system will use default if left empty."
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Final Notice</label>
+                <textarea 
+                  value={templates.final}
+                  onChange={(e) => setTemplates(prev => ({ ...prev, final: e.target.value }))}
+                  rows={2}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all text-[11px] font-medium leading-relaxed"
+                  placeholder="The system will use default if left empty."
+                />
+              </div>
+            </div>
+
+            {plan === 'free' && (
+              <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50 flex items-center justify-between">
+                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest leading-loose">Upgrade to customize WhatsApp reminder templates.</p>
+                <button 
+                  type="button"
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="text-[10px] font-black text-indigo-600 hover:text-slate-900 flex items-center gap-1 uppercase tracking-widest"
+                >
+                  Learn More <ExternalLink size={12} />
+                </button>
+              </div>
+            )}
           </div>
 
           {message && (

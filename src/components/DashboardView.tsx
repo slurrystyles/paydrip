@@ -176,8 +176,40 @@ export default function DashboardView() {
     return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
   });
 
+  const overdueInvoices = invoices.filter(isOverdue);
+  const overdueCount = overdueInvoices.length;
+
   return (
     <div className="space-y-4 pb-8">
+      {/* SECTION 7: AUTOMATION NUDGE */}
+      {overdueCount > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-5 bg-indigo-900 text-white rounded-[2rem] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl shadow-indigo-100 overflow-hidden relative"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/10">
+              <Zap size={24} className="text-white fill-white animate-pulse" />
+            </div>
+            <div>
+              <h4 className="text-lg font-black tracking-tighter italic leading-tight">Automation Suggestion</h4>
+              <p className="text-[10px] font-black text-indigo-200 uppercase tracking-[0.2em] mt-0.5">
+                {overdueCount} {overdueCount === 1 ? 'Ledger Node' : 'Ledger Nodes'} overdue for settlement
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={() => navigate('/invoices')}
+            className="w-full sm:w-auto px-8 py-3.5 bg-white text-indigo-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all active:scale-95 shadow-xl relative z-10 flex items-center justify-center gap-2"
+          >
+            Deploy Reminders
+            <ChevronRight size={14} />
+          </button>
+        </motion.div>
+      )}
+
       {/* SECTION 3: DASHBOARD CLARITY - TOP METRICS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard 
