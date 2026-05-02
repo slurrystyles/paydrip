@@ -99,7 +99,7 @@ export default function LandingPage({ user }: { user: User | null }) {
               <motion.div variants={itemVariants} className="space-y-6">
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                   <button 
-                    onClick={() => setShowAuth(true)}
+                    onClick={() => user ? navigate('/dashboard') : setShowAuth(true)}
                     className="w-full sm:w-auto px-12 py-6 bg-indigo-600 text-white rounded-2xl text-lg font-black tracking-tight hover:bg-slate-900 transition-all shadow-2xl shadow-indigo-100 flex items-center justify-center gap-3 group active:scale-95"
                   >
                     Start Free
@@ -227,7 +227,7 @@ export default function LandingPage({ user }: { user: User | null }) {
                   "Public Payment Page"
                 ]}
                 cta="Start Free"
-                onCta={() => setShowAuth(true)}
+                onCta={() => user ? navigate('/dashboard') : setShowAuth(true)}
               />
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-[2.6rem] blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
@@ -274,7 +274,7 @@ export default function LandingPage({ user }: { user: User | null }) {
           <div className="max-w-3xl mx-auto">
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-slate-900 mb-8 italic">Stop chasing. <br />Start getting paid.</h2>
             <button 
-              onClick={() => setShowAuth(true)}
+              onClick={() => user ? navigate('/dashboard') : setShowAuth(true)}
               className="px-12 py-6 bg-indigo-600 text-white rounded-2xl text-xl font-black tracking-tight hover:bg-slate-900 transition-all shadow-2xl shadow-indigo-100 active:scale-95"
             >
               Create your first invoice
