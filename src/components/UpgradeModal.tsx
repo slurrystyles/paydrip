@@ -40,44 +40,41 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan = 'pro' }: Up
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative z-10 w-full max-w-sm bg-white rounded-[2rem] shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col"
+            className="relative z-10 w-full max-w-sm bg-white rounded-[2rem] shadow-2xl p-5 overflow-hidden max-h-[95vh] flex flex-col"
           >
             {/* Header */}
-            <div className="text-center mb-6">
-              <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white mx-auto mb-4 shadow-xl shadow-indigo-100 italic font-black text-xl">
+            <div className="text-center mb-4">
+              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white mx-auto mb-2 shadow-lg shadow-indigo-100 italic font-black text-lg">
                 P
               </div>
-              <h2 className="text-2xl font-black tracking-tighter text-slate-900 italic">Upgrade to {targetPlan.charAt(0).toUpperCase() + targetPlan.slice(1)}</h2>
-              <div className="mt-1 text-3xl font-black text-indigo-600 tracking-tighter">
-                {price}<span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">/month</span>
+              <h2 className="text-xl font-black tracking-tighter text-slate-900 italic leading-tight">Upgrade to {targetPlan.charAt(0).toUpperCase() + targetPlan.slice(1)}</h2>
+              <div className="text-2xl font-black text-indigo-600 tracking-tighter">
+                {price}<span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest ml-1">/mo</span>
               </div>
             </div>
 
-            {/* Benefits */}
-            <div className="grid grid-cols-1 gap-2 mb-6">
+            {/* Benefits - 2 Column Grid to save space */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
               {benefits.map((benefit, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="w-5 h-5 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0">
-                    <Check size={12} strokeWidth={3} />
+                <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="w-4 h-4 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0">
+                    <Check size={10} strokeWidth={3} />
                   </div>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 truncate">{benefit}</span>
+                  <span className="text-[8px] font-black uppercase tracking-tight text-slate-600 truncate">{benefit}</span>
                 </div>
               ))}
             </div>
 
             {/* UPI Section */}
-            <div className="bg-slate-900 rounded-[1.5rem] p-4 mb-6 text-white relative group">
-              <div className="absolute top-0 right-0 p-3 opacity-10">
-                <ShieldCheck size={32} />
-              </div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3 font-mono">Intent Verification</p>
-              <div className="flex items-center justify-between gap-3">
-                <div className="font-mono text-xs font-bold text-indigo-400 truncate">{upiId}</div>
+            <div className="bg-slate-900 rounded-xl p-3 mb-4 text-white relative group">
+              <p className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-2 font-mono">Intent Verification</p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-mono text-[10px] font-bold text-indigo-400 truncate">{upiId}</div>
                 <button 
                   onClick={copyUpi}
-                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all active:scale-90"
+                  className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-all active:scale-90"
                 >
-                  {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                  {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
                 </button>
               </div>
             </div>
@@ -88,17 +85,17 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan = 'pro' }: Up
                 href={`https://wa.me/910000000000?text=Hi, I want to upgrade to Paydrip ${targetPlan}`}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full flex items-center justify-center gap-3 py-4 bg-indigo-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100 active:scale-95"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-widest text-[9px] hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100 active:scale-95"
               >
-                <MessageSquare size={14} />
-                Continue on WhatsApp
+                <MessageSquare size={12} />
+                WhatsApp Upgrade
               </a>
               <a 
                 href={`mailto:upgrade@paydrip.io?subject=Upgrade to Paydrip ${targetPlan}`}
-                className="w-full flex items-center justify-center gap-3 py-4 bg-slate-50 text-slate-400 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95 border border-slate-100"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-400 rounded-lg font-black uppercase tracking-widest text-[9px] hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95 border border-slate-100"
               >
-                <Mail size={14} />
-                Email us
+                <Mail size={12} />
+                Email Support
               </a>
             </div>
 
