@@ -90,9 +90,9 @@ export default function InvoicesView() {
   const isOverdue = (inv: Invoice) => inv.status !== 'paid' && new Date(inv.due_date) < new Date();
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-1 bg-white border border-slate-200 p-1.5 rounded-xl shadow-sm overflow-x-auto">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center space-x-1 bg-white border border-slate-200 p-1 rounded-xl shadow-sm overflow-x-auto">
           <FilterButton active={filters === 'all'} onClick={() => setFilters('all')}>All</FilterButton>
           <FilterButton active={filters === 'paid'} onClick={() => setFilters('paid')}>Paid</FilterButton>
           <FilterButton active={filters === 'sent'} onClick={() => setFilters('sent')}>Sent</FilterButton>
@@ -108,13 +108,13 @@ export default function InvoicesView() {
             }
           }}
           className={cn(
-            "px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 transition-all shadow-2xl active:scale-95 w-full sm:w-auto",
+            "px-5 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 transition-all shadow-xl active:scale-95 w-full sm:w-auto",
             isLimitReached 
               ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
               : "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100"
           )}
         >
-          {isLimitReached ? <Zap size={14} /> : <Plus size={14} />}
+          {isLimitReached ? <Zap size={12} /> : <Plus size={12} />}
           <span>{isLimitReached ? 'Upgrade to Create' : 'Create Invoice'}</span>
         </button>
       </div>
@@ -126,58 +126,58 @@ export default function InvoicesView() {
 
       <div className="bento-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[800px]">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-3 text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">Client Name</th>
-                <th className="px-6 py-3 text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">Amount</th>
-                <th className="px-6 py-3 text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">Due Date</th>
-                <th className="px-6 py-3 text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
-                <th className="px-6 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {sortedInvoices.map((invoice) => (
-                <tr 
-                  key={invoice.id} 
-                  className="hover:bg-indigo-50/20 transition-colors group cursor-pointer h-16"
-                  onClick={() => setSelectedInvoice(invoice)}
-                >
-                  <td className="px-6 py-3">
-                    <p className="font-black text-slate-900 tracking-tight text-sm leading-none">{invoice.client?.name || invoice.snapshot_json?.name}</p>
-                    <p className="text-[9px] text-slate-400 font-mono font-bold uppercase tracking-widest mt-1 leading-none">#{invoice.invoice_number}</p>
-                  </td>
-                  <td className="px-6 py-3">
-                    <p className="font-black text-slate-900 text-sm">{formatCurrency(invoice.amount)}</p>
-                    {invoice.totalPaid && invoice.totalPaid > 0 && (
-                      <p className="text-[9px] text-green-600 font-black uppercase mt-0.5 leading-none">{formatCurrency(invoice.totalPaid)}</p>
-                    )}
-                  </td>
-                  <td className={cn(
-                    "px-6 py-3 text-[10px] font-black uppercase tracking-widest",
-                    isOverdue(invoice) ? "text-red-500 italic" : "text-slate-500"
-                  )}>
-                    {new Date(invoice.due_date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-3 text-center">
-                    {/* SECTION 4: INVOICE STATUS SYSTEM */}
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                      invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100 shadow-sm' :
-                      isOverdue(invoice) ? 'bg-red-50 text-red-600 border-red-100 shadow-sm' :
-                      invoice.status === 'sent' ? 'bg-yellow-50 text-yellow-600 border-yellow-100 shadow-sm' :
-                      'bg-slate-50 text-slate-400 border-slate-100 shadow-sm'
-                    )}>
-                      {invoice.status === 'paid' ? 'Settled' : invoice.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3 text-right">
-                    <div className="inline-flex items-center justify-center p-2 rounded-xl bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                      <ChevronRight size={14} />
-                    </div>
-                  </td>
+            <table className="w-full text-left min-w-[800px]">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Client Name</th>
+                  <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Amount</th>
+                  <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Due Date</th>
+                  <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
+                  <th className="px-5 py-2.5"></th>
                 </tr>
-              ))}
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {sortedInvoices.map((invoice) => (
+                  <tr 
+                    key={invoice.id} 
+                    className="hover:bg-indigo-50/20 transition-colors group cursor-pointer h-14"
+                    onClick={() => setSelectedInvoice(invoice)}
+                  >
+                    <td className="px-5 py-2.5">
+                      <p className="font-black text-slate-900 tracking-tight text-xs leading-none">{invoice.client?.name || invoice.snapshot_json?.name}</p>
+                      <p className="text-[8px] text-slate-400 font-mono font-bold uppercase tracking-widest mt-1 leading-none">#{invoice.invoice_number}</p>
+                    </td>
+                    <td className="px-5 py-2.5">
+                      <p className="font-black text-slate-900 text-xs">{formatCurrency(invoice.amount)}</p>
+                      {invoice.totalPaid && invoice.totalPaid > 0 && (
+                        <p className="text-[8px] text-green-600 font-black uppercase mt-0.5 leading-none">{formatCurrency(invoice.totalPaid)}</p>
+                      )}
+                    </td>
+                    <td className={cn(
+                      "px-5 py-2.5 text-[9px] font-black uppercase tracking-widest",
+                      isOverdue(invoice) ? "text-red-500 italic" : "text-slate-500"
+                    )}>
+                      {new Date(invoice.due_date).toLocaleDateString()}
+                    </td>
+                    <td className="px-5 py-2.5 text-center">
+                      {/* SECTION 4: INVOICE STATUS SYSTEM */}
+                      <span className={cn(
+                        "px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border",
+                        invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100 shadow-sm' :
+                        isOverdue(invoice) ? 'bg-red-50 text-red-600 border-red-100 shadow-sm' :
+                        invoice.status === 'sent' ? 'bg-yellow-50 text-yellow-600 border-yellow-100 shadow-sm' :
+                        'bg-slate-50 text-slate-400 border-slate-100 shadow-sm'
+                      )}>
+                        {invoice.status === 'paid' ? 'Settled' : invoice.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-2.5 text-right">
+                      <div className="inline-flex items-center justify-center p-1.5 rounded-xl bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                        <ChevronRight size={12} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               {/* SECTION 2: EMPTY STATE */}
               {sortedInvoices.length === 0 && (
                 <tr>
@@ -233,7 +233,7 @@ function FilterButton({ children, active, onClick }: { children: React.ReactNode
     <button 
       onClick={onClick}
       className={cn(
-        "px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all",
+        "px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all",
         active ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "hover:bg-slate-50 text-slate-400"
       )}
     >

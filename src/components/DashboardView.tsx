@@ -177,9 +177,9 @@ export default function DashboardView() {
   });
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 pb-8">
       {/* SECTION 3: DASHBOARD CLARITY - TOP METRICS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard 
           label="Money in Flight" 
           value={formatCurrency(totalOutstanding)} 
@@ -203,27 +203,27 @@ export default function DashboardView() {
         />
       </div>
 
-      <div className="grid grid-cols-12 gap-5">
+      <div className="grid grid-cols-12 gap-4">
         {/* Main Invoices Card */}
-        <div className="col-span-12 lg:col-span-8 bento-card p-6 flex flex-col min-h-[400px]">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+        <div className="col-span-12 lg:col-span-8 bento-card p-5 flex flex-col min-h-[350px]">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4">
             <div>
-              <h2 className="font-black text-slate-900 text-2xl tracking-tighter italic">Ledger Overview</h2>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Sorting: Priority (Overdue/Upcoming)</p>
+              <h2 className="font-black text-slate-900 text-xl tracking-tighter italic leading-tight">Ledger Overview</h2>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sorting: Priority Status</p>
             </div>
             {/* SECTION 5: BUTTON HIERARCHY - PRIMARY */}
-            <div className="flex flex-col sm:flex-row gap-2.5">
+            <div className="flex flex-col sm:flex-row gap-2">
               {plan === 'free' && (
-                <div className="px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between gap-3">
+                <div className="px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between gap-2.5">
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-indigo-600 leading-none">Free Tier</p>
-                    <p className="text-[9px] text-slate-400 font-mono mt-0.5 leading-none">{invoices.length}/3 Invoices</p>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-indigo-600 leading-none">Free Tier</p>
+                    <p className="text-[8px] text-slate-400 font-mono mt-1 leading-none">{invoices.length}/3 Invoices</p>
                   </div>
                   <button 
                     onClick={() => setShowUpgradeModal(true)}
                     className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100"
                   >
-                    <Zap size={12} className="fill-white" />
+                    <Zap size={10} className="fill-white" />
                   </button>
                 </div>
               )}
@@ -236,14 +236,14 @@ export default function DashboardView() {
                   }
                 }}
                 className={cn(
-                  "px-6 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 w-full sm:w-auto flex items-center justify-center gap-2",
+                  "px-5 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 w-full sm:w-auto flex items-center justify-center gap-2",
                   isLimitReached 
                     ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
                     : "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100"
                 )}
               >
                 + Create Invoice
-                {isLimitReached && <Clock size={12} />}
+                {isLimitReached && <Clock size={10} />}
               </button>
             </div>
           </div>
@@ -271,36 +271,36 @@ export default function DashboardView() {
           )}
 
           {/* SECTION 6: INVOICE TABLE IMPROVEMENTS */}
-          <div className="flex-1 overflow-x-auto -mx-6 sm:mx-0">
+          <div className="flex-1 overflow-x-auto -mx-5 sm:mx-0">
             <table className="w-full text-left min-w-[700px]">
-              <thead className="text-[10px] font-black text-slate-400 uppercase border-b border-slate-100 tracking-[0.2em] font-mono">
-                <tr className="h-12">
-                  <th className="px-6">Identity</th>
-                  <th className="px-6">Total</th>
-                  <th className="px-6">Balance</th>
-                  <th className="px-6">Due Date</th>
-                  <th className="px-6">Status</th>
+              <thead className="text-[9px] font-black text-slate-400 uppercase border-b border-slate-100 tracking-[0.15em] font-mono">
+                <tr className="h-10">
+                  <th className="px-5">Identity</th>
+                  <th className="px-5">Total</th>
+                  <th className="px-5">Balance</th>
+                  <th className="px-5">Due Date</th>
+                  <th className="px-5">Status</th>
                 </tr>
               </thead>
-              <tbody className="text-sm">
+              <tbody className="text-[11px]">
                 {sortedInvoices.slice(0, 8).map((invoice) => (
                   <tr 
                     key={invoice.id} 
                     onClick={() => setSelectedInvoice(invoice)}
-                    className="h-16 border-b border-slate-50 hover:bg-indigo-50/20 transition-all cursor-pointer group"
+                    className="h-14 border-b border-slate-50 hover:bg-indigo-50/20 transition-all cursor-pointer group"
                   >
-                    <td className="px-6">
-                      <p className="font-black text-slate-900 text-sm tracking-tight leading-none">{invoice.client?.name}</p>
-                      <p className="text-[9px] font-black text-slate-400 uppercase mt-1 tracking-widest font-mono">#{invoice.invoice_number}</p>
+                    <td className="px-5">
+                      <p className="font-black text-slate-900 text-xs tracking-tight leading-none">{invoice.client?.name}</p>
+                      <p className="text-[8px] font-black text-slate-400 uppercase mt-1 tracking-widest font-mono">#{invoice.invoice_number}</p>
                     </td>
-                    <td className="px-6 font-black text-slate-900 text-xs">{formatCurrency(invoice.amount)}</td>
-                    <td className={`px-6 font-black text-xs ${invoice.remainingBalance === 0 ? 'text-slate-300' : 'text-indigo-600'}`}>
+                    <td className="px-5 font-black text-slate-900">{formatCurrency(invoice.amount)}</td>
+                    <td className={`px-5 font-black ${invoice.remainingBalance === 0 ? 'text-slate-300' : 'text-indigo-600'}`}>
                       {formatCurrency(invoice.remainingBalance ?? invoice.amount)}
                     </td>
-                    <td className={`px-6 text-[9px] font-black uppercase tracking-widest ${isOverdue(invoice) ? 'text-red-500 italic' : 'text-slate-400'}`}>
+                    <td className={`px-5 text-[9px] font-black uppercase tracking-widest ${isOverdue(invoice) ? 'text-red-500 italic' : 'text-slate-400'}`}>
                       {new Date(invoice.due_date).toLocaleDateString()}
                     </td>
-                    <td className="px-6">{/* SECTION 4: INVOICE STATUS SYSTEM */}
+                    <td className="px-5">{/* SECTION 4: INVOICE STATUS SYSTEM */}
                        <StatusBadge status={invoice.status} isOverdue={isOverdue(invoice)} />
                     </td>
                   </tr>
@@ -321,17 +321,17 @@ export default function DashboardView() {
         </div>
 
         {/* Right Rail */}
-        <div className="col-span-12 lg:col-span-4 space-y-5">
+        <div className="col-span-12 lg:col-span-4 space-y-4">
           {/* Collection Rate */}
-          <div className="bento-card p-6 group">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-2">Liquidity Ratio</p>
+          <div className="bento-card p-5 group">
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono mb-2">Liquidity Ratio</p>
             <div className="flex justify-between items-end mb-3">
-              <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic">{collectionRate}%</h3>
-              <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600 shadow-xl shadow-green-100/30">
-                 <TrendingUp size={20} />
+              <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic">{collectionRate}%</h3>
+              <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center text-green-600 shadow-lg border border-green-50">
+                 <TrendingUp size={18} />
               </div>
             </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden shadow-inner">
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden shadow-inner">
               <div 
                 className="bg-green-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_20px_rgba(34,197,94,0.3)]" 
                 style={{ width: `${collectionRate}%` }}
@@ -340,27 +340,27 @@ export default function DashboardView() {
           </div>
 
           {/* System Status */}
-          <div className="bento-card bg-slate-900 border-none p-6 text-white group overflow-hidden relative" id="system-status-card">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-            <h4 className="font-black text-[10px] uppercase tracking-widest mb-1 italic">Security Protocol</h4>
-            <p className="text-[8px] text-slate-500 font-mono mb-6 uppercase tracking-widest">Node: Operational</p>
-            <div className="space-y-4">
+          <div className="bento-card bg-slate-900 border-none p-5 text-white group overflow-hidden relative" id="system-status-card">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full -mr-12 -mt-12 blur-2xl transition-transform group-hover:scale-150 duration-700"></div>
+            <h4 className="font-black text-[9px] uppercase tracking-widest mb-1 italic">Security Protocol</h4>
+            <p className="text-[8px] text-slate-500 font-mono mb-4 uppercase tracking-widest">Node: Online</p>
+            <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center">
-                  <CheckCircle2 size={16} className="text-indigo-400" />
+                <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                  <CheckCircle2 size={14} className="text-indigo-400" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest leading-none">AES-256 E2E</p>
-                  <p className="text-[8px] text-slate-500 mt-1 font-mono uppercase">Standard Active</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest leading-none">AES-256 E2E</p>
+                  <p className="text-[8px] text-slate-500 mt-1 font-mono uppercase">Full Encryption</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center">
-                  <TrendingUp size={16} className="text-green-400" />
+                <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                  <TrendingUp size={14} className="text-green-400" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest leading-none">Ledger Sync</p>
-                  <p className="text-[8px] text-green-500/50 mt-1 font-mono uppercase">0.02ms Propagation</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest leading-none">Global Sync</p>
+                  <p className="text-[8px] text-green-500/50 mt-1 font-mono uppercase">High Propagation</p>
                 </div>
               </div>
             </div>
@@ -416,15 +416,15 @@ function MetricCard({ label, value, subtext, color, icon }: {
       <div className={`absolute top-0 right-0 w-24 h-24 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-700 opacity-10 ${iconColors[color].split(' ')[0]}`}></div>
       <div className="flex justify-between items-start relative z-10 mb-4">
         <div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono">{label}</p>
-          <h3 className="text-2xl font-black text-slate-900 mt-1.5 tracking-tighter italic">{value}</h3>
+          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono leading-none">{label}</p>
+          <h3 className="text-xl font-black text-slate-900 mt-1 tracking-tighter italic leading-none">{value}</h3>
         </div>
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 duration-300 ${iconColors[color]}`}>
-          {icon}
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-md transition-transform group-hover:scale-110 duration-300 border border-slate-100/10 ${iconColors[color]}`}>
+          {React.cloneElement(icon as React.ReactElement, { size: 16 })}
         </div>
       </div>
       <div className="flex items-center gap-2 relative z-10">
-        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${colors[color]}`}>
+        <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest border ${colors[color]}`}>
           {subtext}
         </span>
       </div>
@@ -434,22 +434,22 @@ function MetricCard({ label, value, subtext, color, icon }: {
 
 function StatusBadge({ status, isOverdue }: { status: string, isOverdue: boolean }) {
   if (status === 'paid') return (
-    <span className="px-3 py-1 bg-green-50 text-green-600 border border-green-100 rounded-full text-[10px] font-black uppercase tracking-widest">
+    <span className="px-2 py-0.5 bg-green-50 text-green-600 border border-green-100 rounded-full text-[9px] font-black uppercase tracking-widest">
       Settled
     </span>
   );
   if (isOverdue) return (
-    <span className="px-3 py-1 bg-red-50 text-red-600 border border-red-100 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">
+    <span className="px-2 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded-full text-[9px] font-black uppercase tracking-widest animate-pulse">
       Overdue
     </span>
   );
   if (status === 'sent') return (
-    <span className="px-3 py-1 bg-yellow-50 text-yellow-600 border border-yellow-100 rounded-full text-[10px] font-black uppercase tracking-widest">
+    <span className="px-2 py-0.5 bg-yellow-50 text-yellow-600 border border-yellow-100 rounded-full text-[9px] font-black uppercase tracking-widest">
       Sent
     </span>
   );
   return (
-    <span className="px-3 py-1 bg-slate-50 text-slate-400 border border-slate-100 rounded-full text-[10px] font-black uppercase tracking-widest">
+    <span className="px-2 py-0.5 bg-slate-50 text-slate-400 border border-slate-100 rounded-full text-[9px] font-black uppercase tracking-widest">
       Draft
     </span>
   );
