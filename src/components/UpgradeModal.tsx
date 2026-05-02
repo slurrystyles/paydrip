@@ -9,8 +9,15 @@ interface UpgradeModalProps {
   targetPlan?: 'pro' | 'unlimited';
 }
 
-export default function UpgradeModal({ isOpen, onClose, targetPlan = 'pro' }: UpgradeModalProps) {
+export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan = 'pro' }: UpgradeModalProps) {
+  const [selectedPlan, setSelectedPlan] = React.useState<'pro' | 'unlimited'>(initialPlan);
   const [copied, setCopied] = React.useState(false);
+  
+  // Update internal state if initialPlan changes externally
+  React.useEffect(() => {
+    setSelectedPlan(initialPlan);
+  }, [initialPlan]);
+
   const upiId = "paydrip@upi"; // Example UPI ID
 
   const copyUpi = () => {
@@ -19,11 +26,11 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan = 'pro' }: Up
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const benefits = targetPlan === 'pro' 
-    ? ["20 Invoices / Month", "Custom Business Branding", "WhatsApp Reminders", "Priority Support"]
-    : ["Unlimited Invoices", "No Branding", "White-label Links", "Full Analytics Suite"];
+  const benefits = selectedPlan === 'pro' 
+    ? ["20 Invoices / Mo", "Custom Branding", "WA Reminders", "Priority Support"]
+    : ["Unlimited Invoices", "No Branding", "White-label Links", "Full Analytics"];
 
-  const price = targetPlan === 'pro' ? '₹199' : '₹499';
+  const price = selectedPlan === 'pro' ? '₹199' : '₹499';
 
   return (
     <AnimatePresence>
@@ -47,7 +54,30 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan = 'pro' }: Up
               <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white mx-auto mb-2 shadow-lg shadow-indigo-100 italic font-black text-lg">
                 P
               </div>
-              <h2 className="text-xl font-black tracking-tighter text-slate-900 italic leading-tight">Upgrade to {targetPlan.charAt(0).toUpperCase() + targetPlan.slice(1)}</h2>
+              <h2 className="text-xl font-black tracking-tighter text-slate-900 italic leading-tight">Upgrade Plan</h2>
+              
+              {/* Plan Switcher */}
+              <div className="flex p-1 bg-slate-100 rounded-xl mt-4 mb-2">
+                <button 
+                  onClick={() => setSelectedPlan('pro')}
+                  className={cn(
+                    "flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all",
+                    selectedPlan === 'pro' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  Pro
+                </button>
+                <button 
+                  onClick={() => setSelectedPlan('unlimited')}
+                  className={cn(
+                    "flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all",
+                    selectedPlan === 'unlimited' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  Unlimited
+                </button>
+              </div>
+
               <div className="text-2xl font-black text-indigo-600 tracking-tighter">
                 {price}<span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest ml-1">/mo</span>
               </div>
@@ -82,7 +112,7 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan = 'pro' }: Up
             {/* Actions */}
             <div className="space-y-2">
               <a 
-                href={`https://wa.me/910000000000?text=Hi, I want to upgrade to Paydrip ${targetPlan}`}
+                href={`https://wa.me/910000000000?text=Hi, I want to upgrade to Paydrip ${selectedPlan}`}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-widest text-[9px] hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100 active:scale-95"
@@ -91,7 +121,7 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan = 'pro' }: Up
                 WhatsApp Upgrade
               </a>
               <a 
-                href={`mailto:upgrade@paydrip.io?subject=Upgrade to Paydrip ${targetPlan}`}
+                href={`mailto:upgrade@paydrip.io?subject=Upgrade to Paydrip ${selectedPlan}`}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-400 rounded-lg font-black uppercase tracking-widest text-[9px] hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95 border border-slate-100"
               >
                 <Mail size={12} />
