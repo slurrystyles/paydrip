@@ -201,59 +201,62 @@ export default function ClientsView() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in transition-all">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-bold text-lg">{editingId ? 'Edit Client' : 'New Client'}</h3>
-              <button onClick={closeModal} className="text-gray-400 hover:text-black transition-colors">
-                <Plus size={24} className="rotate-45" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in transition-all">
+          <div className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+            <div className="p-5 border-b border-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="font-black text-xl tracking-tighter text-slate-900 italic">{editingId ? 'Edit Counterparty' : 'Anchor New Node'}</h3>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5 font-mono">Counterparty Identification Protocol</p>
+              </div>
+              <button onClick={closeModal} className="p-1.5 bg-slate-50 rounded-xl text-slate-400 hover:text-slate-900 transition-all">
+                <Plus size={16} className="rotate-45" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Name</label>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1 font-mono">Entity Name</label>
                 <input 
                   autoFocus
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-bold text-slate-700 text-sm"
                   placeholder="e.g. Acme Corp"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Email</label>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1 font-mono">Communication Node (Email)</label>
                 <input 
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-bold text-slate-700 text-sm"
                   placeholder="billing@acme.com"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Phone (Optional)</label>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1 font-mono">Voice Uplink (Optional)</label>
                 <input 
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-bold text-slate-700 text-sm font-mono"
                   placeholder="+91 98765 43210"
                 />
               </div>
-              <div className="pt-4 flex gap-3">
+              <div className="pt-2 flex gap-3">
                 <button 
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 py-2 px-4 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 transition-all"
+                  className="flex-1 py-3 px-4 bg-slate-50 text-slate-500 rounded-xl font-black uppercase tracking-[0.2em] text-[9px] hover:bg-slate-100 transition-all active:scale-95 border border-slate-200"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-2 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-900 transition-all"
+                  className="flex-1 py-3 px-4 bg-indigo-600 text-white rounded-xl font-black uppercase tracking-[0.2em] text-[9px] hover:bg-slate-900 transition-all active:scale-95 shadow-xl shadow-indigo-100"
                 >
-                  {editingId ? 'Save Changes' : 'Create Client'}
+                  {editingId ? 'Push Update' : 'Establish Node'}
                 </button>
               </div>
             </form>

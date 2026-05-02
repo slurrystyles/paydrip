@@ -113,31 +113,31 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden relative z-10 border border-slate-100"
           >
-            <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+            <div className="p-5 border-b border-slate-50 flex items-center justify-between">
               <div>
-                <h3 className="font-black text-2xl tracking-tighter text-slate-900 italic">Generate Ledger</h3>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 font-mono">Securing snapshot of transaction</p>
+                <h3 className="font-black text-xl tracking-tighter text-slate-900 italic">Generate Ledger</h3>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5 font-mono">Securing snapshot of transaction</p>
               </div>
-              <button onClick={onClose} className="p-2 bg-slate-50 rounded-2xl text-slate-400 hover:text-slate-900 transition-all">
-                <X size={20} />
+              <button onClick={onClose} className="p-1.5 bg-slate-50 rounded-xl text-slate-400 hover:text-slate-900 transition-all">
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-10 space-y-8">
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {error && (
-                 <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[10px] font-black uppercase tracking-widest font-mono shadow-lg shadow-red-100">
+                 <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-[9px] font-black uppercase tracking-widest font-mono shadow-sm">
                    {error}
                  </div>
               )}
               
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 font-mono px-1">Selected Counterparty</label>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 font-mono px-1">Selected Counterparty</label>
                   <select
                     required
                     value={clientId}
                     onChange={(e) => setClientId(e.target.value)}
-                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-600 focus:bg-white outline-none transition-all appearance-none font-bold text-slate-700"
+                    className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white outline-none transition-all appearance-none font-bold text-slate-700 text-sm"
                   >
                     <option value="">-- Choose from active list --</option>
                     {clients.map(c => (
@@ -146,68 +146,68 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 font-mono px-1">Amount (INR)</label>
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 font-mono px-1">Amount (INR)</label>
                     <div className="relative group">
-                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-black group-focus-within:text-indigo-600 transition-colors italic group-focus-within:not-italic font-mono">₹</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-black group-focus-within:text-indigo-600 transition-colors italic group-focus-within:not-italic font-mono text-sm">₹</span>
                       <input
                         type="number"
                         required
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-black text-slate-900 tracking-tighter"
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-black text-slate-900 tracking-tighter text-sm"
                         placeholder="0.00"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 font-mono px-1">Settlement Date</label>
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 font-mono px-1">Settlement Date</label>
                     <div className="relative group">
-                      <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={14} />
                       <input
                         type="date"
                         required
                         value={dueDate}
                         onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-bold text-slate-700"
+                        className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-bold text-slate-700 text-sm"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 font-mono px-1">Protocol Notes</label>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 font-mono px-1">Protocol Notes</label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-600 focus:bg-white outline-none transition-all resize-none font-medium text-slate-600 text-sm leading-relaxed"
-                    placeholder="e.g. UPI transfer only. Refer to Master Service Agreement."
+                    rows={2}
+                    className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white outline-none transition-all resize-none font-medium text-slate-600 text-xs leading-relaxed"
+                    placeholder="e.g. UPI transfer only."
                   />
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-4">
+              <div className="flex gap-3 pt-2">
                 <button 
                   type="button" 
                   onClick={onClose}
-                  className="flex-1 py-5 px-6 bg-slate-50 text-slate-500 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-100 transition-all active:scale-95 border border-slate-200"
+                  className="flex-1 py-3 px-4 bg-slate-50 text-slate-500 rounded-xl font-black uppercase tracking-[0.2em] text-[9px] hover:bg-slate-100 transition-all active:scale-95 border border-slate-200"
                 >
                   Cancel
                 </button>
                 <button 
                   disabled={loading}
                   type="submit"
-                  className="flex-1 py-5 px-6 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-900 transition-all disabled:opacity-50 active:scale-95 shadow-2xl shadow-indigo-100 flex items-center justify-center gap-2 group"
+                  className="flex-1 py-3 px-4 bg-indigo-600 text-white rounded-xl font-black uppercase tracking-[0.2em] text-[9px] hover:bg-slate-900 transition-all disabled:opacity-50 active:scale-95 shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 group"
                 >
                   {loading ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     <>
                       Create Invoice
-                      <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
                 </button>
