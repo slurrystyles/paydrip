@@ -18,7 +18,7 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
     setSelectedPlan(initialPlan);
   }, [initialPlan]);
 
-  const upiId = "paydrip@upi"; // Example UPI ID
+  const upiId = "suresh.roshanlal@okicici";
 
   const copyUpi = () => {
     navigator.clipboard.writeText(upiId);
@@ -97,7 +97,7 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
   
               {/* UPI Section */}
               <div className="bg-slate-900 rounded-xl p-2.5 mb-3 text-white relative group">
-                <p className="text-[7px] font-black uppercase tracking-widest text-slate-500 mb-1.5 font-mono">Intent Verification</p>
+                <p className="text-[7px] font-black uppercase tracking-widest text-slate-500 mb-1.5 font-mono">Settlement ID (UPI)</p>
                 <div className="flex items-center justify-between gap-2">
                   <div className="font-mono text-[9px] font-bold text-indigo-400 truncate">{upiId}</div>
                   <button 
@@ -112,20 +112,20 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
               {/* Actions */}
               <div className="grid grid-cols-1 gap-1.5">
                 <a 
-                  href={`https://wa.me/910000000000?text=Hi, I want to upgrade to Paydrip ${selectedPlan}`}
+                  href={`https://wa.me/918522091817?text=Hi, I want to upgrade to Paydrip ${selectedPlan}. I've noted the UPI ID: ${upiId}`}
                   target="_blank"
                   rel="noreferrer"
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-widest text-[8px] hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100 active:scale-95"
                 >
                   <MessageSquare size={10} />
-                  WhatsApp Upgrade
+                  Confirm on WhatsApp
                 </a>
                 <a 
-                  href={`mailto:upgrade@paydrip.io?subject=Upgrade to Paydrip ${selectedPlan}`}
+                  href={`mailto:suresh.roshanlal@gmail.com?subject=Paydrip Upgrade Request: ${selectedPlan}&body=I'm interested in the ${selectedPlan} plan.`}
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-400 rounded-lg font-black uppercase tracking-widest text-[8px] hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95 border border-slate-100"
                 >
                   <Mail size={10} />
-                  Email Support
+                  Email Verification
                 </a>
               </div>
   
