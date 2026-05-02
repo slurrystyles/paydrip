@@ -15,10 +15,13 @@ import { cn } from '../lib/utils';
 import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'motion/react';
 import AuthView from './AuthView';
+import UpgradeModal from './UpgradeModal';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function LandingPage({ user }: { user: User | null }) {
   const [showAuth, setShowAuth] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [targetPlan, setTargetPlan] = useState<'pro' | 'unlimited'>('pro');
   const navigate = useNavigate();
 
   const containerVariants = {
@@ -240,7 +243,10 @@ export default function LandingPage({ user }: { user: User | null }) {
                     "Full Client History"
                   ]}
                   cta="Go Pro"
-                  onCta={() => setShowAuth(true)}
+                  onCta={() => {
+                    setTargetPlan('pro');
+                    setShowUpgrade(true);
+                  }}
                 />
               </div>
               <PricingCard 
@@ -254,7 +260,10 @@ export default function LandingPage({ user }: { user: User | null }) {
                   "VIP Support"
                 ]}
                 cta="Go Unlimited"
-                onCta={() => setShowAuth(true)}
+                onCta={() => {
+                  setTargetPlan('unlimited');
+                  setShowUpgrade(true);
+                }}
               />
             </div>
           </div>
@@ -321,6 +330,12 @@ export default function LandingPage({ user }: { user: User | null }) {
           </div>
         )}
       </AnimatePresence>
+
+      <UpgradeModal 
+        isOpen={showUpgrade} 
+        onClose={() => setShowUpgrade(false)} 
+        targetPlan={targetPlan}
+      />
     </div>
   );
 }

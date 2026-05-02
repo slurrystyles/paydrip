@@ -138,7 +138,13 @@ export default function DashboardView() {
           </div>
 
           <button 
-            onClick={() => setIsInvoiceModalOpen(true)}
+            onClick={() => {
+              if (isLimitReached) {
+                setShowUpgradeModal(true);
+              } else {
+                setIsInvoiceModalOpen(true);
+              }
+            }}
             className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-slate-900 transition-all shadow-xl shadow-indigo-200 active:scale-95"
           >
             Create First Invoice

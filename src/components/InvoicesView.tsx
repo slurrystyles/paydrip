@@ -189,7 +189,13 @@ export default function InvoicesView() {
                       <h3 className="text-xl font-black text-slate-900 mb-2 italic">No invoices created</h3>
                       <p className="text-slate-400 text-sm font-medium mb-8">Create your first invoice and start tracking payments</p>
                       <button 
-                        onClick={() => setIsNewModalOpen(true)}
+                        onClick={() => {
+                          if (isLimitReached) {
+                            setShowUpgradeModal(true);
+                          } else {
+                            setIsNewModalOpen(true);
+                          }
+                        }}
                         className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-50 hover:bg-slate-900 transition-all"
                       >
                         Create Invoice
