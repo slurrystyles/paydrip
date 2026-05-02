@@ -121,7 +121,7 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
                   WhatsApp Upgrade
                 </a>
                 <a 
-                  href={`mailto:upgrade@paydrip.io?subject=Upgrade to Paydrip ${selectedPlan}`}
+                  href={`mailto:suresh.roshanlal@gmail.com?subject=Upgrade to Paydrip ${selectedPlan}`}
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-400 rounded-lg font-black uppercase tracking-widest text-[8px] hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95 border border-slate-100"
                 >
                   <Mail size={10} />
