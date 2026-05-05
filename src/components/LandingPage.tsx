@@ -23,7 +23,7 @@ import { usePlan } from '../contexts/PlanContext';
 export default function LandingPage({ user }: { user: User | null }) {
   const [showAuth, setShowAuth] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
-  const [targetPlan, setTargetPlan] = useState<'pro' | 'unlimited'>('pro');
+  const [targetPlan, setTargetPlan] = useState<'pro'>('pro');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
   const { plan } = usePlan();
@@ -278,13 +278,13 @@ export default function LandingPage({ user }: { user: User | null }) {
               <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No hidden fees. Indian freelancers first.</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               <PricingCard 
                 name="Free"
                 price="0"
                 features={[
-                  "3 Invoices / Month",
-                  "Basic WhatsApp Templates",
+                  "5 Invoices / Month",
+                  "All 3 Reminder Tones",
                   "UPI QR Generation",
                   "Public Payment Page"
                 ]}
@@ -295,14 +295,14 @@ export default function LandingPage({ user }: { user: User | null }) {
                 <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-[2.6rem] blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                 <PricingCard 
                   name="Pro"
-                  price="199"
+                  price="299"
                   isPro
                   features={[
-                    "20 Invoices / Month",
-                    "Custom Reminders",
-                    "Business Branding",
-                    "Priority Analytics",
-                    "Full Client History"
+                    "Unlimited Invoices",
+                    "Custom Branding",
+                    "Reminder Logs",
+                    "PDF Downloads",
+                    "Client Payment History"
                   ]}
                   cta="Go Pro"
                   onCta={() => {
@@ -311,22 +311,6 @@ export default function LandingPage({ user }: { user: User | null }) {
                   }}
                 />
               </div>
-              <PricingCard 
-                name="Pro+"
-                price="499"
-                features={[
-                  "Unlimited Invoices",
-                  "Team Access",
-                  "White-label Links",
-                  "API Access",
-                  "VIP Support"
-                ]}
-                cta="Go Unlimited"
-                onCta={() => {
-                  setTargetPlan('unlimited');
-                  setShowUpgrade(true);
-                }}
-              />
             </div>
           </div>
         </section>

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
 
-type Plan = 'free' | 'pro' | 'unlimited';
+type Plan = 'free' | 'pro';
 
 interface PlanContextType {
   plan: Plan;
@@ -65,7 +65,7 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const isLimitReached = plan === 'free' && invoiceCount >= 3;
+  const isLimitReached = plan === 'free' && invoiceCount >= 5;
 
   return (
     <PlanContext.Provider value={{ plan, invoiceCount, loading, isLimitReached, refreshPlanData, profile }}>

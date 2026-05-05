@@ -9,15 +9,9 @@ interface UpgradeModalProps {
   targetPlan?: 'pro' | 'unlimited';
 }
 
-export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan = 'pro' }: UpgradeModalProps) {
-  const [selectedPlan, setSelectedPlan] = React.useState<'pro' | 'unlimited'>(initialPlan);
+export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
   const [copied, setCopied] = React.useState(false);
   
-  // Update internal state if initialPlan changes externally
-  React.useEffect(() => {
-    setSelectedPlan(initialPlan);
-  }, [initialPlan]);
-
   const upiId = "suresh.roshanlal@okicici";
 
   const copyUpi = () => {
@@ -26,11 +20,16 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const benefits = selectedPlan === 'pro' 
-    ? ["20 Invoices / Mo", "Custom Branding", "WA Reminders", "Priority Support"]
-    : ["Unlimited Invoices", "No Branding", "White-label Links", "Full Analytics"];
+  const benefits = [
+    "Unlimited Invoices", 
+    "Custom Branding", 
+    "Reminder History", 
+    "PDF Downloads",
+    "Payment Analytics",
+    "Unlimited Clients"
+  ];
 
-  const price = selectedPlan === 'pro' ? '₹199' : '₹499';
+  const price = '₹299';
 
   return (
     <AnimatePresence>
@@ -50,41 +49,22 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
             className="relative z-10 w-full max-w-sm bg-white rounded-[1.5rem] shadow-2xl p-4 overflow-hidden max-h-[90vh] flex flex-col scale-95 sm:scale-100"
           >
               {/* Header */}
-              <div className="text-center mb-3">
+              <div className="text-center mb-4">
                 <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white mx-auto mb-1 shadow-lg shadow-indigo-100 italic font-black text-base">
                   P
                 </div>
-                <h2 className="text-lg font-black tracking-tighter text-slate-900 italic leading-tight">Upgrade Plan</h2>
-                
-                {/* Plan Switcher */}
-                <div className="flex p-0.5 bg-slate-100 rounded-lg mt-2 mb-1">
-                  <button 
-                    onClick={() => setSelectedPlan('pro')}
-                    className={cn(
-                      "flex-1 py-1.5 text-[8px] font-black uppercase tracking-widest rounded transition-all",
-                      selectedPlan === 'pro' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                    )}
-                  >
-                    Pro
-                  </button>
-                  <button 
-                    onClick={() => setSelectedPlan('unlimited')}
-                    className={cn(
-                      "flex-1 py-1.5 text-[8px] font-black uppercase tracking-widest rounded transition-all",
-                      selectedPlan === 'unlimited' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                    )}
-                  >
-                    Unlimited
-                  </button>
-                </div>
-  
-                <div className="text-xl font-black text-indigo-600 tracking-tighter">
-                  {price}<span className="text-[8px] text-slate-400 font-bold uppercase tracking-widest ml-1">/mo</span>
+                <h2 className="text-lg font-black tracking-tighter text-slate-900 italic leading-tight">Upgrade to Pro</h2>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Unlock Professional Logistics</p>
+              </div>
+
+              <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-4 text-center">
+                <div className="text-2xl font-black text-indigo-600 tracking-tighter">
+                  {price}<span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest ml-1">/mo</span>
                 </div>
               </div>
   
               {/* Benefits Grid */}
-              <div className="grid grid-cols-2 gap-1.5 mb-3">
+              <div className="grid grid-cols-2 gap-1.5 mb-4">
                 {benefits.map((benefit, i) => (
                   <div key={i} className="flex items-center gap-1.5 p-1.5 bg-slate-50 rounded-lg border border-slate-100">
                     <div className="w-3.5 h-3.5 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0">
@@ -112,7 +92,7 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
               {/* Actions */}
               <div className="grid grid-cols-1 gap-1.5">
                 <a 
-                  href={`https://wa.me/918522091817?text=Hi, I want to upgrade to Paydrip ${selectedPlan}. I've noted the UPI ID: ${upiId}`}
+                  href={`https://wa.me/918522091817?text=Hi, I want to upgrade to Paydrip Pro. I've noted the UPI ID: ${upiId}`}
                   target="_blank"
                   rel="noreferrer"
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-widest text-[8px] hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100 active:scale-95"
@@ -121,7 +101,7 @@ export default function UpgradeModal({ isOpen, onClose, targetPlan: initialPlan 
                   Confirm on WhatsApp
                 </a>
                 <a 
-                  href={`mailto:suresh.roshanlal@gmail.com?subject=Paydrip Upgrade Request: ${selectedPlan}&body=I'm interested in the ${selectedPlan} plan.`}
+                  href={`mailto:suresh.roshanlal@gmail.com?subject=Paydrip Upgrade Request: Pro&body=I'm interested in the Pro plan.`}
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-400 rounded-lg font-black uppercase tracking-widest text-[8px] hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95 border border-slate-100"
                 >
                   <Mail size={10} />

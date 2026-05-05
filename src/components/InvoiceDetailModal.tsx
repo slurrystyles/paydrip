@@ -34,8 +34,11 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const [loading, setLoading] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [reminderLogs, setReminderLogs] = useState<any[]>([]);
+
+  const { plan } = usePlan();
 
   const clientInfo = invoice.client || invoice.snapshot_json || {};
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -365,6 +368,8 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
       />
       
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+      
       <motion.div 
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -522,10 +527,15 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
 
                 {payments.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest flex items-center gap-2">
-                      <History size={12} /> Payment History
-                    </p>
-                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest flex items-center gap-2">
+                        <History size={12} /> Payment History
+                      </p>
+                      {plan === 'free' && (
+                        <span className="text-[7px] font-black text-indigo-400 uppercase tracking-widest">Pro Only</span>
+                      )}
+                    </div>
+                    <div className={cn("space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar", plan === 'free' && "opacity-20 grayscale grayscale blur-[1px] pointer-events-none")}>
                       {payments.map((p) => (
                         <div key={p.id} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg text-[10px] font-bold border border-slate-100">
                           <span className="text-slate-500">{new Date(p.paid_at).toLocaleDateString()}</span>
@@ -587,33 +597,43 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                   <Share2 size={16} />
                 </button>
               </div>
-            </div>
-
-            {/* General Actions */}
+            </div>            {/* General Actions */}
             <div className="space-y-3">
-              <button 
-                onClick={generatePDF}
-                className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl transition-all group border border-slate-200 shadow-sm"
-              >
-                <div className="flex items-center">
-                  <Download size={18} className="mr-3 text-indigo-600" />
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-700 font-mono">Invoice Document</span>
-                </div>
-                <ChevronRight size={14} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
-              </button>
+              <div className="relative group">
+                <button 
+                  onClick={() => plan === 'pro' ? generatePDF() : setShowUpgradeModal(true)}
+                  className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl transition-all group border border-slate-200 shadow-sm"
+                >
+                  <div className="flex items-center">
+                    <Download size={18} className={cn("mr-3", plan === 'pro' ? "text-indigo-600" : "text-slate-300")} />
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-700 font-mono">Invoice Document</span>
+                  </div>
+                  {plan === 'free' ? (
+                    <Shield size={12} className="text-indigo-400" />
+                  ) : (
+                    <ChevronRight size={14} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
+                  )}
+                </button>
+              </div>
 
               {totalPaid > 0 && (
                 <>
-                  <button 
-                    onClick={generateReceipt}
-                    className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl transition-all group border border-slate-200 shadow-sm"
-                  >
-                    <div className="flex items-center">
-                      <FileText size={18} className="mr-3 text-green-600" />
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-700 font-mono">Payment Receipt</span>
-                    </div>
-                    <ChevronRight size={14} className="text-slate-300 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
-                  </button>
+                  <div className="relative group">
+                    <button 
+                      onClick={() => plan === 'pro' ? generateReceipt() : setShowUpgradeModal(true)}
+                      className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl transition-all group border border-slate-200 shadow-sm"
+                    >
+                      <div className="flex items-center">
+                        <FileText size={18} className={cn("mr-3", plan === 'pro' ? "text-green-600" : "text-slate-300")} />
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-700 font-mono">Payment Receipt</span>
+                      </div>
+                      {plan === 'free' ? (
+                        <Shield size={12} className="text-indigo-400" />
+                      ) : (
+                        <ChevronRight size={14} className="text-slate-300 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
+                      )}
+                    </button>
+                  </div>
 
                   <button 
                     onClick={() => startWhatsAppFlow('receipt')}

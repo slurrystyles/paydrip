@@ -11,7 +11,7 @@ export interface UserProfile {
   business_name: string;
   upi_id?: string;
   bank_details?: string;
-  plan?: 'free' | 'pro' | 'unlimited';
+  plan?: 'free' | 'pro';
   logo_url?: string;
   whatsapp_templates?: WhatsAppTemplates;
   created_at: string;
