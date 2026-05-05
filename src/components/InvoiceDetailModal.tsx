@@ -21,6 +21,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { motion, AnimatePresence } from 'motion/react';
+import { usePlan } from '../contexts/PlanContext';
+import UpgradeModal from './UpgradeModal';
 
 interface Props {
   invoice: Invoice;
