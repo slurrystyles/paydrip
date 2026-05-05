@@ -256,42 +256,45 @@ export default function LandingPage({ user }: { user: User | null }) {
           </div>
         </section>
 
-        {/* SECTION 2: PROBLEM → SOLUTION */}
-        <section className="py-24 px-6 bg-slate-50 border-y border-slate-100">
+        {/* SECTION 2: THE PRODUCT FLOW */}
+        <section className="py-24 px-6 bg-[#F8F9FF] border-y border-indigo-100/50">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-              {/* Problem Block */}
-              <div className="space-y-8">
-                <h2 className="text-3xl font-black tracking-tighter text-slate-900 italic">Manual chasing is broken.</h2>
-                <div className="space-y-4">
-                  {["Copy-pasting messages on WhatsApp", "Forgetting who owes what", "Awkward follow-ups"].map((point, i) => (
-                    <div key={i} className="flex items-center gap-5 p-5 bg-white rounded-2xl border border-slate-200/50 shadow-sm opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all border-l-4 border-l-red-100">
-                      <div className="w-8 h-8 bg-red-50 text-red-500 rounded-full flex items-center justify-center shrink-0">
-                        <Plus className="rotate-45" size={16} />
-                      </div>
-                      <span className="text-base font-bold text-slate-700">{point}</span>
+            <div className="text-center mb-16">
+              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] mb-4">Seamless Pipeline</p>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 italic">How most of your payments start arriving in hours.</h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              {/* Product Demo Placeholder */}
+              <div className="lg:col-span-7">
+                <div className="relative aspect-video bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden group border border-slate-800">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-12">
+                    <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-white mb-6 animate-pulse">
+                      <Zap size={32} />
                     </div>
-                  ))}
+                    <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tighter italic">Demo Coming Soon</h3>
+                    <p className="text-slate-400 text-xs font-medium max-w-xs uppercase tracking-widest leading-relaxed">A short video showing the flow from triggering a notification to a settled UPI payment.</p>
+                  </div>
+                  {/* Visual Hint of UI */}
+                  <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-slate-900 to-transparent"></div>
                 </div>
               </div>
 
-              {/* Solution Block */}
-              <div className="space-y-8">
-                <h2 className="text-3xl font-black tracking-tighter text-indigo-600 italic">Paydrip automates the flow.</h2>
-                <div className="space-y-4">
-                  {[
-                    { title: "Create invoice", icon: <Plus size={18} /> },
-                    { title: "Send via WhatsApp", icon: <MessageSquare size={18} /> },
-                    { title: "Get paid", icon: <Check size={18} /> }
-                  ].map((step, i) => (
-                    <div key={i} className="flex items-center gap-5 p-5 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-100 transition-transform hover:scale-[1.02] border-l-4 border-l-white/20">
-                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
-                        {step.icon}
-                      </div>
-                      <span className="text-lg font-black uppercase tracking-widest">{step.title}</span>
+              {/* Steps */}
+              <div className="lg:col-span-5 space-y-4">
+                {[
+                  { step: "01", title: "Generate Invoice", desc: "Instantly create a professional, UPI-ready invoice link." },
+                  { step: "02", title: "Nudge on WhatsApp", desc: "Drop a pre-filled, polite reminder directly into their chat." },
+                  { step: "03", title: "Automatic Receipt", desc: "Client pays via UPI; we auto-generate their PDF receipt." }
+                ].map((item, i) => (
+                  <div key={i} className="p-6 bg-white rounded-3xl border border-slate-100 flex gap-5 group hover:border-indigo-200 transition-all">
+                    <div className="text-2xl font-black text-indigo-200 group-hover:text-indigo-600 transition-colors italic">{item.step}</div>
+                    <div>
+                      <h4 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-1">{item.title}</h4>
+                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{item.desc}</p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -306,7 +309,7 @@ export default function LandingPage({ user }: { user: User | null }) {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] mb-4">Functional Arsenal</p>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 italic">Built for the high-frequency freelancer.</h2>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 italic">Built for Indian freelancers who are tired of following up.</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -350,41 +353,7 @@ export default function LandingPage({ user }: { user: User | null }) {
           </div>
         </section>
 
-        {/* SECTION 4: HUMAN TRUST / TESTIMONIAL */}
-        <section className="py-24 px-6 bg-slate-900 overflow-hidden relative">
-           <div className="absolute top-0 right-0 w-full h-full opacity-20 pointer-events-none">
-              <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                 <defs>
-                    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                       <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" strokeWidth="0.1"/>
-                    </pattern>
-                 </defs>
-                 <rect width="100" height="100" fill="url(#grid)" />
-              </svg>
-           </div>
-
-           <div className="max-w-4xl mx-auto relative z-10">
-              <div className="bg-white/10 backdrop-blur-xl p-10 md:p-16 rounded-[3rem] border border-white/10 shadow-2xl text-center">
-                 <div className="w-20 h-20 bg-indigo-500 rounded-full mx-auto mb-10 overflow-hidden border-4 border-indigo-400/20 shadow-2xl">
-                    <div className="w-full h-full flex items-center justify-center text-white text-3xl font-black italic">AB</div>
-                 </div>
-                 <p className="text-xl md:text-2xl font-medium text-white leading-relaxed mb-10 italic">
-                    "I used to spend 2 hours every Friday chasing clients on WhatsApp. Now, I just trigger a Paydrip nudge while drinking my morning coffee. <span className="text-indigo-400 font-black">Payments that used to take weeks now arrive in hours."</span>
-                 </p>
-                 <div>
-                    <h4 className="text-white font-black uppercase tracking-widest text-sm">Amritanshu Bhatia</h4>
-                    <p className="text-indigo-400 font-mono text-[10px] uppercase tracking-[0.2em] mt-1 font-black">UX Strategist & Consultant</p>
-                 </div>
-              </div>
-
-              <div className="mt-16 flex flex-wrap justify-center gap-12 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-700">
-                 <div className="text-white text-xl font-black italic tracking-tighter opacity-60">DESIGN.CO</div>
-                 <div className="text-white text-xl font-black italic tracking-tighter opacity-60">NODE BUILDERS</div>
-                 <div className="text-white text-xl font-black italic tracking-tighter opacity-60">PIXELS & CODE</div>
-                 <div className="text-white text-xl font-black italic tracking-tighter opacity-60">STUDIO DHARNA</div>
-              </div>
-           </div>
-        </section>
+        {/* SECTION 4 REMOVED: PLACEHOLDER SOCIAL PROOF */}
 
         {/* SECTION 5: PRICING */}
         <section id="pricing" className="py-24 px-6 bg-slate-900 text-white">
