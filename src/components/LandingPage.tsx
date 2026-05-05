@@ -169,7 +169,6 @@ export default function LandingPage({ user }: { user: User | null }) {
                   </button>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No credit card required</p>
                 </div>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">Used by freelancers across India</p>
               </motion.div>
             </div>
             
@@ -177,26 +176,82 @@ export default function LandingPage({ user }: { user: User | null }) {
               variants={itemVariants}
               className="lg:col-span-5 relative"
             >
-              <div className="absolute inset-0 bg-indigo-600/5 rounded-[4rem] -rotate-3 blur-2xl"></div>
-              <div className="relative bg-white p-4 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(79,70,229,0.15)] border border-slate-100">
-                <div className="bg-slate-50 rounded-[2.2rem] p-8 overflow-hidden aspect-[4/5] sm:aspect-auto">
-                  <div className="flex justify-between items-center mb-10">
-                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl"></div>
-                    <div className="h-6 w-32 bg-slate-200 rounded-full animate-pulse"></div>
-                  </div>
-                  <div className="space-y-4 mb-12">
-                    <div className="h-12 w-full bg-slate-100 rounded-2xl"></div>
-                    <div className="h-12 w-3/4 bg-slate-100 rounded-2xl"></div>
-                    <div className="h-40 w-full bg-indigo-600/10 rounded-3xl border-2 border-dashed border-indigo-200 flex items-center justify-center">
-                       <Zap size={40} className="text-indigo-600" />
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="h-14 flex-1 bg-slate-900 rounded-2xl"></div>
-                    <div className="h-14 flex-1 bg-slate-200 rounded-2xl"></div>
+              <div className="absolute inset-0 bg-indigo-600/5 rounded-[4rem] -rotate-3 blur-3xl"></div>
+              
+              {/* WhatsApp Mockup */}
+              <div className="relative bg-[#E5DDD5] w-full max-w-[340px] mx-auto rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border-[8px] border-slate-900 overflow-hidden aspect-[9/18.5]">
+                {/* Status Bar */}
+                <div className="h-6 bg-slate-900/10 flex justify-between px-6 items-center">
+                  <div className="w-12 h-2 bg-slate-400/20 rounded-full"></div>
+                </div>
+
+                {/* Header */}
+                <div className="bg-[#075E54] p-4 flex items-center gap-3">
+                  <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white text-[10px] font-black italic border border-white/20">P</div>
+                  <div>
+                    <h4 className="text-white text-[11px] font-bold leading-none">Paydrip Finance</h4>
+                    <p className="text-white/60 text-[8px] mt-0.5">Online</p>
                   </div>
                 </div>
+
+                {/* Chat Area */}
+                <div className="p-4 space-y-4 font-sans h-full">
+                  <div className="flex justify-center">
+                    <span className="bg-white/90 text-slate-400 text-[8px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Today</span>
+                  </div>
+
+                  {/* Message Bubble */}
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0, x: -20 }}
+                    animate={{ scale: 1, opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-white p-3 rounded-xl rounded-tl-none shadow-sm max-w-[85%] relative border-l-4 border-l-indigo-400"
+                  >
+                    <p className="text-[11px] text-slate-800 leading-relaxed font-medium">
+                      Hey Arjun Bhatia, just a quick reminder that invoice <span className="font-bold text-indigo-600">#INV-204</span> is due today. 
+                      <br /><br />
+                      Total: <span className="font-black">₹12,450.00</span>
+                      <br /><br />
+                      Sharing the secure payment link here: 
+                    </p>
+                    <div className="mt-2 p-2 bg-slate-50 border border-slate-100 rounded-lg flex items-center gap-2">
+                       <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center text-white text-[8px] font-black italic">P</div>
+                       <div className="flex-1 overflow-hidden">
+                         <p className="text-[9px] font-bold text-slate-900 truncate">paydrip.io/v/secure-node</p>
+                         <p className="text-[7px] text-slate-400">Click to settle ledger instantly</p>
+                       </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Reply Bubble (Mocking real trust) */}
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0, x: 20 }}
+                    animate={{ scale: 1, opacity: 1, x: 0 }}
+                    transition={{ delay: 1.2 }}
+                    className="bg-[#DCF8C6] p-3 rounded-xl rounded-tr-none shadow-sm max-w-[80%] ml-auto"
+                  >
+                    <p className="text-[11px] text-slate-800 leading-relaxed font-medium">
+                      Ah thanks for the reminder! Just paid via UPI. ⚡️
+                    </p>
+                    <span className="text-[7px] text-slate-500 float-right mt-1">10:42 AM</span>
+                  </motion.div>
+                </div>
               </div>
+
+              {/* Floating Badge */}
+              <motion.div 
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -bottom-6 -left-6 bg-white p-5 rounded-3xl shadow-2xl border border-slate-100 flex items-center gap-4 z-20"
+              >
+                <div className="w-10 h-10 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center">
+                  <CheckCircle size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Receipt Generated</p>
+                  <p className="text-sm font-black text-slate-900 tracking-tight">₹12,450 Settled</p>
+                </div>
+              </motion.div>
             </motion.div>
           </div>
         </section>
@@ -243,31 +298,92 @@ export default function LandingPage({ user }: { user: User | null }) {
         </section>
 
         {/* SECTION 3: CORE FEATURES */}
-        <section className="py-24 px-6">
+        <section className="py-24 px-6 relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none opacity-[0.03]">
+             <div className="grid grid-cols-12 h-full border-x border-slate-900 border-dashed"></div>
+          </div>
+          
           <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] mb-4">Functional Arsenal</p>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 italic">Built for the high-frequency freelancer.</h2>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <FeatureCard 
-                icon={<Smartphone size={22} />}
-                title="WhatsApp Reminders"
-                description="Send polite to final reminders instantly without typing a single word."
-              />
+              <div className="lg:col-span-2 row-span-1 p-10 bg-indigo-600 text-white rounded-[2.5rem] shadow-2xl shadow-indigo-100 flex flex-col justify-between group overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
+                <div className="relative z-10">
+                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-8 border border-white/20">
+                    <Smartphone size={28} />
+                  </div>
+                  <h3 className="text-2xl font-black mb-4 uppercase tracking-tight italic">WhatsApp Reminders</h3>
+                  <p className="text-white/80 leading-relaxed font-medium text-sm max-w-xs mb-8">
+                    Send polite, firm, or final reminders instantly. No typing, no scrolling through chats, no friction. Just results.
+                  </p>
+                </div>
+                <div className="relative z-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest bg-white/10 w-fit px-4 py-2 rounded-full border border-white/10">
+                   <Zap size={12} className="animate-pulse" /> Highly Addictive
+                </div>
+              </div>
+              
               <FeatureCard 
                 icon={<Zap size={22} />}
-                title="UPI-Ready Invoices"
-                description="Embed QR codes for GPay, PhonePe, and Paytm. Clients pay in seconds."
+                title="UPI-Ready"
+                description="Embed QR codes for GPay, PhonePe, and Paytm. Clients pay on their phones in seconds."
               />
               <FeatureCard 
                 icon={<BarChart3 size={22} />}
-                title="Track Everything"
-                description="Know exactly who paid, who hasn't, and who is ignoring your messages."
+                title="Real-time Tracking"
+                description="Know exactly who viewed your link and who is yet to settle their ledger."
               />
               <FeatureCard 
                 icon={<ExternalLink size={22} />}
-                title="Public Invoice Link"
-                description="No boring PDFs. Send a secure public link that looks professional on mobile."
+                title="Secure Links"
+                description="No slow PDFs. Send a secure, mobile-first payment page that builds client trust."
+              />
+              <FeatureCard 
+                icon={<CheckCircle size={22} />}
+                title="Pro Receipts"
+                description="Automatic PDF receipt generation as soon as payment is verified. Professionalism, automated."
               />
             </div>
           </div>
+        </section>
+
+        {/* SECTION 4: HUMAN TRUST / TESTIMONIAL */}
+        <section className="py-24 px-6 bg-slate-900 overflow-hidden relative">
+           <div className="absolute top-0 right-0 w-full h-full opacity-20 pointer-events-none">
+              <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                 <defs>
+                    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                       <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" strokeWidth="0.1"/>
+                    </pattern>
+                 </defs>
+                 <rect width="100" height="100" fill="url(#grid)" />
+              </svg>
+           </div>
+
+           <div className="max-w-4xl mx-auto relative z-10">
+              <div className="bg-white/10 backdrop-blur-xl p-10 md:p-16 rounded-[3rem] border border-white/10 shadow-2xl text-center">
+                 <div className="w-20 h-20 bg-indigo-500 rounded-full mx-auto mb-10 overflow-hidden border-4 border-indigo-400/20 shadow-2xl">
+                    <div className="w-full h-full flex items-center justify-center text-white text-3xl font-black italic">AB</div>
+                 </div>
+                 <p className="text-xl md:text-2xl font-medium text-white leading-relaxed mb-10 italic">
+                    "I used to spend 2 hours every Friday chasing clients on WhatsApp. Now, I just trigger a Paydrip nudge while drinking my morning coffee. <span className="text-indigo-400 font-black">Payments that used to take weeks now arrive in hours."</span>
+                 </p>
+                 <div>
+                    <h4 className="text-white font-black uppercase tracking-widest text-sm">Amritanshu Bhatia</h4>
+                    <p className="text-indigo-400 font-mono text-[10px] uppercase tracking-[0.2em] mt-1 font-black">UX Strategist & Consultant</p>
+                 </div>
+              </div>
+
+              <div className="mt-16 flex flex-wrap justify-center gap-12 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+                 <div className="text-white text-xl font-black italic tracking-tighter opacity-60">DESIGN.CO</div>
+                 <div className="text-white text-xl font-black italic tracking-tighter opacity-60">NODE BUILDERS</div>
+                 <div className="text-white text-xl font-black italic tracking-tighter opacity-60">PIXELS & CODE</div>
+                 <div className="text-white text-xl font-black italic tracking-tighter opacity-60">STUDIO DHARNA</div>
+              </div>
+           </div>
         </section>
 
         {/* SECTION 5: PRICING */}
