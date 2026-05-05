@@ -179,7 +179,7 @@ export default function LandingPage({ user }: { user: User | null }) {
               <div className="absolute inset-0 bg-indigo-600/5 rounded-[4rem] -rotate-3 blur-3xl"></div>
               
               {/* WhatsApp Mockup */}
-              <div className="relative bg-[#E5DDD5] w-full max-w-[340px] mx-auto rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border-[8px] border-slate-900 overflow-hidden aspect-[9/18.5]">
+              <div className="relative bg-[#E5DDD5] w-full max-w-[320px] mx-auto rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border-[8px] border-slate-900 overflow-hidden aspect-[9/16]">
                 {/* Status Bar */}
                 <div className="h-6 bg-slate-900/10 flex justify-between px-6 items-center">
                   <div className="w-12 h-2 bg-slate-400/20 rounded-full"></div>
@@ -265,33 +265,33 @@ export default function LandingPage({ user }: { user: User | null }) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              {/* Product Demo Placeholder */}
-              <div className="lg:col-span-7">
-                <div className="relative aspect-video bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden group border border-slate-800">
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-12">
-                    <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-white mb-6 animate-pulse">
-                      <Zap size={32} />
+              {/* Product Demo Placeholder (Mobile Mode) */}
+              <div className="lg:col-span-6 flex justify-center">
+                <div className="relative w-full max-w-[280px] aspect-[9/16] bg-slate-900 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(79,70,229,0.3)] overflow-hidden group border-[6px] border-slate-800">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mb-6 animate-pulse">
+                      <Zap size={24} />
                     </div>
-                    <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tighter italic">Demo Coming Soon</h3>
-                    <p className="text-slate-400 text-xs font-medium max-w-xs uppercase tracking-widest leading-relaxed">A short video showing the flow from triggering a notification to a settled UPI payment.</p>
+                    <h3 className="text-sm font-black text-white mb-2 uppercase tracking-tighter italic">Mobile Demo</h3>
+                    <p className="text-slate-400 text-[9px] font-medium max-w-[140px] uppercase tracking-widest leading-relaxed">Simulating the flow from reminder to payment.</p>
                   </div>
                   {/* Visual Hint of UI */}
                   <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-slate-900 to-transparent"></div>
                 </div>
               </div>
 
-              {/* Steps */}
-              <div className="lg:col-span-5 space-y-4">
+              {/* Steps (High Contrast Styling) */}
+              <div className="lg:col-span-6 space-y-4">
                 {[
                   { step: "01", title: "Generate Invoice", desc: "Instantly create a professional, UPI-ready invoice link." },
                   { step: "02", title: "Nudge on WhatsApp", desc: "Drop a pre-filled, polite reminder directly into their chat." },
                   { step: "03", title: "Automatic Receipt", desc: "Client pays via UPI; we auto-generate their PDF receipt." }
                 ].map((item, i) => (
-                  <div key={i} className="p-6 bg-white rounded-3xl border border-slate-100 flex gap-5 group hover:border-indigo-200 transition-all">
-                    <div className="text-2xl font-black text-indigo-200 group-hover:text-indigo-600 transition-colors italic">{item.step}</div>
+                  <div key={i} className="p-6 bg-indigo-600 text-white rounded-3xl shadow-xl shadow-indigo-100 flex gap-5 group hover:scale-[1.02] transition-all border-l-4 border-l-white/20">
+                    <div className="text-2xl font-black text-white/30 group-hover:text-white transition-colors italic">{item.step}</div>
                     <div>
-                      <h4 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-1">{item.title}</h4>
-                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{item.desc}</p>
+                      <h4 className="text-sm font-black uppercase tracking-widest text-white mb-1">{item.title}</h4>
+                      <p className="text-[11px] text-white/70 font-medium leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -312,15 +312,16 @@ export default function LandingPage({ user }: { user: User | null }) {
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 italic">Built for Indian freelancers who are tired of following up.</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="lg:col-span-2 row-span-1 p-10 bg-indigo-600 text-white rounded-[2.5rem] shadow-2xl shadow-indigo-100 flex flex-col justify-between group overflow-hidden relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* WhatsApp Card (Top Row, Spans 2 Columns) */}
+              <div className="lg:col-span-2 p-10 bg-indigo-600 text-white rounded-[2.5rem] shadow-2xl shadow-indigo-100 flex flex-col justify-between group overflow-hidden relative min-h-[320px]">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
                 <div className="relative z-10">
                   <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-8 border border-white/20">
                     <Smartphone size={28} />
                   </div>
-                  <h3 className="text-2xl font-black mb-4 uppercase tracking-tight italic">WhatsApp Reminders</h3>
-                  <p className="text-white/80 leading-relaxed font-medium text-sm max-w-xs mb-8">
+                  <h3 className="text-3xl font-black mb-6 uppercase tracking-tight italic">WhatsApp Reminders</h3>
+                  <p className="text-white/80 leading-relaxed font-medium text-base max-w-sm mb-8">
                     Send polite, firm, or final reminders instantly. No typing, no scrolling through chats, no friction. Just results.
                   </p>
                 </div>
@@ -329,10 +330,11 @@ export default function LandingPage({ user }: { user: User | null }) {
                 </div>
               </div>
               
+              {/* Individual Feature Cards (Grid Fillers) */}
               <FeatureCard 
                 icon={<Zap size={22} />}
                 title="UPI-Ready"
-                description="Embed QR codes for GPay, PhonePe, and Paytm. Clients pay on their phones in seconds."
+                description="Embed QR codes for GPay, PhonePe, and Paytm. Settlement in seconds."
               />
               <FeatureCard 
                 icon={<BarChart3 size={22} />}
@@ -342,12 +344,12 @@ export default function LandingPage({ user }: { user: User | null }) {
               <FeatureCard 
                 icon={<ExternalLink size={22} />}
                 title="Secure Links"
-                description="No slow PDFs. Send a secure, mobile-first payment page that builds client trust."
+                description="No slow PDFs. Send a secure, mobile-first payment page that builds trust."
               />
               <FeatureCard 
                 icon={<CheckCircle size={22} />}
                 title="Pro Receipts"
-                description="Automatic PDF receipt generation as soon as payment is verified. Professionalism, automated."
+                description="Automatic PDF receipt generation as soon as payment is verified."
               />
             </div>
           </div>
