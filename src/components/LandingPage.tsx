@@ -265,18 +265,21 @@ export default function LandingPage({ user }: { user: User | null }) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              {/* Product Demo Placeholder (Mobile Mode) */}
+              {/* Product Demo (Mobile Mode) */}
               <div className="lg:col-span-6 flex justify-center">
                 <div className="relative w-full max-w-[280px] aspect-[9/16] bg-slate-900 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(79,70,229,0.3)] overflow-hidden group border-[6px] border-slate-800">
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
-                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mb-6 animate-pulse">
-                      <Zap size={24} />
-                    </div>
-                    <h3 className="text-sm font-black text-white mb-2 uppercase tracking-tighter italic">Mobile Demo</h3>
-                    <p className="text-slate-400 text-[9px] font-medium max-w-[140px] uppercase tracking-widest leading-relaxed">Simulating the flow from reminder to payment.</p>
-                  </div>
-                  {/* Visual Hint of UI */}
-                  <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-slate-900 to-transparent"></div>
+                  <video 
+                    autoPlay 
+                    muted 
+                    loop 
+                    playsInline 
+                    className="w-full h-full object-cover"
+                  >
+                    <source src="/demo/paydrip_demo.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                  {/* Subtle overaly for depth */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent pointer-events-none"></div>
                 </div>
               </div>
 
