@@ -599,7 +599,41 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                   <Share2 size={16} />
                 </button>
               </div>
-            </div>            {/* General Actions */}
+            </div>
+
+            {/* Reminder History Log (Pro Gated) */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Reminder Trail</label>
+                {plan === 'free' && (
+                  <span className="text-[7px] font-black text-indigo-400 uppercase tracking-widest border border-indigo-100 px-1.5 py-0.5 rounded">Pro Feature</span>
+                )}
+              </div>
+              
+              <div className={cn("space-y-2 transition-all", plan === 'free' && "opacity-20 grayscale grayscale blur-[1px] pointer-events-none")}>
+                {reminderLogs.length > 0 ? (
+                  reminderLogs.map((log) => (
+                    <div key={log.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-[10px] font-bold">
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-1.5 h-1.5 rounded-full",
+                          log.type === 'polite' ? 'bg-indigo-400' : 
+                          log.type === 'firm' ? 'bg-orange-400' : 'bg-red-400'
+                        )}></div>
+                        <span className="text-slate-600 uppercase tracking-tighter">{log.type} nudge deployed</span>
+                      </div>
+                      <span className="text-slate-400 font-mono">{new Date(log.sent_at).toLocaleDateString()} at {new Date(log.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 border-2 border-dashed border-slate-100 rounded-2xl text-center">
+                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No reminders deployed yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* General Actions */}
             <div className="space-y-3">
               <div className="relative group">
                 <button 
