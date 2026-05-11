@@ -70,7 +70,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
 
   const navItems = [
     { icon: <LayoutDashboard size={18} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <Zap size={18} />, label: 'Recovery', path: '/recovery' },
+    { icon: <Zap size={18} />, label: 'Intelligence', path: '/recovery' },
+    { icon: <SettingsIcon size={18} />, label: 'Operations', path: '/operations' },
     { icon: <FileText size={18} />, label: 'Invoices', path: '/invoices' },
     { icon: <Users size={18} />, label: 'Clients', path: '/clients' },
     { icon: <SettingsIcon size={18} />, label: 'Settings', path: '/settings' },

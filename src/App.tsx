@@ -12,6 +12,7 @@ import SettingsView from './components/SettingsView';
 import LandingPage from './components/LandingPage';
 import PublicInvoiceView from './components/PublicInvoiceView';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
+import RecoveryOpsCenter from './components/RecoveryOpsCenter';
 import PrivacyPage from './components/PrivacyPage';
 import TermsPage from './components/TermsPage';
 import ContactPage from './components/ContactPage';
@@ -67,6 +68,7 @@ export default function App() {
           {/* Protected Routes */}
           <Route path="/dashboard" element={user ? <AuthenticatedLayout><DashboardView /></AuthenticatedLayout> : <Navigate to="/" />} />
           <Route path="/recovery" element={user ? <AuthenticatedLayout><RecoveryDashboard /></AuthenticatedLayout> : <Navigate to="/" />} />
+          <Route path="/operations" element={user ? <AuthenticatedLayout><RecoveryOpsCenter /></AuthenticatedLayout> : <Navigate to="/" />} />
           <Route path="/invoices" element={user ? <AuthenticatedLayout><InvoicesView /></AuthenticatedLayout> : <Navigate to="/" />} />
           <Route path="/clients" element={user ? <AuthenticatedLayout><ClientsView /></AuthenticatedLayout> : <Navigate to="/" />} />
           <Route path="/settings" element={user ? <AuthenticatedLayout><SettingsView /></AuthenticatedLayout> : <Navigate to="/" />} />

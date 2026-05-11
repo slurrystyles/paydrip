@@ -28,10 +28,34 @@ export default function InvoicesView() {
   const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [filters, setFilters] = useState<InvoiceStatus | 'all'>('all');
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === sortedInvoices.length && sortedInvoices.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(sortedInvoices.map(i => i.id));
+    }
+  };
+
+  const toggleSelect = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkAction = async (action: 'pause' | 'resume' | 'nudge') => {
+    try {
+      await recoveryService.bulkProcessInvoices(selectedIds, action);
+      setSelectedIds([]);
+      fetchData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -129,22 +153,41 @@ export default function InvoicesView() {
         <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[800px]">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Client Name</th>
-                  <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Amount</th>
-                  <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest text-center">Risk</th>
-                  <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Due Date</th>
-                  <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
-                  <th className="px-5 py-2.5"></th>
+                <tr className="bg-slate-50 border-b border-slate-100 uppercase tracking-[0.2em] italic">
+                  <th className="px-5 py-4 w-12">
+                    <input 
+                      type="checkbox" 
+                      onChange={toggleSelectAll}
+                      checked={selectedIds.length === sortedInvoices.length && sortedInvoices.length > 0}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                  </th>
+                  <th className="px-5 py-4 text-[8px] font-black text-slate-400">Client Name</th>
+                  <th className="px-5 py-4 text-[8px] font-black text-slate-400">Amount</th>
+                  <th className="px-5 py-4 text-[8px] font-black text-slate-400 text-center">Risk</th>
+                  <th className="px-5 py-4 text-[8px] font-black text-slate-400">Due Date</th>
+                  <th className="px-5 py-4 text-[8px] font-black text-slate-400 text-center">Status</th>
+                  <th className="px-5 py-4"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {sortedInvoices.map((invoice) => (
                   <tr 
                     key={invoice.id} 
-                    className="hover:bg-indigo-50/20 transition-colors group cursor-pointer h-14"
+                    className={cn(
+                      "hover:bg-indigo-50/20 transition-colors group cursor-pointer h-16",
+                      selectedIds.includes(invoice.id) && "bg-indigo-50/40"
+                    )}
                     onClick={() => setSelectedInvoice(invoice)}
                   >
+                    <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                       <input 
+                         type="checkbox"
+                         checked={selectedIds.includes(invoice.id)}
+                         onChange={(e) => toggleSelect(invoice.id, e as any)}
+                         className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                       />
+                    </td>
                     <td className="px-5 py-2.5">
                       <p className="font-black text-slate-900 tracking-tight text-xs leading-none">{invoice.client?.name || invoice.snapshot_json?.name}</p>
                       <p className="text-[8px] text-slate-400 font-mono font-bold uppercase tracking-widest mt-1 leading-none">#{invoice.invoice_number}</p>
@@ -238,7 +281,60 @@ export default function InvoicesView() {
           onUpdate={fetchData}
         />
       )}
+
+      {/* Floating Bulk Toolbar */}
+      <AnimatePresence>
+        {selectedIds.length > 0 && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-5 rounded-[2rem] shadow-2xl z-50 flex items-center gap-8 border border-white/10 backdrop-blur-xl"
+          >
+             <div className="flex items-center gap-3 pr-8 border-r border-white/10">
+                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-black italic text-sm">
+                   {selectedIds.length}
+                </div>
+                <div>
+                   <p className="text-[10px] font-black uppercase tracking-widest leading-none">Nodes Selected</p>
+                   <p className="text-[9px] font-bold text-white/40 mt-1 uppercase">Mass Operation Active</p>
+                </div>
+             </div>
+
+             <div className="flex items-center gap-3">
+                <BulkButton onClick={() => handleBulkAction('pause')} icon={<Pause size={14} />}>Pause</BulkButton>
+                <BulkButton onClick={() => handleBulkAction('resume')} icon={<Play size={14} />}>Resume</BulkButton>
+                <BulkButton onClick={() => handleBulkAction('nudge')} variant="indigo" icon={<Zap size={14} />}>Mass Nudge</BulkButton>
+                <button 
+                  onClick={() => setSelectedIds([])}
+                  className="p-3 hover:bg-white/10 rounded-xl transition-all"
+                >
+                   <X size={16} />
+                </button>
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function BulkButton({ children, icon, onClick, variant = 'ghost' }: { 
+  children: React.ReactNode, 
+  icon: React.ReactNode, 
+  onClick: () => void,
+  variant?: 'ghost' | 'indigo'
+}) {
+  return (
+    <button 
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2.5 px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+        variant === 'indigo' ? "bg-indigo-600 hover:bg-indigo-700" : "hover:bg-white/10"
+      )}
+    >
+      {icon} {children}
+    </button>
   );
 }
 

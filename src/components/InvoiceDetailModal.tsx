@@ -19,7 +19,8 @@ import {
   Calendar,
   Layers,
   ArrowRight,
-  Scale
+  Scale,
+  ShieldAlert
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
@@ -709,6 +710,31 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
 
                 {/* Recovery Actions Group */}
                 {!isFullyPaid && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm">
+                           <ShieldAlert size={18} />
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-900 leading-none">Dispute Protocol</p>
+                           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-1">Pauses all automation</p>
+                        </div>
+                     </div>
+                     <button 
+                       onClick={() => recoveryService.toggleDispute(invoice.id, !invoice.is_disputed).then(onUpdate)}
+                       className={cn(
+                        "w-12 h-6 rounded-full transition-all relative p-1",
+                        invoice.is_disputed ? "bg-red-500" : "bg-slate-200"
+                       )}
+                     >
+                        <div className={cn(
+                          "w-4 h-4 bg-white rounded-full shadow-sm transition-all trasform",
+                          invoice.is_disputed ? "translate-x-6" : "translate-x-0"
+                        )} />
+                     </button>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <button 
                       onClick={() => setShowLegalModal(true)}
@@ -729,6 +755,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                       </div>
                     </button>
                   </div>
+                </div>
                 )}
               </div>
             )}

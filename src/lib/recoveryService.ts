@@ -312,7 +312,74 @@ export const recoveryService = {
 
     stats.successRate = stats.totalInvoices ? (recoveredCount / stats.totalInvoices) * 100 : 0;
     stats.avgRecoveryDays = recoveredCount ? totalRecoveryDays / recoveredCount : 0;
-
     return stats;
+  },
+
+  async recordLegalNotice(invoiceId: string, userId: string, details: any) {
+    const { error } = await supabase.from('legal_notices').insert([{
+      invoice_id: invoiceId,
+      user_id: userId,
+      ...details
+    }]);
+
+    if (error) throw error;
+
+    // Update invoice stage
+    await supabase.from('invoices').update({
+       recovery_stage: 'legal_warning',
+       escalation_level: 5,
+       updated_at: new Date().toISOString()
+    }).eq('id', invoiceId);
+
+    await this.logEvent({
+      invoice_id: invoiceId,
+      user_id: userId,
+      event_type: 'legal_action',
+      metadata: { template: details.template }
+    });
+  },
+
+  /**
+   * Bulk Actions
+   */
+  async bulkProcessInvoices(invoiceIds: string[], action: 'nudge' | 'escalate' | 'pause' | 'resume') {
+    if (action === 'pause' || action === 'resume') {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ automation_paused: action === 'pause' })
+        .in('id', invoiceIds);
+      if (error) throw error;
+    }
+
+    if (action === 'escalate') {
+      // mass escalation logic
+    }
+  },
+
+  async toggleDispute(invoiceId: string, status: boolean) {
+    const { error } = await supabase
+      .from('invoices')
+      .update({ is_disputed: status, automation_paused: status })
+      .eq('id', invoiceId);
+    if (error) throw error;
+
+    await this.logEvent({
+      invoice_id: invoiceId,
+      user_id: (await supabase.auth.getUser()).data.user?.id || '',
+      event_type: 'system_note',
+      metadata: { action: 'dispute_toggle', status }
+    });
+  },
+
+  async retryQueueItem(itemId: string) {
+    const { error } = await supabase
+      .from('escalation_queue')
+      .update({ 
+        status: 'pending', 
+        attempt_count: 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', itemId);
+    if (error) throw error;
   }
 };
