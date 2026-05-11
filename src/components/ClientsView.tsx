@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Client } from '../types';
-import { Plus, Search, Mail, Phone, Trash2, Edit2, MoreVertical } from 'lucide-react';
+import { Plus, Search, Mail, Phone, Trash2, Edit2, ShieldAlert } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { RiskBadge } from './RiskBadge';
 
 export default function ClientsView() {
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<(Client & { risk_score?: any })[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,12 +22,24 @@ export default function ClientsView() {
   }, []);
 
   async function fetchClients() {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('name');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const [clientsRes, riskRes] = await Promise.all([
+      supabase.from('clients').select('*').order('name'),
+      supabase.from('client_risk_scores').select('*').eq('user_id', user.id)
+    ]);
     
-    if (!error && data) setClients(data);
+    if (!clientsRes.error && clientsRes.data) {
+      const clientsWithRisk = clientsRes.data.map(client => {
+        const risk = riskRes.data?.find(r => r.client_id === client.id);
+        return {
+          ...client,
+          risk_score: risk?.risk_score || 'low'
+        };
+      });
+      setClients(clientsWithRisk);
+    }
     setLoading(false);
   }
 
@@ -124,6 +137,7 @@ export default function ClientsView() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Entity Name</th>
+                <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Risk Profile</th>
                 <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Contact Node</th>
                 <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest text-right">Protocol</th>
               </tr>
@@ -141,6 +155,9 @@ export default function ClientsView() {
                         <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">Counterparty Node</p>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-5 py-3">
+                    <RiskBadge level={client.risk_score as any} />
                   </td>
                   <td className="px-5 py-3">
                     <div className="space-y-1">

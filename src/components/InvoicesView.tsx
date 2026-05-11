@@ -20,6 +20,7 @@ import { formatCurrency, cn } from '../lib/utils';
 import InvoiceModal from './InvoiceModal';
 import InvoiceDetailModal from './InvoiceDetailModal';
 import UpgradeModal from './UpgradeModal';
+import { RiskBadge } from './RiskBadge';
 import { usePlan } from '../contexts/PlanContext';
 
 export default function InvoicesView() {
@@ -131,6 +132,7 @@ export default function InvoicesView() {
                 <tr className="bg-slate-50 border-b border-slate-100">
                   <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Client Name</th>
                   <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Amount</th>
+                  <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest text-center">Risk</th>
                   <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Due Date</th>
                   <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
                   <th className="px-5 py-2.5"></th>
@@ -153,6 +155,13 @@ export default function InvoicesView() {
                         <p className="text-[8px] text-green-600 font-black uppercase mt-0.5 leading-none">{formatCurrency(invoice.totalPaid)}</p>
                       )}
                     </td>
+                    <td className="px-5 py-2.5 text-center">
+                       <RiskBadge level={
+                         isOverdue(invoice) 
+                           ? (invoice.remainingBalance && invoice.remainingBalance > 50000 ? 'critical' : 'high')
+                           : 'minimal'
+                       } />
+                    </td>
                     <td className={cn(
                       "px-5 py-2.5 text-[9px] font-black uppercase tracking-widest",
                       isOverdue(invoice) ? "text-red-500 italic" : "text-slate-500"
@@ -170,6 +179,11 @@ export default function InvoicesView() {
                       )}>
                         {invoice.status === 'paid' ? 'Settled' : invoice.status}
                       </span>
+                      {isOverdue(invoice) && invoice.recovery_stage && (
+                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-tighter mt-1 italic">
+                          Stage: {invoice.recovery_stage.replace('_', ' ')}
+                        </p>
+                      )}
                     </td>
                     <td className="px-5 py-2.5 text-right">
                       <div className="inline-flex items-center justify-center p-1.5 rounded-xl bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">

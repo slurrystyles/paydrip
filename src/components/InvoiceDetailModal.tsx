@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Invoice, UserProfile, Payment } from '../types';
+import { Invoice, UserProfile, Payment, RecoveryStage, ReminderTimeline, ClientRiskScore } from '../types';
 import { 
   X, 
   Download, 
@@ -14,7 +14,10 @@ import {
   Zap,
   Plus,
   History,
-  FileText
+  FileText,
+  Calendar,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
@@ -23,6 +26,8 @@ import 'jspdf-autotable';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePlan } from '../contexts/PlanContext';
 import UpgradeModal from './UpgradeModal';
+import { recoveryService } from '../lib/recoveryService';
+import { RiskBadge } from './RiskBadge';
 
 interface Props {
   invoice: Invoice;
@@ -37,8 +42,10 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const [paymentAmount, setPaymentAmount] = useState('');
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [riskScore, setRiskScore] = useState<ClientRiskScore | null>(null);
 
-  const [reminderLogs, setReminderLogs] = useState<any[]>([]);
+  const [reminderLogs, setReminderLogs] = useState<ReminderTimeline[]>([]);
+  const [activeTab, setActiveTab] = useState<'recovery' | 'payments' | 'history'>('recovery');
 
   const { plan } = usePlan();
 
@@ -53,7 +60,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       if (profile) setUserProfile(profile);
 
       const { data: logs } = await supabase
-        .from('reminder_logs')
+        .from('reminder_timeline')
         .select('*')
         .eq('invoice_id', invoice.id)
         .order('sent_at', { ascending: false });
@@ -65,9 +72,18 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         .eq('invoice_id', invoice.id)
         .order('paid_at', { ascending: false });
       if (payData) setPayments(payData);
+
+      if (invoice.client_id) {
+        const { data: risk } = await supabase
+          .from('client_risk_scores')
+          .select('*')
+          .eq('client_id', invoice.client_id)
+          .single();
+        if (risk) setRiskScore(risk);
+      }
     }
     fetchData();
-  }, [invoice.id, invoice.user_id]);
+  }, [invoice.id, invoice.user_id, invoice.client_id]);
 
   async function recordPayment(amount: number) {
     if (amount <= 0) return;
@@ -334,10 +350,16 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     const encodedMessage = encodeURIComponent(editingMessage);
     
     // Log reminder
-    await supabase.from('reminder_logs').insert([{
+    await recoveryService.logReminder({
       invoice_id: invoice.id,
-      type: editingType === 'receipt' ? 'polite' : editingType // Mapping receipt to polite for logging simplicity or just use more types
-    }]);
+      user_id: invoice.user_id,
+      sent_at: new Date().toISOString(),
+      channel: 'whatsapp',
+      tone: editingType === 'receipt' ? 'polite' : editingType,
+      delivery_status: 'sent',
+      reminder_type: 'manual',
+      message_content: editingMessage
+    });
 
     await supabase.from('events').insert([{
       user_id: invoice.user_id,
@@ -348,11 +370,36 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     // Update status to 'sent' if it was draft
     if (invoice.status === 'draft') {
       await supabase.from('invoices').update({ status: 'sent' }).eq('id', invoice.id);
-      onUpdate();
     }
 
+    // Auto-escalate if not paid and in recovery
+    if (!isFullyPaid && editingType !== 'receipt') {
+      let nextStage: RecoveryStage = invoice.recovery_stage;
+      if (editingType === 'polite') nextStage = 'gentle_followup';
+      else if (editingType === 'firm') nextStage = 'firm_followup';
+      else if (editingType === 'final') nextStage = 'final_notice';
+
+      if (nextStage !== invoice.recovery_stage) {
+        await recoveryService.updateRecoveryStage(invoice.id, nextStage, (invoice.escalation_level || 0) + 1);
+      }
+      
+      // Re-calculate risk score
+      if (invoice.client_id) {
+        await recoveryService.calculateRiskScore(invoice.client_id, invoice.user_id);
+      }
+    }
+
+    onUpdate();
     window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
     setShowReminderEditor(false);
+
+    // Refresh logs
+    const { data: logs } = await supabase
+      .from('reminder_timeline')
+      .select('*')
+      .eq('invoice_id', invoice.id)
+      .order('sent_at', { ascending: false });
+    if (logs) setReminderLogs(logs);
   };
 
   // UPI Link generation: upi://pay?pa=VPA&pn=NAME&am=AMOUNT&cu=INR
@@ -384,7 +431,10 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
             <div className="flex justify-between items-start mb-16">
               <div>
                 <h2 className="text-3xl font-black tracking-tight text-slate-900">{userProfile?.business_name || 'Your Company'}</h2>
-                <p className="text-slate-400 font-mono text-xs mt-2 uppercase tracking-widest">{userProfile?.email}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <p className="text-slate-400 font-mono text-xs uppercase tracking-widest leading-none">{userProfile?.email}</p>
+                  {riskScore && <RiskBadge level={riskScore.risk_level} />}
+                </div>
               </div>
               <div className="text-right">
                 <p className="font-mono text-[10px] text-slate-400 uppercase tracking-widest">Digital Invoice</p>
@@ -465,224 +515,265 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
           </div>
 
           <div className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
-            {/* Status Section */}
-            <div className="space-y-3">
-               <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Ledger Status</label>
-               <div className={cn(
-                  "p-4 rounded-2xl border-2 flex items-center justify-between transition-all duration-500",
-                  isFullyPaid ? 'bg-green-50/50 border-green-200 text-green-700 shadow-lg shadow-green-100/50' :
-                  invoice.status === 'overdue' ? 'bg-red-50/50 border-red-200 text-red-700 shadow-lg shadow-red-100/50' : 'bg-slate-50/50 border-slate-200 text-slate-700'
-               )}>
-                 <div className="flex items-center gap-3">
-                    {isFullyPaid && <CheckCircle size={18} className="text-green-600" />}
-                    <span className="font-black text-xs uppercase tracking-widest">{isFullyPaid ? 'Settled' : invoice.status}</span>
-                 </div>
-                 {!isFullyPaid && (
-                    <button 
-                      onClick={() => updateStatus('paid')}
-                      className="text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white px-4 py-2 rounded-xl transition-all hover:bg-slate-900 active:scale-95 shadow-lg shadow-indigo-100"
-                    >
-                      Mark Paid
-                    </button>
-                 )}
-               </div>
+            {/* Nav Tabs */}
+            <div className="flex gap-1 bg-slate-50 p-1 rounded-2xl overflow-hidden">
+               {(['recovery', 'payments', 'history'] as const).map(tab => (
+                 <button
+                   key={tab}
+                   onClick={() => setActiveTab(tab)}
+                   className={cn(
+                     "flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all",
+                     activeTab === tab ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                   )}
+                 >
+                   {tab}
+                 </button>
+               ))}
             </div>
 
-            {/* Partial Payment Section */}
-            {!isFullyPaid && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Record Payment</label>
-                  <button 
-                    onClick={() => setShowPaymentForm(!showPaymentForm)}
-                    className="text-[10px] font-bold text-indigo-600 flex items-center gap-1"
-                  >
-                    {showPaymentForm ? 'Cancel' : <><Plus size={12}/> Record Partial</>}
-                  </button>
-                </div>
-                
-                <AnimatePresence>
-                  {showPaymentForm && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden space-y-3"
-                    >
-                      <input 
-                        type="number"
-                        placeholder="Amount (₹)"
-                        value={paymentAmount}
-                        onChange={(e) => setPaymentAmount(e.target.value)}
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all"
-                      />
-                      <button 
-                        onClick={() => recordPayment(parseFloat(paymentAmount))}
-                        disabled={loading || !paymentAmount}
-                        className="w-full py-4 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-50 hover:bg-slate-900 transition-all active:scale-95 shadow-xl shadow-indigo-100"
-                      >
-                        {loading ? 'Processing...' : 'Record Payment'}
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {payments.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest flex items-center gap-2">
-                        <History size={12} /> Payment History
-                      </p>
-                      {plan === 'free' && (
-                        <span className="text-[7px] font-black text-indigo-400 uppercase tracking-widest">Pro Only</span>
-                      )}
-                    </div>
-                    <div className={cn("space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar", plan === 'free' && "opacity-20 grayscale grayscale blur-[1px] pointer-events-none")}>
-                      {payments.map((p) => (
-                        <div key={p.id} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg text-[10px] font-bold border border-slate-100">
-                          <span className="text-slate-500">{new Date(p.paid_at).toLocaleDateString()}</span>
-                          <span className="text-green-600">+{formatCurrency(p.amount)}</span>
+            {activeTab === 'recovery' && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* Status Section */}
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Recovery Stage</label>
+                  <div className={cn(
+                    "p-4 rounded-2xl border-2 flex items-center justify-between transition-all duration-500",
+                    isFullyPaid ? 'bg-green-50/50 border-green-200 text-green-700 shadow-lg shadow-green-100/50' :
+                    invoice.status === 'overdue' ? 'bg-red-50/50 border-red-200 text-red-700 shadow-lg shadow-red-100/50' : 'bg-slate-50/50 border-slate-200 text-slate-700'
+                  )}>
+                    <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-2.5 h-2.5 rounded-full animate-pulse",
+                          isFullyPaid ? 'bg-green-500' : 'bg-orange-500'
+                        )}></div>
+                        <div>
+                          <span className="font-black text-[10px] uppercase tracking-widest block leading-none mb-1">{isFullyPaid ? 'Settled' : invoice.recovery_stage.replace('_', ' ')}</span>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Next Action: {invoice.next_action_at ? new Date(invoice.next_action_at).toLocaleDateString() : 'Immediate Nudge'}</p>
                         </div>
-                      ))}
                     </div>
+                    {!isFullyPaid && (
+                        <button 
+                          onClick={() => updateStatus('paid')}
+                          className="text-[9px] font-black uppercase tracking-widest bg-slate-900 text-white px-3 py-2 rounded-xl"
+                        >
+                          Recovered
+                        </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Next Recommended Action */}
+                {!isFullyPaid && (
+                  <div className="bg-indigo-600 p-5 rounded-2xl text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                     <div className="relative z-10">
+                        <p className="text-[8px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">System Recommendation</p>
+                        <h4 className="text-base font-black italic tracking-tighter flex items-center gap-2 mb-3">
+                           <Zap size={16} /> Deploy {invoice.recovery_stage === 'pending' ? 'Gentle' : 'Firm'} Nudge
+                        </h4>
+                        <button 
+                          onClick={() => startWhatsAppFlow(invoice.recovery_stage === 'pending' ? 'polite' : 'firm')}
+                          className="w-full py-3 bg-white text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-lg"
+                        >
+                           Execute Action
+                        </button>
+                     </div>
+                  </div>
+                )}
+
+                {/* Reminder Controls */}
+                <div className={cn("space-y-4", isFullyPaid && "opacity-40 grayscale pointer-events-none")}>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Escalation Arsenal</label>
+                    <div className="flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Tools Ready</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <WhatsAppTemplateButton 
+                      label="Gentle follow-up" 
+                      description="Day 1 reminder"
+                      onClick={() => startWhatsAppFlow('polite')}
+                      icon={<Shield size={16} className="text-indigo-500" />}
+                    />
+                    <WhatsAppTemplateButton 
+                      label="Firm mandate" 
+                      description="Overdue escalation"
+                      onClick={() => startWhatsAppFlow('firm')}
+                      icon={<AlertCircle size={16} className="text-orange-500" />}
+                    />
+                    <WhatsAppTemplateButton 
+                      label="Final ultimatum" 
+                      description="Last notice before fail"
+                      onClick={() => startWhatsAppFlow('final')}
+                      icon={<Zap size={16} className="text-red-500" />}
+                    />
+                  </div>
+                </div>
+
+                {/* Legal Notice Action */}
+                {!isFullyPaid && (
+                  <button 
+                    onClick={async () => {
+                      if (confirm('Initiate formal legal notice workflow? This will escalate the recovery stage.')) {
+                        await recoveryService.recordLegalNotice(invoice.id, invoice.user_id, {
+                          client_name: clientInfo.name,
+                          amount: remainingBalance,
+                          notice_type: 'first_warning'
+                        });
+                        onUpdate();
+                        alert('Legal notice drafted and invoice escalated.');
+                      }
+                    }}
+                    className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-between group hover:bg-red-600 transition-all shadow-xl shadow-slate-200/50"
+                  >
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white border border-white/10 group-hover:bg-white/20">
+                          <Layers size={18} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none mb-1">Legal Notice</p>
+                          <p className="text-[8px] font-bold text-white/60 uppercase tracking-tighter">Draft formal demand letter</p>
+                        </div>
+                    </div>
+                    <ArrowRight size={16} className="text-white/40 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'payments' && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* Partial Payment Section */}
+                {!isFullyPaid && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Add Payment</label>
+                      <button 
+                        onClick={() => setShowPaymentForm(!showPaymentForm)}
+                        className="text-[10px] font-bold text-indigo-600 flex items-center gap-1"
+                      >
+                        {showPaymentForm ? 'Cancel' : <><Plus size={12}/> Record Partial</>}
+                      </button>
+                    </div>
+                    
+                    <AnimatePresence>
+                      {showPaymentForm && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden space-y-3"
+                        >
+                          <input 
+                            type="number"
+                            placeholder="Amount (₹)"
+                            value={paymentAmount}
+                            onChange={(e) => setPaymentAmount(e.target.value)}
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all"
+                          />
+                          <button 
+                            onClick={() => recordPayment(parseFloat(paymentAmount))}
+                            disabled={loading || !paymentAmount}
+                            className="w-full py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-50 hover:bg-slate-900 transition-all active:scale-95 shadow-xl shadow-indigo-100"
+                          >
+                            {loading ? 'Processing...' : 'Record Payment'}
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {payments.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest flex items-center gap-2">
+                            <History size={12} /> Payment History
+                          </p>
+                        </div>
+                        <div className="space-y-3">
+                          {payments.map((p) => (
+                            <div key={p.id} className="flex items-center justify-between p-4 bg-white rounded-2xl text-[11px] font-bold border border-slate-100 shadow-sm">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
+                                   <CheckCircle size={14} />
+                                </div>
+                                <div>
+                                  <span className="text-slate-900">{formatCurrency(p.amount)}</span>
+                                  <p className="text-[9px] text-slate-400 mt-0.5">{new Date(p.paid_at).toLocaleDateString()}</p>
+                                </div>
+                              </div>
+                              <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{p.method}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* WhatsApp Integration - DISBALED IF PAID */}
-            <div className={cn("space-y-4", isFullyPaid && "opacity-40 grayscale pointer-events-none")}>
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Reminders</label>
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Live Support</span>
+            {activeTab === 'history' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Reminder Trail</label>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <WhatsAppTemplateButton 
-                  label="Polite nudge" 
-                  description="Initial approach"
-                  onClick={() => startWhatsAppFlow('polite')}
-                  icon={<Shield size={16} className="text-indigo-500" />}
-                />
-                <WhatsAppTemplateButton 
-                  label="Firm ask" 
-                  description="Secondary request"
-                  onClick={() => startWhatsAppFlow('firm')}
-                  icon={<AlertCircle size={16} className="text-orange-500" />}
-                />
-                <WhatsAppTemplateButton 
-                  label="Final notice" 
-                  description="Critical ultimatum"
-                  onClick={() => startWhatsAppFlow('final')}
-                  icon={<Zap size={16} className="text-red-500" />}
-                />
-              </div>
-            </div>
-
-            {/* Public Link Section */}
-            <div className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Cloud Access Link</label>
-              <div className="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl flex items-center justify-between group hover:border-indigo-100 transition-all">
-                <div className="overflow-hidden mr-2">
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter mb-1">Public URL</p>
-                  <p className="text-xs text-slate-500 font-mono underline decoration-indigo-200 truncate">{window.location.host}/v/{invoice.public_token}</p>
-                </div>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/v/${invoice.public_token}`);
-                    alert("Link copied!");
-                  }}
-                  className="p-3 bg-white border border-slate-200 rounded-xl hover:border-indigo-600 transition-all text-slate-600 hover:text-indigo-600 shadow-sm active:scale-90"
-                >
-                  <Share2 size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Reminder History Log (Pro Gated) */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Reminder Trail</label>
-                {plan === 'free' && (
-                  <span className="text-[7px] font-black text-indigo-400 uppercase tracking-widest border border-indigo-100 px-1.5 py-0.5 rounded">Pro Feature</span>
-                )}
-              </div>
-              
-              <div className={cn("space-y-2 transition-all", plan === 'free' && "opacity-20 grayscale grayscale blur-[1px] pointer-events-none")}>
-                {reminderLogs.length > 0 ? (
-                  reminderLogs.map((log) => (
-                    <div key={log.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-[10px] font-bold">
-                      <div className="flex items-center gap-2">
-                        <div className={cn(
-                          "w-1.5 h-1.5 rounded-full",
-                          log.type === 'polite' ? 'bg-indigo-400' : 
-                          log.type === 'firm' ? 'bg-orange-400' : 'bg-red-400'
-                        )}></div>
-                        <span className="text-slate-600 uppercase tracking-tighter">{log.type} nudge deployed</span>
+                
+                <div className="space-y-3">
+                  {reminderLogs.length > 0 ? (
+                    reminderLogs.map((log) => (
+                      <div key={log.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={cn(
+                            "w-10 h-10 rounded-xl flex items-center justify-center border border-slate-50",
+                            log.tone === 'polite' ? 'bg-indigo-50 text-indigo-500' : 
+                            log.tone === 'firm' ? 'bg-orange-50 text-orange-500' : 'bg-red-50 text-red-500'
+                          )}>
+                             <Smartphone size={18} />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{log.tone} Nudge Sent</span>
+                            <p className="text-[9px] text-slate-400 font-mono mt-0.5">{new Date(log.sent_at).toLocaleDateString()} at {new Date(log.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        </div>
+                        <div className="text-[8px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50/50 px-2 py-1 rounded-full">
+                           {log.reminder_type}
+                        </div>
                       </div>
-                      <span className="text-slate-400 font-mono">{new Date(log.sent_at).toLocaleDateString()} at {new Date(log.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-8 border-2 border-dashed border-slate-100 rounded-2xl text-center">
-                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No reminders deployed yet</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* General Actions */}
-            <div className="space-y-3">
-              <div className="relative group">
-                <button 
-                  onClick={() => plan === 'pro' ? generatePDF() : setShowUpgradeModal(true)}
-                  className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl transition-all group border border-slate-200 shadow-sm"
-                >
-                  <div className="flex items-center">
-                    <Download size={18} className={cn("mr-3", plan === 'pro' ? "text-indigo-600" : "text-slate-300")} />
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-700 font-mono">Invoice Document</span>
-                  </div>
-                  {plan === 'free' ? (
-                    <Shield size={12} className="text-indigo-400" />
+                    ))
                   ) : (
-                    <ChevronRight size={14} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
-                  )}
-                </button>
-              </div>
-
-              {totalPaid > 0 && (
-                <>
-                  <div className="relative group">
-                    <button 
-                      onClick={() => plan === 'pro' ? generateReceipt() : setShowUpgradeModal(true)}
-                      className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl transition-all group border border-slate-200 shadow-sm"
-                    >
-                      <div className="flex items-center">
-                        <FileText size={18} className={cn("mr-3", plan === 'pro' ? "text-green-600" : "text-slate-300")} />
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-700 font-mono">Payment Receipt</span>
-                      </div>
-                      {plan === 'free' ? (
-                        <Shield size={12} className="text-indigo-400" />
-                      ) : (
-                        <ChevronRight size={14} className="text-slate-300 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
-                      )}
-                    </button>
-                  </div>
-
-                  <button 
-                    onClick={() => startWhatsAppFlow('receipt')}
-                    className="w-full flex items-center justify-between p-4 bg-green-50/20 hover:bg-green-50 rounded-2xl transition-all group border border-green-100/50"
-                  >
-                    <div className="flex items-center">
-                      <Smartphone size={18} className="mr-3 text-green-500" />
-                      <span className="text-xs font-black uppercase tracking-widest text-green-700 font-mono">Share Receipt</span>
+                    <div className="p-12 border-2 border-dashed border-slate-100 rounded-[2rem] text-center">
+                       <History size={32} className="mx-auto text-slate-100 mb-4" />
+                       <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No reminders deployed yet</p>
                     </div>
-                    <Share2 size={14} className="text-green-300 group-hover:text-green-600 transition-all" />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Support Actions */}
+            <div className="space-y-3 pt-4 border-t border-slate-50">
+               <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest mb-4">Assets & Links</label>
+               <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/v/${invoice.public_token}`);
+                      alert("Link copied!");
+                    }}
+                    className="flex flex-col items-center justify-center gap-3 p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-indigo-300 hover:bg-white transition-all group"
+                  >
+                     <Share2 size={24} className="text-slate-300 group-hover:text-indigo-600" />
+                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900">Copy Link</span>
                   </button>
-                </>
-              )}
+                  <button 
+                    onClick={() => plan === 'pro' ? generatePDF() : setShowUpgradeModal(true)}
+                    className="flex flex-col items-center justify-center gap-3 p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-indigo-300 hover:bg-white transition-all group"
+                  >
+                     <FileText size={24} className="text-slate-300 group-hover:text-indigo-600" />
+                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900">PDF Invoice</span>
+                  </button>
+               </div>
             </div>
           </div>
 
