@@ -6,6 +6,7 @@ import {
   Download, 
   Share2, 
   CheckCircle, 
+  CheckCircle2,
   Trash2, 
   Smartphone, 
   ChevronRight,
@@ -17,7 +18,8 @@ import {
   FileText,
   Calendar,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Scale
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
@@ -65,6 +67,13 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         .eq('invoice_id', invoice.id)
         .order('sent_at', { ascending: false });
       if (logs) setReminderLogs(logs);
+
+      const { data: events } = await supabase
+        .from('invoice_events')
+        .select('*')
+        .eq('invoice_id', invoice.id)
+        .order('created_at', { ascending: false });
+      if (events) setEventLogs(events);
 
       const { data: payData } = await supabase
         .from('payments')
@@ -282,6 +291,32 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const [showReminderEditor, setShowReminderEditor] = useState(false);
   const [editingMessage, setEditingMessage] = useState('');
   const [editingType, setEditingType] = useState<'polite' | 'firm' | 'final' | 'receipt' | null>(null);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [eventLogs, setEventLogs] = useState<any[]>([]);
+  const [showLegalModal, setShowLegalModal] = useState(false);
+
+  const handleGenerateAI = async (tone: 'polite' | 'firm' | 'final') => {
+    setIsGeneratingAI(true);
+    try {
+      const result = await recoveryService.generateAIReminder({
+        amount: remainingBalance,
+        daysOverdue: Math.floor((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)),
+        tone,
+        clientName: clientInfo.name,
+        businessName: userProfile?.business_name || 'My Business',
+        riskLevel: riskScore?.risk_level || 'low'
+      });
+      setEditingMessage(result.message);
+      setEditingType(tone);
+      setShowReminderEditor(true);
+    } catch (error) {
+      console.error('AI Error:', error);
+      alert('AI Generation failed. Falling back to template.');
+      startWhatsAppFlow(tone);
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   const getWhatsAppMessage = (type: 'polite' | 'firm' | 'final' | 'receipt') => {
     const businessName = userProfile?.business_name || 'My Business';
@@ -562,21 +597,35 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                   </div>
                 </div>
 
-                {/* Next Recommended Action */}
+                {/* AI Recommendation Panel */}
                 {!isFullyPaid && (
-                  <div className="bg-indigo-600 p-5 rounded-2xl text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                  <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-6 rounded-[2rem] text-white shadow-xl shadow-indigo-200 relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:scale-150 transition-transform duration-1000 opacity-50"></div>
                      <div className="relative z-10">
-                        <p className="text-[8px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">System Recommendation</p>
-                        <h4 className="text-base font-black italic tracking-tighter flex items-center gap-2 mb-3">
-                           <Zap size={16} /> Deploy {invoice.recovery_stage === 'pending' ? 'Gentle' : 'Firm'} Nudge
+                        <div className="flex items-center justify-between mb-4">
+                           <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">AI Recovery Agent</p>
+                           <Zap size={14} className="text-yellow-400 fill-yellow-400" />
+                        </div>
+                        <h4 className="text-xl font-black italic tracking-tighter mb-4 leading-tight">
+                           Generate AI-optimized nudge for ₹{formatCurrency(remainingBalance)}
                         </h4>
-                        <button 
-                          onClick={() => startWhatsAppFlow(invoice.recovery_stage === 'pending' ? 'polite' : 'firm')}
-                          className="w-full py-3 bg-white text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-lg"
-                        >
-                           Execute Action
-                        </button>
+                        <div className="grid grid-cols-3 gap-2">
+                           {(['polite', 'firm', 'final'] as const).map((tone) => (
+                             <button
+                               key={tone}
+                               onClick={() => handleGenerateAI(tone)}
+                               disabled={isGeneratingAI}
+                               className="py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all border border-white/10"
+                             >
+                               {tone}
+                             </button>
+                           ))}
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                           <p className="text-[10px] font-medium opacity-60 leading-relaxed">
+                              "AI predicts high effectiveness for a <span className="font-bold underline decoration-indigo-400 underline-offset-2">Firm</span> nudge today based on client history."
+                           </p>
+                        </div>
                      </div>
                   </div>
                 )}
@@ -612,33 +661,28 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                   </div>
                 </div>
 
-                {/* Legal Notice Action */}
+                {/* Recovery Actions Group */}
                 {!isFullyPaid && (
-                  <button 
-                    onClick={async () => {
-                      if (confirm('Initiate formal legal notice workflow? This will escalate the recovery stage.')) {
-                        await recoveryService.recordLegalNotice(invoice.id, invoice.user_id, {
-                          client_name: clientInfo.name,
-                          amount: remainingBalance,
-                          notice_type: 'first_warning'
-                        });
-                        onUpdate();
-                        alert('Legal notice drafted and invoice escalated.');
-                      }
-                    }}
-                    className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-between group hover:bg-red-600 transition-all shadow-xl shadow-slate-200/50"
-                  >
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white border border-white/10 group-hover:bg-white/20">
-                          <Layers size={18} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none mb-1">Legal Notice</p>
-                          <p className="text-[8px] font-bold text-white/60 uppercase tracking-tighter">Draft formal demand letter</p>
-                        </div>
-                    </div>
-                    <ArrowRight size={16} className="text-white/40 group-hover:translate-x-1 transition-transform" />
-                  </button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      onClick={() => setShowLegalModal(true)}
+                      className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-center gap-3 group hover:bg-red-600 transition-all shadow-xl shadow-slate-200/50"
+                    >
+                      <Scale size={20} className="text-white/60 group-hover:text-white" />
+                      <div className="text-left">
+                        <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none">Legal Notice</p>
+                      </div>
+                    </button>
+                    <button 
+                      onClick={() => updateStatus('paid')}
+                      className="p-4 bg-green-500 rounded-2xl border border-green-400 flex items-center justify-center gap-3 group hover:bg-green-600 transition-all shadow-xl shadow-green-100/50"
+                    >
+                      <CheckCircle2 size={20} className="text-white" />
+                      <div className="text-left">
+                        <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none">Recovered</p>
+                      </div>
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -717,37 +761,38 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
             {activeTab === 'history' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Reminder Trail</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Chronological Audit Trail</label>
                 </div>
                 
-                <div className="space-y-3">
-                  {reminderLogs.length > 0 ? (
-                    reminderLogs.map((log) => (
-                      <div key={log.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center border border-slate-50",
-                            log.tone === 'polite' ? 'bg-indigo-50 text-indigo-500' : 
-                            log.tone === 'firm' ? 'bg-orange-50 text-orange-500' : 'bg-red-50 text-red-500'
-                          )}>
-                             <Smartphone size={18} />
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{log.tone} Nudge Sent</span>
-                            <p className="text-[9px] text-slate-400 font-mono mt-0.5">{new Date(log.sent_at).toLocaleDateString()} at {new Date(log.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                          </div>
+                <div className="space-y-6 relative pl-4 border-l-2 border-slate-100 py-2">
+                  {eventLogs.concat(reminderLogs).sort((a,b) => new Date(b.created_at || b.sent_at).getTime() - new Date(a.created_at || a.sent_at).getTime()).map((event, i) => {
+                    const isReminder = !!event.tone;
+                    return (
+                      <div key={i} className="relative">
+                        <div className={cn(
+                          "absolute -left-[2.35rem] top-1.5 w-7 h-7 rounded-full border-4 border-white flex items-center justify-center shadow-sm",
+                          isReminder ? "bg-indigo-600 text-white" : "bg-slate-900 text-white"
+                        )}>
+                          {isReminder ? <Smartphone size={10} /> : <Zap size={10} />}
                         </div>
-                        <div className="text-[8px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50/50 px-2 py-1 rounded-full">
-                           {log.reminder_type}
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none">
+                            {isReminder ? `${event.tone} Reminder` : event.event_type.replace('_', ' ')}
+                          </p>
+                          <p className="text-[8px] font-mono text-slate-400 uppercase">
+                            {new Date(event.created_at || event.sent_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                          </p>
+                          {event.metadata && (
+                            <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                               <p className="text-[9px] text-slate-500 font-medium leading-relaxed italic">
+                                 {JSON.stringify(event.metadata)}
+                               </p>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="p-12 border-2 border-dashed border-slate-100 rounded-[2rem] text-center">
-                       <History size={32} className="mx-auto text-slate-100 mb-4" />
-                       <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No reminders deployed yet</p>
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -842,6 +887,14 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
           </div>
         )}
       </AnimatePresence>
+      {/* Legal Notice Modal */}
+      {showLegalModal && (
+        <LegalNoticeModal 
+          invoice={invoice} 
+          onClose={() => setShowLegalModal(false)} 
+          onUpdate={onUpdate}
+        />
+      )}
     </div>
   );
 }
