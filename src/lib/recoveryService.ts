@@ -83,7 +83,7 @@ export const recoveryService = {
   },
 
   /**
-   * Calculate and update risk score for a client using production-grade logic
+   * Calculate and update risk score for a client using Adaptive Intelligence
    */
   async calculateRiskScore(clientId: string, userId: string) {
     const { data: invoices, error: invError } = await supabase
@@ -93,50 +93,61 @@ export const recoveryService = {
 
     if (invError) throw invError;
 
+    // Behavioral Metrics
     let overdueCount = 0;
     let totalDelayDays = 0;
-    let ignoredReminders = 0;
-    let partialPayments = 0;
-    let recoveryFailures = 0;
+    let totalRemindersSent = 0;
+    let responsiveReminders = 0;
+    let ghostingDetected = false;
+    let settlementDurations: number[] = [];
 
     invoices?.forEach(inv => {
       const isOverdue = new Date(inv.due_date) < new Date() && inv.status !== 'paid';
-      if (isOverdue) overdueCount++;
-      if (inv.recovery_stage === 'failed') recoveryFailures++;
-      
       const reminders = inv.reminder_timeline || [];
-      const hasPayments = (inv.payments?.length || 0) > 0;
+      const pays = inv.payments || [];
       
-      if (reminders.length > 2 && !hasPayments && isOverdue) {
-        ignoredReminders += reminders.length;
+      if (isOverdue) overdueCount++;
+      totalRemindersSent += reminders.length;
+
+      // Responsiveness: Did they pay or communicate after a reminder?
+      reminders.forEach(rem => {
+        const afterRem = pays.filter(p => new Date(p.paid_at) > new Date(rem.sent_at));
+        if (afterRem.length > 0) responsiveReminders++;
+      });
+
+      // Settlement Duration
+      if (inv.status === 'paid' && pays.length > 0) {
+        const lastPay = new Date(Math.max(...pays.map((p: any) => new Date(p.paid_at).getTime())));
+        const duration = (lastPay.getTime() - new Date(inv.due_date).getTime()) / (1000 * 86400);
+        settlementDurations.push(Math.max(0, duration));
+        totalDelayDays += Math.max(0, duration);
       }
 
-      const totalPaid = inv.payments?.reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0;
-      if (totalPaid > 0 && totalPaid < Number(inv.amount)) {
-        partialPayments++;
-      }
-
-      if (inv.status === 'paid' && hasPayments) {
-        const lastPayment = new Date(Math.max(...inv.payments.map((p: any) => new Date(p.paid_at).getTime())));
-        const dueDate = new Date(inv.due_date);
-        if (lastPayment > dueDate) {
-          totalDelayDays += Math.floor((lastPayment.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-        }
+      // Check for Ghosting
+      if (isOverdue && reminders.length > 3 && pays.length === 0) {
+        ghostingDetected = true;
       }
     });
 
-    const paidCount = invoices?.filter(i => i.status === 'paid').length || 0;
-    const avgDelayDays = paidCount ? totalDelayDays / paidCount : 0;
+    const paidCount = settlementDurations.length;
+    const avgDelay = paidCount ? totalDelayDays / paidCount : 15;
+    const responsivenessRatio = totalRemindersSent ? (responsiveReminders / totalRemindersSent) * 100 : 50;
     
-    // Advanced Scoring Algorithm (0-100)
-    let score = (overdueCount * 15) + (avgDelayDays * 1.5) + (ignoredReminders * 8) + (recoveryFailures * 30);
-    score = Math.min(100, Math.max(0, score));
-
+    // Adaptive Scoring Algorithm (0-100)
+    let baseScore = (overdueCount * 12) + (avgDelay * 1.2) + (100 - responsivenessRatio) * 0.4;
+    if (ghostingDetected) baseScore += 25;
+    
+    const score = Math.min(100, Math.max(0, baseScore));
     let riskLevel: 'minimal' | 'low' | 'medium' | 'high' | 'critical' = 'minimal';
-    if (score > 80) riskLevel = 'critical';
-    else if (score > 60) riskLevel = 'high';
+    if (score > 85) riskLevel = 'critical';
+    else if (score > 65) riskLevel = 'high';
     else if (score > 40) riskLevel = 'medium';
     else if (score > 15) riskLevel = 'low';
+
+    // Predictive Recovery Probability
+    let recoveryProbability = 100 - (score * 0.8) - (overdueCount * 2);
+    if (avgDelay > 60) recoveryProbability -= 15;
+    recoveryProbability = Math.min(98, Math.max(5, recoveryProbability));
 
     const riskData = {
       client_id: clientId,
@@ -145,10 +156,10 @@ export const recoveryService = {
       risk_level: riskLevel,
       metrics: {
         overdue_count: overdueCount,
-        avg_delay_days: avgDelayDays,
-        ignored_reminders: ignoredReminders,
-        partial_payments: partialPayments,
-        recovery_failures: recoveryFailures
+        avg_delay_days: avgDelay,
+        responsiveness_ratio: responsivenessRatio,
+        recovery_probability: recoveryProbability,
+        ghosting_detected: ghostingDetected
       },
       last_calculated_at: new Date().toISOString()
     };
@@ -160,19 +171,55 @@ export const recoveryService = {
       .single();
 
     if (error) throw error;
-
-    await this.logEvent({
-      invoice_id: invoices?.[0]?.id || '',
-      user_id: userId,
-      event_type: 'risk_change',
-      metadata: { clientId, level: riskLevel, score }
-    });
-
     return data;
   },
 
   /**
-   * AI-Powered Reminder Generation
+   * AI-Powered Strategic Recommendations
+   */
+  async getStrategicRecommendation(invoice: any, risk: any) {
+    const daysOverdue = Math.floor((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 86400));
+    const prob = risk?.metrics?.recovery_probability || 70;
+    
+    let recommendation = {
+      action: 'Send Polite Nudge',
+      tone: 'polite',
+      timing: 'Today',
+      strategy: 'Client is relatively new or has low overdue count. Keep it soft.',
+      urgency: 'low' as 'low' | 'medium' | 'high' | 'critical'
+    };
+
+    if (prob < 40) {
+      recommendation = {
+        action: 'Legal Escalation',
+        tone: 'final',
+        timing: 'Immediate',
+        strategy: 'Critical high risk detected. Ghosting pattern identified. Move to legal notice.',
+        urgency: 'critical'
+      };
+    } else if (daysOverdue > 30 || risk?.score > 60) {
+      recommendation = {
+        action: 'Firm WhatsApp',
+        tone: 'firm',
+        timing: 'Morning (Best Response)',
+        strategy: 'Follow-up fatigue detected. Tighter follow-up window required.',
+        urgency: 'high'
+      };
+    } else if (risk?.metrics?.responsiveness_ratio < 30) {
+      recommendation = {
+        action: 'Variable Tone Nudge',
+        tone: 'firm',
+        timing: 'Within 48h',
+        strategy: 'Client typically unresponsive. Rotate channels or tone.',
+        urgency: 'medium'
+      };
+    }
+
+    return recommendation;
+  },
+
+  /**
+   * Behavior-Aware AI Reminder Generation
    */
   async generateAIReminder(context: {
     amount: number;
@@ -181,31 +228,34 @@ export const recoveryService = {
     clientName: string;
     businessName: string;
     riskLevel: string;
+    previousTone?: string;
+    hasPartialPayments?: boolean;
   }) {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error('AI Service Unconfigured');
-    }
+    if (!process.env.GEMINI_API_KEY) throw new Error('AI Service Unconfigured');
 
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const prompt = `
-      Act as a professional payment recovery expert for a business named "${context.businessName}".
-      Generate a WhatsApp reminder message for client "${context.clientName}" regarding overdue invoice of ₹${context.amount}.
-      Days overdue: ${context.daysOverdue}.
-      Client Risk Level: ${context.riskLevel}.
-      Requested Tone: ${context.tone}.
+      Act as an Adaptive AI Recovery Agent for "${context.businessName}".
+      Generate a high-conversion payment nudge for client "${context.clientName}".
       
-      Requirements:
-      - Short, punchy, and effective for WhatsApp.
-      - Include a clear call to action.
-      - If tone is "final", mention potential legal escalation.
-      - Do not include placeholders like [Link], use the phrase "Payment Link: {{link}}".
-      - Output JSON format: { "subject": "...", "message": "...", "nextStep": "..." }
+      Intelligence Context:
+      - Amount: ₹${context.amount}
+      - Overdue: ${context.daysOverdue} days
+      - Risk Level: ${context.riskLevel}
+      - Tone: ${context.tone}
+      - Last Reminder Tone: ${context.previousTone || 'None'}
+      - Partial Payments Made: ${context.hasPartialPayments ? 'Yes' : 'No'}
+      
+      Requirement:
+      - Form: WhatsApp-ready message (Short, Punchy, High-Urgency).
+      - Personalization Strike: Use the client's name and acknowledge history (e.g., "following up on our previous chat").
+      - Tone Calibration: If "${context.tone}" is final, maintain professional authority. If partial payments exist, leverage the "momentum" of their response.
+      - CTA Optimization: Clear, single-click directive. Use "Payment Link: {{link}}".
+      - Output Structure: JSON ONLY { "subject": "Brief Meta", "message": "The body", "strategy_node": "Why this message works" }
     `;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().replace(/```json|```/g, '').trim();
-    
+    const text = result.response.text().replace(/```json|```/g, '').trim();
     return JSON.parse(text);
   },
 

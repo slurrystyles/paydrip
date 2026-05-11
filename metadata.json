@@ -1,6 +1,6 @@
 {
   "name": "Paydrip",
-  "description": "Secure payment recovery tool for freelancers. Auto-track invoices, send WhatsApp reminders, and get paid via UPI in <60 seconds.",
+  "description": "Adaptive payment recovery platform for freelancers. Features predictive risk scoring, behavior-aware AI reminders, and strategic collection intelligence to maximize revenue recovery.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

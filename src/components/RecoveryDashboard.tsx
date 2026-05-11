@@ -216,10 +216,46 @@ export const RecoveryDashboard: React.FC = () => {
                                {stats?.overdueCount || 0} nodes are drifting toward <span className="text-orange-600 font-black">Critical Risk</span>. Immediate action required.
                              </p>
                           </div>
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-900">
+                                <History size={18} />
+                             </div>
+                             <p className="text-[11px] font-bold text-slate-600 leading-snug">
+                               Detected <span className="font-black italic">Ghosting Pattern</span> in active accounts. Switching to legal escalation recommended.
+                             </p>
+                          </div>
                        </div>
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Behavior Analysis Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                 <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl p-8">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                       <PieChart size={14} className="text-indigo-500" /> Chronic Late Payers
+                    </h4>
+                    <div className="space-y-4">
+                       {highRiskClients.filter(r => r.score > 70).slice(0, 3).map((r, i) => (
+                         <div key={i} className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-700">{r.clients?.name}</span>
+                            <span className="text-[10px] font-black text-red-500 uppercase">High Risk Pattern</span>
+                         </div>
+                       ))}
+                       {highRiskClients.filter(r => r.score > 70).length === 0 && (
+                          <p className="text-[10px] text-slate-300 italic uppercase">No chronic lates detected</p>
+                       )}
+                    </div>
+                 </div>
+                 <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl p-8">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                       <Clock size={14} className="text-orange-500" /> Response Intelligence
+                    </h4>
+                    <p className="text-[11px] font-bold text-slate-600 leading-relaxed italic">
+                       "Strategic analysis indicates highest response rate window: <span className="text-indigo-600 underline">Tuesdays between 10am - 12pm</span> for your sector."
+                    </p>
+                 </div>
               </div>
 
               {/* Activity Trail */}

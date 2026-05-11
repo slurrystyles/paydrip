@@ -70,7 +70,11 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
           .select('*')
           .eq('client_id', invoice.client_id)
           .single();
-        if (risk) setRiskScore(risk);
+        if (risk) {
+          setRiskScore(risk);
+          const rec = await recoveryService.getStrategicRecommendation(invoice, risk);
+          setRecommendation(rec);
+        }
       }
     }
 
@@ -319,6 +323,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [eventLogs, setEventLogs] = useState<any[]>([]);
   const [showLegalModal, setShowLegalModal] = useState(false);
+  const [recommendation, setRecommendation] = useState<any>(null);
 
   const handleGenerateAI = async (tone: 'polite' | 'firm' | 'final') => {
     setIsGeneratingAI(true);
@@ -329,7 +334,9 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         tone,
         clientName: clientInfo.name,
         businessName: userProfile?.business_name || 'My Business',
-        riskLevel: riskScore?.risk_level || 'low'
+        riskLevel: riskScore?.risk_level || 'low',
+        previousTone: reminderLogs[0]?.tone,
+        hasPartialPayments: payments.length > 0
       });
       setEditingMessage(result.message);
       setEditingType(tone);
@@ -628,12 +635,22 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:scale-150 transition-transform duration-1000 opacity-50"></div>
                      <div className="relative z-10">
                         <div className="flex items-center justify-between mb-4">
-                           <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">AI Recovery Agent</p>
-                           <Zap size={14} className="text-yellow-400 fill-yellow-400" />
+                           <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">AI Strategy Engine</p>
+                           <div className="flex items-center gap-2">
+                             {riskScore?.metrics?.recovery_probability && (
+                               <span className="text-[9px] bg-white/20 px-2 py-0.5 rounded-full font-black">
+                                 {Math.round(riskScore.metrics.recovery_probability)}% Recovery Prob
+                               </span>
+                             )}
+                             <Zap size={14} className="text-yellow-400 fill-yellow-400" />
+                           </div>
                         </div>
                         <h4 className="text-xl font-black italic tracking-tighter mb-4 leading-tight">
-                           Generate AI-optimized nudge for ₹{formatCurrency(remainingBalance)}
+                           {recommendation?.action || 'Optimize Recovery'} for ₹{formatCurrency(remainingBalance)}
                         </h4>
+                        <p className="text-[10px] opacity-80 mb-4 leading-relaxed font-medium">
+                          {recommendation?.strategy || 'AI is analyzing client behavior to suggest the best next step.'}
+                        </p>
                         <div className="grid grid-cols-3 gap-2">
                            {(['polite', 'firm', 'final'] as const).map((tone) => (
                              <button
@@ -646,10 +663,14 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                              </button>
                            ))}
                         </div>
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                           <p className="text-[10px] font-medium opacity-60 leading-relaxed">
-                              "AI predicts high effectiveness for a <span className="font-bold underline decoration-indigo-400 underline-offset-2">Firm</span> nudge today based on client history."
+                        <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
+                           <p className="text-[10px] font-black opacity-60 leading-relaxed uppercase tracking-widest">
+                              Peak Response: <span className="text-white font-bold">{recommendation?.timing || '24h'}</span>
                            </p>
+                           <div className="flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                           </div>
                         </div>
                      </div>
                   </div>
