@@ -61,6 +61,20 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       const { data: profile } = await supabase.from('users').select('*').eq('id', invoice.user_id).single();
       if (profile) setUserProfile(profile);
 
+      refreshLogs();
+      refreshPayments();
+
+      if (invoice.client_id) {
+        const { data: risk } = await supabase
+          .from('client_risk_scores')
+          .select('*')
+          .eq('client_id', invoice.client_id)
+          .single();
+        if (risk) setRiskScore(risk);
+      }
+    }
+
+    const refreshLogs = async () => {
       const { data: logs } = await supabase
         .from('reminder_timeline')
         .select('*')
@@ -74,25 +88,36 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         .eq('invoice_id', invoice.id)
         .order('created_at', { ascending: false });
       if (events) setEventLogs(events);
+    };
 
+    const refreshPayments = async () => {
       const { data: payData } = await supabase
         .from('payments')
         .select('*')
         .eq('invoice_id', invoice.id)
         .order('paid_at', { ascending: false });
       if (payData) setPayments(payData);
+    };
 
-      if (invoice.client_id) {
-        const { data: risk } = await supabase
-          .from('client_risk_scores')
-          .select('*')
-          .eq('client_id', invoice.client_id)
-          .single();
-        if (risk) setRiskScore(risk);
-      }
-    }
     fetchData();
-  }, [invoice.id, invoice.user_id, invoice.client_id]);
+
+    // Real-time Subscriptions
+    const sub = supabase
+      .channel(`invoice_${invoice.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments', filter: `invoice_id=eq.${invoice.id}` }, () => {
+        refreshPayments();
+        onUpdate();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reminder_timeline', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoice_events', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'invoices', filter: `id=eq.${invoice.id}` }, () => {
+        onUpdate();
+        fetchData();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(sub); };
+  }, [invoice.id, invoice.user_id, invoice.client_id, onUpdate]);
 
   async function recordPayment(amount: number) {
     if (amount <= 0) return;

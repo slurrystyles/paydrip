@@ -84,7 +84,7 @@ export interface ClientRiskScore {
   client_id: string;
   user_id: string;
   score: number;
-  risk_level: 'low' | 'medium' | 'high';
+  risk_level: 'minimal' | 'low' | 'medium' | 'high' | 'critical';
   metrics: {
     overdue_count: number;
     avg_delay_days: number;
@@ -95,16 +95,30 @@ export interface ClientRiskScore {
   last_calculated_at: string;
 }
 
+export interface InvoiceEvent {
+  id: string;
+  invoice_id: string;
+  user_id: string;
+  event_type: 'creation' | 'status_change' | 'reminder' | 'payment' | 'recovery_escalation' | 'legal_action' | 'risk_change' | 'system_note';
+  metadata: any;
+  created_at: string;
+}
+
+export type QueueStatus = 'pending' | 'processing' | 'processed' | 'cancelled' | 'failed';
+
 export interface EscalationQueueItem {
   id: string;
   invoice_id: string;
   user_id: string;
   scheduled_at: string;
-  action_type: 'send_reminder' | 'change_stage';
+  action_type: string;
   action_data: any;
-  status: 'pending' | 'processed' | 'cancelled' | 'failed';
+  status: QueueStatus;
+  attempt_count: number;
+  last_error?: string;
   processed_at?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface LegalNotice {
