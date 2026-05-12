@@ -197,6 +197,10 @@ export const recoveryService = {
     const daysOverdue = Math.floor((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 86400));
     const prob = risk?.metrics?.recovery_probability || 70;
     
+    // Plan Enforcement: Check if user can use AI recommendations
+    const entitled = await this.checkEntitlement('ai_recommendations', organizationId);
+    // if (!entitled) return null; // We can show a simplified version instead of returning null
+
     let recommendation = {
       action: 'Send Polite Nudge',
       tone: 'polite',
@@ -407,12 +411,13 @@ export const recoveryService = {
   /**
    * Bulk Actions
    */
-  async bulkProcessInvoices(invoiceIds: string[], action: 'nudge' | 'escalate' | 'pause' | 'resume') {
+  async bulkProcessInvoices(invoiceIds: string[], action: 'nudge' | 'escalate' | 'pause' | 'resume', organizationId: string) {
     if (action === 'pause' || action === 'resume') {
       const { error } = await supabase
         .from('invoices')
         .update({ automation_paused: action === 'pause' })
-        .in('id', invoiceIds);
+        .in('id', invoiceIds)
+        .eq('organization_id', organizationId);
       if (error) throw error;
     }
 
@@ -421,22 +426,26 @@ export const recoveryService = {
     }
   },
 
-  async toggleDispute(invoiceId: string, status: boolean) {
+  async toggleDispute(invoiceId: string, status: boolean, organizationId: string) {
     const { error } = await supabase
       .from('invoices')
       .update({ is_disputed: status, automation_paused: status })
-      .eq('id', invoiceId);
+      .eq('id', invoiceId)
+      .eq('organization_id', organizationId);
     if (error) throw error;
+
+    const { data: { user } } = await supabase.auth.getUser();
 
     await this.logEvent({
       invoice_id: invoiceId,
-      user_id: (await supabase.auth.getUser()).data.user?.id || '',
+      user_id: user?.id || '',
+      organization_id: organizationId,
       event_type: 'system_note',
       metadata: { action: 'dispute_toggle', status }
     });
   },
 
-  async retryQueueItem(itemId: string) {
+  async retryQueueItem(itemId: string, organizationId: string) {
     const { error } = await supabase
       .from('escalation_queue')
       .update({ 
@@ -444,7 +453,8 @@ export const recoveryService = {
         attempt_count: 0,
         updated_at: new Date().toISOString()
       })
-      .eq('id', itemId);
+      .eq('id', itemId)
+      .eq('organization_id', organizationId);
     if (error) throw error;
   }
 };

@@ -101,7 +101,7 @@ export default function LegalNoticeModal({ invoice, onClose, onUpdate }: Props) 
   const handleEscalate = async () => {
     setLoading(true);
     try {
-      await recoveryService.recordLegalNotice(invoice.id, invoice.user_id, {
+      await recoveryService.recordLegalNotice(invoice.id, invoice.user_id, invoice.organization_id, {
         template: selectedTemplate.id,
         amount: invoice.amount,
         status: 'dispatched'

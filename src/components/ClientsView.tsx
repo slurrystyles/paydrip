@@ -4,8 +4,10 @@ import { Client } from '../types';
 import { Plus, Search, Mail, Phone, Trash2, Edit2, ShieldAlert } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { RiskBadge } from './RiskBadge';
+import { useOrganization } from '../contexts/OrganizationContext';
 
 export default function ClientsView() {
+  const { currentOrganization } = useOrganization();
   const [clients, setClients] = useState<(Client & { risk_score?: any })[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,15 +21,16 @@ export default function ClientsView() {
 
   useEffect(() => {
     fetchClients();
-  }, []);
+  }, [currentOrganization]);
 
   async function fetchClients() {
+    if (!currentOrganization) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const [clientsRes, riskRes] = await Promise.all([
-      supabase.from('clients').select('*').order('name'),
-      supabase.from('client_risk_scores').select('*').eq('user_id', user.id)
+      supabase.from('clients').select('*').eq('organization_id', currentOrganization.id).order('name'),
+      supabase.from('client_risk_scores').select('*').eq('organization_id', currentOrganization.id)
     ]);
     
     if (!clientsRes.error && clientsRes.data) {
@@ -45,16 +48,24 @@ export default function ClientsView() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!currentOrganization) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const payload = { user_id: user.id, name, email, phone };
+    const payload = { 
+      user_id: user.id, 
+      organization_id: currentOrganization.id,
+      name, 
+      email, 
+      phone 
+    };
 
     if (editingId) {
       const { error } = await supabase
         .from('clients')
         .update(payload)
-        .eq('id', editingId);
+        .eq('id', editingId)
+        .eq('organization_id', currentOrganization.id);
       if (!error) {
         setClients(clients.map(c => c.id === editingId ? { ...c, ...payload } : c));
       }
@@ -72,8 +83,9 @@ export default function ClientsView() {
   }
 
   async function deleteClient(id: string) {
+    if (!currentOrganization) return;
     if (!confirm('Are you sure? All associated invoices will also be affected.')) return;
-    const { error } = await supabase.from('clients').delete().eq('id', id);
+    const { error } = await supabase.from('clients').delete().eq('id', id).eq('organization_id', currentOrganization.id);
     if (!error) {
       setClients(clients.filter(c => c.id !== id));
     }

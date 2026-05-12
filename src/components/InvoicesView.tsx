@@ -22,9 +22,12 @@ import InvoiceDetailModal from './InvoiceDetailModal';
 import UpgradeModal from './UpgradeModal';
 import { RiskBadge } from './RiskBadge';
 import { usePlan } from '../contexts/PlanContext';
+import { useOrganization } from '../contexts/OrganizationContext';
+import { recoveryService } from '../lib/recoveryService';
 
 export default function InvoicesView() {
   const { isLimitReached, refreshPlanData } = usePlan();
+  const { currentOrganization } = useOrganization();
   const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,8 +51,9 @@ export default function InvoicesView() {
   };
 
   const handleBulkAction = async (action: 'pause' | 'resume' | 'nudge') => {
+    if (!currentOrganization) return;
     try {
-      await recoveryService.bulkProcessInvoices(selectedIds, action);
+      await recoveryService.bulkProcessInvoices(selectedIds, action, currentOrganization.id);
       setSelectedIds([]);
       fetchData();
     } catch (e) {
@@ -59,13 +63,14 @@ export default function InvoicesView() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentOrganization]);
 
   async function fetchData() {
+    if (!currentOrganization) return;
     await refreshPlanData();
     const [invRes, cliRes] = await Promise.all([
-      supabase.from('invoices').select('*, client:clients(*)').order('created_at', { ascending: false }),
-      supabase.from('clients').select('*').order('name')
+      supabase.from('invoices').select('*, client:clients(*)').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }),
+      supabase.from('clients').select('*').eq('organization_id', currentOrganization.id).order('name')
     ]);
     
     if (!invRes.error && invRes.data) {

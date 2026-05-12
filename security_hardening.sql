@@ -1,61 +1,34 @@
 -- ENTERPRISE SECURITY & ABUSE PROTECTION ARCHITECTURE
 -- Platform: Paydrip Recovery Agent
--- Hardened Production Version
+-- Version: 2.0.0 (Hardened)
 
--- =====================================================
--- EXTENSIONS
--- =====================================================
-
+-- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- =====================================================
--- SECURITY SCHEMA
--- =====================================================
-
+-- 2. SCHEMA: SECURITY & AUDIT
 CREATE SCHEMA IF NOT EXISTS security;
 
--- =====================================================
--- RATE LIMITING
--- =====================================================
-
+-- 3. RATE LIMITING SYSTEM
 CREATE TABLE IF NOT EXISTS security.rate_limit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES auth.users(id),
     ip_address INET NOT NULL,
-    action TEXT NOT NULL,
+    action TEXT NOT NULL, -- e.g., 'reminder_send', 'ai_gen', 'invoice_create'
     request_count INT DEFAULT 1,
     window_start TIMESTAMPTZ DEFAULT now(),
     last_request_at TIMESTAMPTZ DEFAULT now(),
     expires_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now(),
-
-    CONSTRAINT uq_rate_limit_window
-    UNIQUE (user_id, ip_address, action)
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_rate_limit_lookup
-ON security.rate_limit_logs (
-    user_id,
-    ip_address,
-    action,
-    expires_at
-);
+CREATE INDEX idx_rate_limit_lookup ON security.rate_limit_logs (user_id, ip_address, action) WHERE expires_at > now();
 
-CREATE INDEX IF NOT EXISTS idx_rate_limit_clean
-ON security.rate_limit_logs (expires_at);
-
--- =====================================================
--- ABUSE & SPAM
--- =====================================================
-
+-- 4. ABUSE & SPAM PROTECTION
 CREATE TABLE IF NOT EXISTS security.abuse_flags (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES auth.users(id),
     ip_address INET,
-    severity TEXT CHECK (
-        severity IN ('low','medium','high','critical')
-    ),
+    severity TEXT CHECK (severity IN ('low', 'medium', 'high', 'critical')),
     reason TEXT NOT NULL,
     metadata JSONB DEFAULT '{}'::jsonb,
     is_active BOOLEAN DEFAULT true,
@@ -66,17 +39,14 @@ CREATE TABLE IF NOT EXISTS security.abuse_flags (
 CREATE TABLE IF NOT EXISTS security.spam_signals (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES auth.users(id),
-    invoice_id UUID REFERENCES public.invoices(id) ON DELETE CASCADE,
-    signal_type TEXT NOT NULL,
-    score FLOAT DEFAULT 0,
+    invoice_id UUID,
+    signal_type TEXT NOT NULL, -- e.g., 'reminder_flood', 'scraping_attempt'
+    score FLOAT DEFAULT 0.0,
     metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- =====================================================
--- WORKER SECURITY
--- =====================================================
-
+-- 5. WORKER & QUEUE HARDENING
 CREATE TABLE IF NOT EXISTS security.worker_execution_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     worker_name TEXT NOT NULL,
@@ -102,42 +72,31 @@ CREATE TABLE IF NOT EXISTS security.worker_tokens (
 CREATE TABLE IF NOT EXISTS security.queue_health_metrics (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     queue_name TEXT NOT NULL,
-    pending_count INT DEFAULT 0,
-    failure_rate FLOAT DEFAULT 0,
-    avg_processing_time INT DEFAULT 0,
+    pending_count INT,
+    failure_rate FLOAT,
+    avg_processing_time INT,
     last_snapshot_at TIMESTAMPTZ DEFAULT now()
 );
 
--- =====================================================
--- AUDIT LOGS
--- =====================================================
-
+-- 6. SECURITY AUDIT SYSTEM
 CREATE TABLE IF NOT EXISTS security.audit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    actor_id UUID,
-    actor_type TEXT CHECK (
-        actor_type IN ('user','system','worker','anonymous')
-    ),
+    actor_id UUID, -- References auth.users(id) or system
+    actor_type TEXT CHECK (actor_type IN ('user', 'system', 'worker', 'anonymous')),
     action TEXT NOT NULL,
     resource_type TEXT NOT NULL,
     resource_id UUID,
-    severity TEXT DEFAULT 'notice',
+    severity TEXT NOT NULL DEFAULT 'notice',
     ip_address INET,
     user_agent TEXT,
-    payload_snapshot JSONB DEFAULT '{}'::jsonb,
+    payload_snapshot JSONB,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_audit_resource
-ON security.audit_logs(resource_type, resource_id);
+CREATE INDEX idx_audit_resource ON security.audit_logs (resource_type, resource_id);
+CREATE INDEX idx_audit_time ON security.audit_logs (created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_audit_time
-ON security.audit_logs(created_at DESC);
-
--- =====================================================
--- SESSION SECURITY
--- =====================================================
-
+-- 7. SESSION & AUTH HARDENING
 CREATE TABLE IF NOT EXISTS security.active_sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES auth.users(id),
@@ -150,10 +109,6 @@ CREATE TABLE IF NOT EXISTS security.active_sessions (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_active_sessions_user
-ON security.active_sessions(user_id)
-WHERE revoked_at IS NULL;
-
 CREATE TABLE IF NOT EXISTS security.revoked_tokens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     token_hash TEXT NOT NULL UNIQUE,
@@ -162,339 +117,161 @@ CREATE TABLE IF NOT EXISTS security.revoked_tokens (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- =====================================================
--- PUBLIC ACCESS SECURITY
--- =====================================================
-
+-- 8. PUBLIC INVOICE ACCESS PROTECTION
 CREATE TABLE IF NOT EXISTS security.public_access_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    invoice_id UUID REFERENCES public.invoices(id) ON DELETE CASCADE,
+    invoice_id UUID NOT NULL,
     public_token TEXT NOT NULL,
     ip_address INET NOT NULL,
     user_agent TEXT,
-    status TEXT NOT NULL,
+    status TEXT NOT NULL, -- 'success', 'expired', 'blocked', 'brute_force'
     metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_public_access_ip
-ON security.public_access_logs(ip_address, created_at);
+CREATE INDEX idx_public_access_ip ON security.public_access_logs (ip_address, created_at) WHERE status != 'success';
 
--- =====================================================
--- ESCALATION QUEUE HARDENING
--- =====================================================
+-- 9. HELPER FUNCTIONS
 
-ALTER TABLE public.escalation_queue
-ADD COLUMN IF NOT EXISTS locked_at TIMESTAMPTZ,
-ADD COLUMN IF NOT EXISTS locked_by UUID;
-
--- =====================================================
--- RATE LIMIT FUNCTION
--- =====================================================
-
+-- Function to check and increment rate limit
 CREATE OR REPLACE FUNCTION security.check_rate_limit(
     p_user_id UUID,
     p_ip INET,
     p_action TEXT,
     p_limit INT,
     p_window_seconds INT
-)
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, security
-AS $$
+) RETURNS BOOLEAN AS $$
 DECLARE
+    v_window_start TIMESTAMPTZ := now() - (p_window_seconds || ' seconds')::interval;
+    v_log_id UUID;
     v_count INT;
 BEGIN
-
-    IF EXISTS (
-        SELECT 1
-        FROM security.abuse_flags
-        WHERE (
-            user_id = p_user_id
-            OR ip_address = p_ip
-        )
-        AND is_active = true
-        AND (
-            expires_at IS NULL
-            OR expires_at > now()
-        )
-    ) THEN
+    -- Check if user is locked out manually
+    IF EXISTS (SELECT 1 FROM security.abuse_flags WHERE (user_id = p_user_id OR ip_address = p_ip) AND is_active = true AND (expires_at IS NULL OR expires_at > now())) THEN
         RETURN FALSE;
     END IF;
 
-    INSERT INTO security.rate_limit_logs (
-        user_id,
-        ip_address,
-        action,
-        request_count,
-        window_start,
-        expires_at
-    )
-    VALUES (
-        p_user_id,
-        p_ip,
-        p_action,
-        1,
-        now(),
-        now() + (p_window_seconds || ' seconds')::interval
-    )
-
-    ON CONFLICT (user_id, ip_address, action)
-
-    DO UPDATE SET
-        request_count = CASE
-            WHEN security.rate_limit_logs.window_start <
-                 now() - (p_window_seconds || ' seconds')::interval
-            THEN 1
-            ELSE security.rate_limit_logs.request_count + 1
+    -- Upsert rate limit log
+    INSERT INTO security.rate_limit_logs (user_id, ip_address, action, request_count, window_start, expires_at)
+    VALUES (p_user_id, p_ip, p_action, 1, now(), now() + (p_window_seconds || ' seconds')::interval)
+    ON CONFLICT (user_id, ip_address, action) DO UPDATE
+    SET 
+        request_count = CASE 
+            WHEN security.rate_limit_logs.window_start < now() - (p_window_seconds || ' seconds')::interval THEN 1 
+            ELSE security.rate_limit_logs.request_count + 1 
         END,
-
-        window_start = CASE
-            WHEN security.rate_limit_logs.window_start <
-                 now() - (p_window_seconds || ' seconds')::interval
-            THEN now()
-            ELSE security.rate_limit_logs.window_start
+        window_start = CASE 
+            WHEN security.rate_limit_logs.window_start < now() - (p_window_seconds || ' seconds')::interval THEN now() 
+            ELSE security.rate_limit_logs.window_start 
         END,
-
         last_request_at = now()
+    RETURNING request_count INTO v_count;
 
-    RETURNING request_count
-    INTO v_count;
-
+    -- Return true if under limit
     RETURN v_count <= p_limit;
-
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- =====================================================
--- WORKER VALIDATION
--- =====================================================
-
+-- Function to validate worker signed token (Simplified POC)
 CREATE OR REPLACE FUNCTION security.validate_worker_invocation(
     p_worker_name TEXT,
     p_token TEXT
-)
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, security
-AS $$
+) RETURNS BOOLEAN AS $$
 BEGIN
-
     RETURN EXISTS (
-        SELECT 1
-        FROM security.worker_tokens
-        WHERE worker_name = p_worker_name
-        AND token_hash = crypt(p_token, token_hash)
-        AND NOT is_revoked
-        AND (
-            expires_at IS NULL
-            OR expires_at > now()
-        )
+        SELECT 1 FROM security.worker_tokens 
+        WHERE worker_name = p_worker_name 
+        AND token_hash = crypt(p_token, token_hash) -- Uses pgcrypto if enabled
+        AND NOT is_revoked 
+        AND (expires_at IS NULL OR expires_at > now())
     );
-
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- =====================================================
--- SPAM SCORE
--- =====================================================
+-- 10. RLS POLICIES (Hardened)
 
+-- Enable RLS on all security tables
+ALTER TABLE security.rate_limit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE security.abuse_flags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE security.audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE security.worker_execution_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE security.active_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE security.public_access_logs ENABLE ROW LEVEL SECURITY;
+
+-- Deny all by default for non-service users
+CREATE POLICY "service_role_manage_logs" ON security.audit_logs
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "users_see_own_audit" ON security.audit_logs
+    FOR SELECT TO authenticated USING (actor_id = auth.uid());
+
+CREATE POLICY "users_see_own_sessions" ON security.active_sessions
+    FOR SELECT TO authenticated USING (user_id = auth.uid());
+
+-- 11. AUTOMATION & CLEANUP
+CREATE OR REPLACE FUNCTION security.cleanup_expired_logs()
+RETURNS void AS $$
+BEGIN
+    DELETE FROM security.rate_limit_logs WHERE expires_at < now();
+    DELETE FROM security.audit_logs WHERE created_at < now() - interval '90 days';
+    DELETE FROM security.public_access_logs WHERE created_at < now() - interval '30 days';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 12. TRIGGERS FOR SECURITY EVENTS
+CREATE OR REPLACE FUNCTION security.log_invoice_status_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.status != NEW.status THEN
+        INSERT INTO security.audit_logs (actor_id, actor_type, action, resource_type, resource_id, severity, metadata)
+        VALUES (auth.uid(), 'user', 'status_update', 'invoice', NEW.id, 'notice', 
+                jsonb_build_object('old_status', OLD.status, 'new_status', NEW.status));
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER tr_audit_invoice_status
+    AFTER UPDATE OF status ON public.invoices
+    FOR EACH ROW EXECUTE FUNCTION security.log_invoice_status_change();
+
+-- 13. ANTI-SPAM SCORING HELPER
 CREATE OR REPLACE FUNCTION security.calculate_spam_score(
     p_user_id UUID,
     p_invoice_id UUID
-)
-RETURNS FLOAT
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, security
-AS $$
+) RETURNS FLOAT AS $$
 DECLARE
     v_reminder_count INT;
     v_recent_signals INT;
 BEGIN
+    -- Gauge frequency of reminders in last 24h
+    SELECT count(*) INTO v_reminder_count 
+    FROM public.reminder_timeline 
+    WHERE invoice_id = p_invoice_id AND sent_at > now() - interval '24 hours';
 
-    SELECT count(*)
-    INTO v_reminder_count
-    FROM public.reminder_timeline
-    WHERE invoice_id = p_invoice_id
-    AND sent_at > now() - interval '24 hours';
-
-    SELECT count(*)
-    INTO v_recent_signals
+    -- Check for previous spam signals
+    SELECT count(*) INTO v_recent_signals
     FROM security.spam_signals
-    WHERE invoice_id = p_invoice_id
-    AND created_at > now() - interval '7 days';
+    WHERE invoice_id = p_invoice_id AND created_at > now() - interval '7 days';
 
-    RETURN
-        (v_reminder_count * 0.4)
-        + (v_recent_signals * 0.2);
-
+    RETURN (v_reminder_count * 0.4) + (v_recent_signals * 0.2);
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- =====================================================
--- SIGNED TOKEN VALIDATION
--- =====================================================
-
+-- 14. SIGNED TOKEN VERIFICATION (HMAC-SHA256 simulation)
+-- Requires pgcrypto
 CREATE OR REPLACE FUNCTION security.verify_invoice_token(
     p_invoice_id UUID,
     p_token TEXT,
     p_secret TEXT
-)
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, security
-AS $$
+) RETURNS BOOLEAN AS $$
 BEGIN
-
-    RETURN p_token = encode(
-        hmac(
-            p_invoice_id::text,
-            p_secret,
-            'sha256'
-        ),
-        'hex'
-    );
-
+    -- Check if token matches a signed version of invoice_id + secret
+    -- In production, p_secret would be retrieved from vault
+    RETURN p_token = encode(hmac(p_invoice_id::text, p_secret, 'sha256'), 'hex');
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- =====================================================
--- CLEANUP
--- =====================================================
-
-CREATE OR REPLACE FUNCTION security.cleanup_expired_logs()
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, security
-AS $$
-BEGIN
-
-    DELETE FROM security.rate_limit_logs
-    WHERE expires_at < now();
-
-    DELETE FROM security.audit_logs
-    WHERE created_at < now() - interval '90 days';
-
-    DELETE FROM security.public_access_logs
-    WHERE created_at < now() - interval '30 days';
-
-END;
-$$;
-
--- =====================================================
--- AUDIT TRIGGER
--- =====================================================
-
-CREATE OR REPLACE FUNCTION security.log_invoice_status_change()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, security
-AS $$
-BEGIN
-
-    IF OLD.status IS DISTINCT FROM NEW.status THEN
-
-        INSERT INTO security.audit_logs (
-            actor_id,
-            actor_type,
-            action,
-            resource_type,
-            resource_id,
-            severity,
-            payload_snapshot
-        )
-        VALUES (
-            COALESCE(auth.uid(), NEW.user_id),
-            'user',
-            'status_update',
-            'invoice',
-            NEW.id,
-            'notice',
-
-            jsonb_build_object(
-                'old_status', OLD.status,
-                'new_status', NEW.status
-            )
-        );
-
-    END IF;
-
-    RETURN NEW;
-
-END;
-$$;
-
-DROP TRIGGER IF EXISTS tr_audit_invoice_status
-ON public.invoices;
-
-CREATE TRIGGER tr_audit_invoice_status
-AFTER UPDATE OF status
-ON public.invoices
-FOR EACH ROW
-EXECUTE FUNCTION security.log_invoice_status_change();
-
--- =====================================================
--- RLS
--- =====================================================
-
-ALTER TABLE security.rate_limit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE security.abuse_flags ENABLE ROW LEVEL SECURITY;
-ALTER TABLE security.spam_signals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE security.audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE security.worker_execution_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE security.worker_tokens ENABLE ROW LEVEL SECURITY;
-ALTER TABLE security.queue_health_metrics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE security.active_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE security.revoked_tokens ENABLE ROW LEVEL SECURITY;
-ALTER TABLE security.public_access_logs ENABLE ROW LEVEL SECURITY;
-
--- =====================================================
--- SERVICE ROLE POLICIES
--- =====================================================
-
-CREATE POLICY service_role_audit_logs
-ON security.audit_logs
-FOR ALL
-TO service_role
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY service_role_rate_limits
-ON security.rate_limit_logs
-FOR ALL
-TO service_role
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY service_role_abuse
-ON security.abuse_flags
-FOR ALL
-TO service_role
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY service_role_sessions
-ON security.active_sessions
-FOR ALL
-TO service_role
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY users_view_own_audit
-ON security.audit_logs
-FOR SELECT
-TO authenticated
-USING (actor_id = auth.uid());
-
-CREATE POLICY users_view_own_sessions
-ON security.active_sessions
-FOR SELECT
-TO authenticated
-USING (user_id = auth.uid());
+-- 15. INDEX OPTIMIZATION
+CREATE INDEX IF NOT EXISTS idx_rate_limit_clean ON security.rate_limit_logs (expires_at);
+CREATE INDEX IF NOT EXISTS idx_active_sessions_user ON security.active_sessions (user_id) WHERE revoked_at IS NULL;

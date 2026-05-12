@@ -26,23 +26,26 @@ import {
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { usePlan } from '../contexts/PlanContext';
+import { useOrganization } from '../contexts/OrganizationContext';
 
 export default function RecoveryAnalytics() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { plan } = usePlan();
+  const { currentOrganization } = useOrganization();
 
   useEffect(() => {
     async function loadStats() {
+      if (!currentOrganization) return;
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      const data = await recoveryService.getRecoveryStats(user.id);
+      const data = await recoveryService.getRecoveryStats(currentOrganization.id);
       setStats(data);
       setLoading(false);
     }
     loadStats();
-  }, []);
+  }, [currentOrganization]);
 
   if (loading) {
     return (

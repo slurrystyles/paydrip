@@ -24,9 +24,11 @@ import { supabase } from '../lib/supabase';
 import { recoveryService } from '../lib/recoveryService';
 import { EscalationQueueItem, Invoice, AuditLog, SecurityAbuseFlag } from '../types';
 import { formatCurrency, cn } from '../lib/utils';
+import { useOrganization } from '../contexts/OrganizationContext';
 import OperationsHealth from './OperationsHealth';
 
 export default function RecoveryOpsCenter() {
+  const { currentOrganization } = useOrganization();
   const [activeView, setActiveView] = useState<'board' | 'queue' | 'logs' | 'security' | 'health'>('board');
   const [queue, setQueue] = useState<EscalationQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,15 +37,16 @@ export default function RecoveryOpsCenter() {
   const [abuseFlags, setAbuseFlags] = useState<SecurityAbuseFlag[]>([]);
 
   const fetchData = async () => {
+    if (!currentOrganization) return;
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const [queueData, invoiceData, auditData, abuseData] = await Promise.all([
-      supabase.from('escalation_queue').select('*').order('scheduled_at', { ascending: true }),
-      supabase.from('invoices').select('*, client:clients(*)').order('created_at', { ascending: false }),
-      supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(20),
-      supabase.from('abuse_flags').select('*').order('created_at', { ascending: false }).limit(20)
+      supabase.from('escalation_queue').select('*').eq('organization_id', currentOrganization.id).order('scheduled_at', { ascending: true }),
+      supabase.from('invoices').select('*, client:clients(*)').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }),
+      supabase.from('audit_logs').select('*').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }).limit(20),
+      supabase.from('abuse_flags').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
     ]);
 
     setQueue(queueData.data || []);
@@ -55,12 +58,13 @@ export default function RecoveryOpsCenter() {
 
   useEffect(() => {
     fetchData();
-    const channel = supabase.channel('ops_center')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'escalation_queue' }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, fetchData)
+    if (!currentOrganization) return;
+    const channel = supabase.channel(`ops_center_${currentOrganization.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'escalation_queue', filter: `organization_id=eq.${currentOrganization.id}` }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `organization_id=eq.${currentOrganization.id}` }, fetchData)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [currentOrganization]);
 
   const handleRetry = async (id: string) => {
     try {

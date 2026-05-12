@@ -16,18 +16,21 @@ import { supabase } from '../lib/supabase';
 import { DeadLetterJob, UsageCounter, Subscription, AuditLog } from '../types';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
+import { useOrganization } from '../contexts/OrganizationContext';
 
 export default function OperationsHealth() {
+  const { currentOrganization } = useOrganization();
   const [dlqJobs, setDlqJobs] = useState<DeadLetterJob[]>([]);
   const [usage, setUsage] = useState<UsageCounter[]>([]);
   const [auditStats, setAuditStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
+    if (!currentOrganization) return;
     const [dlq, use, audit] = await Promise.all([
-      supabase.from('dead_letter_queue').select('*').order('quarantined_at', { ascending: false }).limit(20),
-      supabase.from('usage_counters').select('*').limit(50),
-      supabase.from('audit_logs').select('severity, count()', { count: 'exact', head: false }).neq('severity', null) // Simplified grouping
+      supabase.from('dead_letter_queue').select('*').eq('organization_id', currentOrganization.id).order('quarantined_at', { ascending: false }).limit(20),
+      supabase.from('usage_counters').select('*').eq('organization_id', currentOrganization.id).limit(50),
+      supabase.from('audit_logs').select('severity, count()', { count: 'exact', head: false }).eq('organization_id', currentOrganization.id).neq('severity', null) // Simplified grouping
     ]);
 
     setDlqJobs(dlq.data || []);
@@ -37,7 +40,7 @@ export default function OperationsHealth() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentOrganization]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">

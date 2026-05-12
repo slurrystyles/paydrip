@@ -31,6 +31,7 @@ import { usePlan } from '../contexts/PlanContext';
 import UpgradeModal from './UpgradeModal';
 import { recoveryService } from '../lib/recoveryService';
 import { RiskBadge } from './RiskBadge';
+import { useOrganization } from '../contexts/OrganizationContext';
 
 interface Props {
   invoice: Invoice;
@@ -39,6 +40,7 @@ interface Props {
 }
 
 export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props) {
+  const { currentOrganization } = useOrganization();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -70,10 +72,11 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
           .from('client_risk_scores')
           .select('*')
           .eq('client_id', invoice.client_id)
+          .eq('organization_id', invoice.organization_id)
           .single();
         if (risk) {
           setRiskScore(risk);
-          const rec = await recoveryService.getStrategicRecommendation(invoice, risk);
+          const rec = await recoveryService.getStrategicRecommendation(invoice, risk, invoice.organization_id);
           setRecommendation(rec);
         }
       }
@@ -84,6 +87,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         .from('reminder_timeline')
         .select('*')
         .eq('invoice_id', invoice.id)
+        .eq('organization_id', invoice.organization_id)
         .order('sent_at', { ascending: false });
       if (logs) setReminderLogs(logs);
 
@@ -91,6 +95,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         .from('invoice_events')
         .select('*')
         .eq('invoice_id', invoice.id)
+        .eq('organization_id', invoice.organization_id)
         .order('created_at', { ascending: false });
       if (events) setEventLogs(events);
     };
@@ -100,6 +105,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         .from('payments')
         .select('*')
         .eq('invoice_id', invoice.id)
+        .eq('organization_id', invoice.organization_id)
         .order('paid_at', { ascending: false });
       if (payData) setPayments(payData);
     };
@@ -130,6 +136,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     
     const { error } = await supabase.from('payments').insert([{
       invoice_id: invoice.id,
+      organization_id: invoice.organization_id,
       amount,
       method: 'upi',
       paid_at: new Date().toISOString()
@@ -138,13 +145,15 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     if (!error) {
        const newTotalPaid = totalPaid + amount;
        if (newTotalPaid >= invoice.amount) {
-         await supabase.from('invoices').update({ status: 'paid' }).eq('id', invoice.id);
+         await supabase.from('invoices').update({ status: 'paid' }).eq('id', invoice.id).eq('organization_id', invoice.organization_id);
        }
        
-       await supabase.from('events').insert([{
+       await supabase.from('invoice_events').insert([{
+         invoice_id: invoice.id,
          user_id: invoice.user_id,
-         type: 'payment_received',
-         meta: { invoice_id: invoice.id, amount }
+         organization_id: invoice.organization_id,
+         event_type: 'payment',
+         metadata: { amount }
        }]);
        
        setPaymentAmount('');
@@ -152,7 +161,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
        onUpdate();
        
        // Refresh payments
-       const { data } = await supabase.from('payments').select('*').eq('invoice_id', invoice.id).order('paid_at', { ascending: false });
+       const { data } = await supabase.from('payments').select('*').eq('invoice_id', invoice.id).eq('organization_id', invoice.organization_id).order('paid_at', { ascending: false });
        if (data) setPayments(data);
     }
     setLoading(false);
@@ -160,22 +169,25 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
 
   async function updateStatus(status: 'paid' | 'sent') {
     setLoading(true);
-    const { error } = await supabase.from('invoices').update({ status }).eq('id', invoice.id);
+    const { error } = await supabase.from('invoices').update({ status }).eq('id', invoice.id).eq('organization_id', invoice.organization_id);
     
     if (status === 'paid' && !error) {
        // If manually marking as paid, we record one big payment if none exist
        if (payments.length === 0) {
          await supabase.from('payments').insert([{
            invoice_id: invoice.id,
+           organization_id: invoice.organization_id,
            amount: invoice.amount,
            method: 'cash'
          }]);
        }
        
-       await supabase.from('events').insert([{
+       await supabase.from('invoice_events').insert([{
+         invoice_id: invoice.id,
          user_id: invoice.user_id,
-         type: 'payment_received',
-         meta: { invoice_id: invoice.id, amount: invoice.amount }
+         organization_id: invoice.organization_id,
+         event_type: 'payment',
+         metadata: { amount: invoice.amount }
        }]);
     }
     
@@ -185,7 +197,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
 
   async function deleteInvoice() {
     if (!confirm('Permanent delete?')) return;
-    const { error } = await supabase.from('invoices').delete().eq('id', invoice.id);
+    const { error } = await supabase.from('invoices').delete().eq('id', invoice.id).eq('organization_id', invoice.organization_id);
     if (!error) {
       onUpdate();
       onClose();
@@ -336,6 +348,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         clientName: clientInfo.name,
         businessName: userProfile?.business_name || 'My Business',
         riskLevel: riskScore?.risk_level || 'low',
+        organizationId: invoice.organization_id,
         previousTone: reminderLogs[0]?.tone,
         hasPartialPayments: payments.length > 0
       });
@@ -421,6 +434,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     await recoveryService.logReminder({
       invoice_id: invoice.id,
       user_id: invoice.user_id,
+      organization_id: invoice.organization_id,
       sent_at: new Date().toISOString(),
       channel: 'whatsapp',
       tone: editingType === 'receipt' ? 'polite' : editingType,
@@ -429,15 +443,17 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       message_content: editingMessage
     });
 
-    await supabase.from('events').insert([{
+    await supabase.from('invoice_events').insert([{
+      invoice_id: invoice.id,
       user_id: invoice.user_id,
-      type: 'reminder_sent',
-      meta: { invoice_id: invoice.id, type: editingType }
+      organization_id: invoice.organization_id,
+      event_type: 'reminder',
+      metadata: { type: editingType }
     }]);
 
     // Update status to 'sent' if it was draft
     if (invoice.status === 'draft') {
-      await supabase.from('invoices').update({ status: 'sent' }).eq('id', invoice.id);
+      await supabase.from('invoices').update({ status: 'sent' }).eq('id', invoice.id).eq('organization_id', invoice.organization_id);
     }
 
     // Auto-escalate if not paid and in recovery
@@ -448,12 +464,12 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       else if (editingType === 'final') nextStage = 'final_notice';
 
       if (nextStage !== invoice.recovery_stage) {
-        await recoveryService.updateRecoveryStage(invoice.id, nextStage, (invoice.escalation_level || 0) + 1);
+        await recoveryService.updateRecoveryStage(invoice.id, nextStage, invoice.organization_id, (invoice.escalation_level || 0) + 1);
       }
       
       // Re-calculate risk score
       if (invoice.client_id) {
-        await recoveryService.calculateRiskScore(invoice.client_id, invoice.user_id);
+        await recoveryService.calculateRiskScore(invoice.client_id, invoice.user_id, invoice.organization_id);
       }
     }
 
@@ -722,7 +738,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                         </div>
                      </div>
                      <button 
-                       onClick={() => recoveryService.toggleDispute(invoice.id, !invoice.is_disputed).then(onUpdate)}
+                       onClick={() => recoveryService.toggleDispute(invoice.id, !invoice.is_disputed, invoice.organization_id).then(onUpdate)}
                        className={cn(
                         "w-12 h-6 rounded-full transition-all relative p-1",
                         invoice.is_disputed ? "bg-red-500" : "bg-slate-200"

@@ -20,6 +20,7 @@ export interface UserProfile {
 export interface Client {
   id: string;
   user_id: string;
+  organization_id: string;
   name: string;
   email: string;
   phone?: string;
@@ -41,6 +42,7 @@ export type RecoveryStage =
 export interface Invoice {
   id: string;
   user_id: string;
+  organization_id: string;
   client_id: string | null;
   invoice_number: string;
   amount: number;
@@ -62,6 +64,7 @@ export interface ReminderTimeline {
   id: string;
   invoice_id: string;
   user_id: string;
+  organization_id: string;
   sent_at: string;
   channel: 'whatsapp' | 'email' | 'sms';
   tone: 'polite' | 'firm' | 'final' | 'legal';
@@ -75,6 +78,7 @@ export interface ReminderTimeline {
 export interface EscalationRule {
   id: string;
   user_id: string;
+  organization_id: string;
   days_after_due: number;
   target_stage: RecoveryStage;
   is_auto_escalate: boolean;
@@ -85,6 +89,7 @@ export interface EscalationRule {
 export interface ClientRiskScore {
   client_id: string;
   user_id: string;
+  organization_id: string;
   score: number;
   risk_level: 'minimal' | 'low' | 'medium' | 'high' | 'critical';
   metrics: {
@@ -100,6 +105,7 @@ export interface ClientRiskScore {
 export interface AuditLog {
   id: string;
   actor_id?: string;
+  organization_id?: string;
   actor_type: 'user' | 'system' | 'worker' | 'anonymous';
   action: string;
   resource_type: string;
@@ -114,6 +120,7 @@ export interface AuditLog {
 export interface SecurityAbuseFlag {
   id: string;
   user_id?: string;
+  organization_id?: string;
   ip_address?: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   reason: string;
@@ -126,6 +133,7 @@ export interface DeadLetterJob {
   id: string;
   original_queue_id?: string;
   user_id: string;
+  organization_id: string;
   action_type: string;
   payload: any;
   last_error?: string;
@@ -138,6 +146,7 @@ export interface DeadLetterJob {
 export interface UsageCounter {
   id: string;
   user_id: string;
+  organization_id: string;
   metric: string;
   count: number;
   period_start: string;
@@ -147,6 +156,7 @@ export interface UsageCounter {
 export interface Subscription {
   id: string;
   user_id: string;
+  organization_id: string;
   plan_id: string;
   status: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing';
   current_period_start: string;
@@ -210,6 +220,7 @@ export interface InvoiceEvent {
   id: string;
   invoice_id: string;
   user_id: string;
+  organization_id: string;
   event_type: 'creation' | 'status_change' | 'reminder' | 'payment' | 'recovery_escalation' | 'legal_action' | 'risk_change' | 'system_note';
   metadata: any;
   created_at: string;
@@ -221,6 +232,7 @@ export interface EscalationQueueItem {
   id: string;
   invoice_id: string;
   user_id: string;
+  organization_id: string;
   scheduled_at: string;
   action_type: string;
   action_data: any;
@@ -236,6 +248,7 @@ export interface LegalNotice {
   id: string;
   invoice_id: string;
   user_id: string;
+  organization_id: string;
   notice_type: string;
   dispatched_at?: string;
   tracking_number?: string;
@@ -247,6 +260,7 @@ export interface LegalNotice {
 export interface Payment {
   id: string;
   invoice_id: string;
+  organization_id: string;
   amount: number;
   method: 'upi' | 'cash' | 'bank';
   paid_at: string;
@@ -255,6 +269,7 @@ export interface Payment {
 export interface ReminderLog {
   id: string;
   invoice_id: string;
+  organization_id: string;
   type: 'polite' | 'firm' | 'final';
   sent_at: string;
 }
@@ -262,6 +277,7 @@ export interface ReminderLog {
 export interface InvoiceView {
   id: string;
   invoice_id: string;
+  organization_id: string;
   viewed_at: string;
   ip_address?: string;
 }
@@ -269,6 +285,7 @@ export interface InvoiceView {
 export interface AuditEvent {
   id: string;
   user_id: string;
+  organization_id: string;
   type: string;
   meta: any;
   created_at: string;

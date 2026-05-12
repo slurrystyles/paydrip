@@ -10,6 +10,7 @@ interface OrganizationContextType {
   isAdmin: boolean;
   isOwner: boolean;
   capabilities: string[];
+  createOrganization: (name: string, type?: string) => Promise<void>;
 }
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
@@ -68,6 +69,40 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   const currentMembership = memberships.find(m => m.organization_id === currentOrganization?.id);
   const role = currentMembership?.role;
 
+  const createOrganization = async (name: string, type: string = 'standard') => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // 1. Create Organization
+    const { data: org, error: orgError } = await supabase
+      .from('organizations')
+      .insert([{
+        name,
+        type,
+        is_active: true
+      }])
+      .select()
+      .single();
+
+    if (orgError) throw orgError;
+
+    // 2. Create Membership (as owner)
+    const { error: memError } = await supabase
+      .from('memberships')
+      .insert([{
+        organization_id: org.id,
+        user_id: user.id,
+        role: 'owner',
+        is_active: true
+      }]);
+
+    if (memError) throw memError;
+
+    // 3. Refresh and select
+    await fetchMemberships();
+    await setOrganization(org.id);
+  };
+
   const isAdmin = role === 'admin' || role === 'owner';
   const isOwner = role === 'owner';
 
@@ -89,7 +124,8 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       setOrganization,
       isAdmin,
       isOwner,
-      capabilities
+      capabilities,
+      createOrganization
     }}>
       {children}
     </OrganizationContext.Provider>

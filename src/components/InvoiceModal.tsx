@@ -79,11 +79,12 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
 
     if (!insertError && newInvoice) {
       // Production Audit: Log Event
-      await supabase.from('events').insert([{
+      await supabase.from('invoice_events').insert([{
+        invoice_id: newInvoice.id,
         user_id: user.id,
         organization_id: currentOrganization.id,
-        type: 'invoice_created',
-        meta: { invoice_id: newInvoice.id, amount: parseFloat(amount) }
+        event_type: 'creation',
+        metadata: { amount: parseFloat(amount) }
       }]);
 
       onSuccess();

@@ -33,6 +33,7 @@ export const securityService = {
     action: string;
     resourceType: string;
     resourceId?: string;
+    organizationId?: string;
     severity?: 'notice' | 'warning' | 'alert' | 'critical';
     metadata?: any;
   }) {
@@ -43,6 +44,7 @@ export const securityService = {
       .insert([{
         actor_id: user?.id,
         actor_type: user ? 'user' : 'anonymous',
+        organization_id: params.organizationId,
         action: params.action,
         resource_type: params.resourceType,
         resource_id: params.resourceId,

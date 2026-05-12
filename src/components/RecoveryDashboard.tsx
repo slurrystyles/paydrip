@@ -17,9 +17,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { recoveryService } from '../lib/recoveryService';
 import { supabase } from '../lib/supabase';
 import { formatCurrency, cn } from '../lib/utils';
+import { useOrganization } from '../contexts/OrganizationContext';
 import RecoveryAnalytics from './RecoveryAnalytics';
 
 export const RecoveryDashboard: React.FC = () => {
+  const { currentOrganization } = useOrganization();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics'>('overview');
@@ -27,13 +29,14 @@ export const RecoveryDashboard: React.FC = () => {
   const [highRiskClients, setHighRiskClients] = useState<any[]>([]);
 
   const fetchStats = async () => {
+    if (!currentOrganization) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const [statsData, events, riskScores] = await Promise.all([
-      recoveryService.getRecoveryStats(user.id),
-      supabase.from('invoice_events').select('*').order('created_at', { ascending: false }).limit(5),
-      supabase.from('client_risk_scores').select('*, clients(name)').eq('user_id', user.id).order('score', { ascending: false }).limit(3)
+      recoveryService.getRecoveryStats(currentOrganization.id),
+      supabase.from('invoice_events').select('*').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }).limit(5),
+      supabase.from('client_risk_scores').select('*, clients(name)').eq('organization_id', currentOrganization.id).order('score', { ascending: false }).limit(3)
     ]);
 
     setStats(statsData);
@@ -44,16 +47,16 @@ export const RecoveryDashboard: React.FC = () => {
   useEffect(() => {
     fetchStats().then(() => setLoading(false));
 
-    // Real-time Subscriptions
+    if (!currentOrganization) return;
     const sub = supabase
-      .channel('recovery_updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, fetchStats)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, fetchStats)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoice_events' }, fetchStats)
+      .channel(`recovery_updates_${currentOrganization.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `organization_id=eq.${currentOrganization.id}` }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments', filter: `organization_id=eq.${currentOrganization.id}` }, fetchStats)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoice_events', filter: `organization_id=eq.${currentOrganization.id}` }, fetchStats)
       .subscribe();
 
     return () => { supabase.removeChannel(sub); };
-  }, []);
+  }, [currentOrganization]);
 
   if (loading) return (
     <div className="p-12 flex flex-col items-center justify-center">
