@@ -168,6 +168,44 @@ export interface Plan {
   };
 }
 
+export type OrganizationType = 'standard' | 'agency' | 'enterprise';
+export type MembershipRole = 'owner' | 'admin' | 'manager' | 'operator' | 'analyst' | 'finance' | 'support' | 'read_only';
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  type: OrganizationType;
+  branding: {
+    primary_color: string;
+    logo_url: string | null;
+    company_name: string | null;
+    support_email: string | null;
+  };
+  is_active: boolean;
+  metadata: any;
+  created_at: string;
+}
+
+export interface Membership {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: MembershipRole;
+  is_active: boolean;
+  joined_at: string;
+  organization?: Organization;
+}
+
+export interface OrganizationLink {
+  id: string;
+  parent_org_id: string;
+  child_org_id: string;
+  link_type: string;
+  permissions: string[];
+  created_at: string;
+}
+
 export interface InvoiceEvent {
   id: string;
   invoice_id: string;
