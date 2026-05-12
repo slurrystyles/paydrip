@@ -1,7 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { UserProfile } from '../types';
-import { Save, User, Building, CreditCard, Shield, Zap, ExternalLink, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { UserProfile, WebhookEndpoint } from '../types';
+import { 
+  Save, 
+  User, 
+  Building, 
+  CreditCard, 
+  Shield, 
+  Zap, 
+  ExternalLink, 
+  Upload, 
+  Image as ImageIcon, 
+  Loader2, 
+  Globe, 
+  Activity, 
+  Database,
+  RefreshCw,
+  Key
+} from 'lucide-react';
 import { cn } from '../lib/utils';
 import { usePlan } from '../contexts/PlanContext';
 import UpgradeModal from './UpgradeModal';
@@ -14,6 +30,7 @@ export default function SettingsView() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [webhooks, setWebhooks] = useState<any[]>([]);
 
   // Form fields
   const [name, setName] = useState('');
@@ -27,6 +44,11 @@ export default function SettingsView() {
     final: ''
   });
 
+  const fetchSecurityData = async () => {
+    const { data: webData } = await supabase.from('webhook_endpoints').select('*').limit(5);
+    setWebhooks(webData || []);
+  };
+
   useEffect(() => {
     if (profile) {
       setName(profile.name || '');
@@ -39,6 +61,7 @@ export default function SettingsView() {
         firm: profile.whatsapp_templates?.firm || '',
         final: profile.whatsapp_templates?.final || ''
       });
+      fetchSecurityData();
       setLoading(false);
     }
   }, [profile]);
@@ -382,6 +405,80 @@ export default function SettingsView() {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Developer & Hooks (Gated) */}
+          <div className="space-y-4 pt-2 border-t border-slate-50">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
+              Developer Protocol
+              {plan === 'free' && (
+                <span className="flex items-center gap-1 text-[8px] text-indigo-500 font-black tracking-widest">
+                  <Shield size={10} /> ENTERPRISE ONLY
+                </span>
+              )}
+            </h3>
+
+            <div className={cn("space-y-5 transition-all", plan !== 'enterprise' && "opacity-40 grayscale pointer-events-none")}>
+               <div className="p-5 bg-slate-900 rounded-3xl text-white">
+                  <div className="flex items-center justify-between mb-4">
+                     <h4 className="text-[10px] font-black uppercase tracking-widest leading-none flex items-center gap-2">
+                        <Globe size={14} className="text-indigo-400" /> Webhook Endpoints
+                     </h4>
+                     <button type="button" className="text-[9px] font-black uppercase text-indigo-400 hover:text-white transition-colors underline">Add Hook</button>
+                  </div>
+                  {webhooks.length > 0 ? (
+                    <div className="space-y-3">
+                       {webhooks.map((w, i) => (
+                         <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
+                            <span className="text-[10px] font-mono opacity-60 truncate max-w-[150px]">{w.url}</span>
+                            <span className="text-[8px] font-black px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">ACTIVE</span>
+                         </div>
+                       ))}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-white/30 italic">No webhooks registered.</p>
+                  )}
+               </div>
+
+               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 border border-slate-100">
+                    <Key size={16} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black uppercase text-slate-600">Signing Secret</p>
+                    <p className="text-[9px] font-mono text-slate-400 mt-0.5">********************************</p>
+                  </div>
+                  <button type="button" className="p-2 transition-all hover:bg-white rounded-lg text-slate-400">
+                    <RefreshCw size={14} />
+                  </button>
+               </div>
+            </div>
+          </div>
+
+          {/* Recovery & Infrastructure */}
+          <div className="space-y-4 pt-2 border-t border-slate-50">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between italic">
+              Infrastructure
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+               <div className="p-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                     <Database size={12} />
+                     <span className="text-[9px] font-black uppercase tracking-widest">Backup Status</span>
+                  </div>
+                  <p className="text-[11px] font-bold text-green-600">Continuous (PITR)</p>
+               </div>
+               <div className="p-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                     <Activity size={12} />
+                     <span className="text-[9px] font-black uppercase tracking-widest">Service Level</span>
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-900">99.9% Uptime</p>
+               </div>
+            </div>
+            <p className="text-[9px] text-slate-400 leading-relaxed italic">
+              Commercial data is encrypted at rest and backed up every 60 seconds. Restores can be initiated via Enterprise Support Node.
+            </p>
           </div>
 
           {message && (

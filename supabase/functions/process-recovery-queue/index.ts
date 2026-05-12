@@ -90,24 +90,48 @@ serve(async (req) => {
           })
           .eq("id", item.id);
 
+        // 6. Usage Metering: Increment automation count
+        await supabase.rpc('security.increment_usage', {
+          p_user_id: item.user_id,
+          p_metric: 'automations_processed',
+          p_amount: 1
+        });
+
         results.push({ id: item.id, status: "success" });
 
       } catch (itemError) {
         console.error(`Error processing item ${item.id}:`, itemError);
         
-        // 6. Handle Retries
+        // 7. Handle Retries & Dead Letter Queue
         const newAttemptCount = (item.attempt_count || 0) + 1;
-        const newStatus = newAttemptCount >= 3 ? "failed" : "pending";
+        const isPoisonJob = itemError instanceof Error && itemError.message.includes('poison');
         
-        await supabase
-          .from("escalation_queue")
-          .update({ 
-            status: newStatus,
-            attempt_count: newAttemptCount,
+        if (newAttemptCount >= 3 || isPoisonJob) {
+          // Move to Dead Letter Queue
+          await supabase.from("dead_letter_queue").insert([{
+            original_queue_id: item.id,
+            user_id: item.user_id,
+            action_type: item.action_type,
+            payload: item.action_data,
             last_error: itemError instanceof Error ? itemError.message : String(itemError),
+            failure_reason: isPoisonJob ? 'poison_job' : 'max_retries'
+          }]);
+
+          await supabase.from("escalation_queue").update({ 
+            status: "failed",
             updated_at: new Date().toISOString()
-          })
-          .eq("id", item.id);
+          }).eq("id", item.id);
+        } else {
+          await supabase
+            .from("escalation_queue")
+            .update({ 
+              status: "pending",
+              attempt_count: newAttemptCount,
+              last_error: itemError instanceof Error ? itemError.message : String(itemError),
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", item.id);
+        }
 
         results.push({ id: item.id, status: "error", error: itemError });
       }

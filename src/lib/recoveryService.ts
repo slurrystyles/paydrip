@@ -328,7 +328,47 @@ export const recoveryService = {
     return stats;
   },
 
+  /**
+   * Usage & Plan Enforcement
+   */
+  async checkEntitlement(metric: string) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data, error } = await supabase.rpc('security.increment_usage', {
+      p_user_id: user.id,
+      p_metric: metric,
+      p_amount: 1
+    });
+
+    if (error) {
+      console.error('Usage check failed:', error);
+      // Fallback to allow if system error, but log it
+      return true;
+    }
+
+    return data as boolean;
+  },
+
+  async getUsageStats() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('usage_counters')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('period_start', new Date().toISOString().slice(0, 7) + '-01T00:00:00Z'); // Current month
+
+    if (error) throw error;
+    return data;
+  },
+
   async recordLegalNotice(invoiceId: string, userId: string, details: any) {
+    // Plan Enforcement: Check if user can send legal notice
+    const allowed = await this.checkEntitlement('legal_notices_sent');
+    if (!allowed) throw new Error('Legal Notice limit reached for your current plan.');
+
     const { error } = await supabase.from('legal_notices').insert([{
       invoice_id: invoiceId,
       user_id: userId,

@@ -122,6 +122,52 @@ export interface SecurityAbuseFlag {
   created_at: string;
 }
 
+export interface DeadLetterJob {
+  id: string;
+  original_queue_id?: string;
+  user_id: string;
+  action_type: string;
+  payload: any;
+  last_error?: string;
+  failure_reason: 'poison_job' | 'max_retries' | 'quota_exceeded' | 'invalid_payload' | 'system_error';
+  quarantined_at: string;
+  resolved_at?: string;
+  resolution_note?: string;
+}
+
+export interface UsageCounter {
+  id: string;
+  user_id: string;
+  metric: string;
+  count: number;
+  period_start: string;
+  period_end: string;
+}
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing';
+  current_period_start: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  slug: string;
+  price_monthly: number;
+  limits: {
+    ai_generations: number;
+    invoices_month: number;
+    automations_active: number;
+    team_seats: number;
+    retention_days: number;
+  };
+}
+
 export interface InvoiceEvent {
   id: string;
   invoice_id: string;
