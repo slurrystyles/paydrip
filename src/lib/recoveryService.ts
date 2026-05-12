@@ -18,6 +18,7 @@ export const recoveryService = {
   async logEvent(event: {
     invoice_id: string;
     user_id: string;
+    organization_id: string;
     event_type: 'creation' | 'status_change' | 'reminder' | 'payment' | 'recovery_escalation' | 'legal_action' | 'risk_change' | 'system_note';
     metadata?: any;
   }) {
@@ -34,7 +35,7 @@ export const recoveryService = {
   /**
    * Log a reminder to the timeline
    */
-  async logReminder(reminder: Omit<ReminderTimeline, 'id' | 'created_at' | 'updated_at'>) {
+  async logReminder(reminder: Omit<ReminderTimeline, 'id' | 'created_at' | 'updated_at'> & { organization_id: string }) {
     const { data, error } = await supabase
       .from('reminder_timeline')
       .insert([reminder])
@@ -47,6 +48,7 @@ export const recoveryService = {
     await this.logEvent({
       invoice_id: reminder.invoice_id,
       user_id: reminder.user_id,
+      organization_id: reminder.organization_id,
       event_type: 'reminder',
       metadata: { channel: reminder.channel, tone: reminder.tone, type: reminder.reminder_type }
     });
@@ -57,12 +59,13 @@ export const recoveryService = {
   /**
    * Update invoice recovery stage with event logging
    */
-  async updateRecoveryStage(invoiceId: string, stage: RecoveryStage, escalationLevel?: number) {
+  async updateRecoveryStage(invoiceId: string, stage: RecoveryStage, organizationId: string, escalationLevel?: number) {
     // Security: Log audit
     await securityService.logAudit({
       action: 'stage_update',
       resourceType: 'invoice',
       resourceId: invoiceId,
+      organizationId,
       metadata: { stage, level: escalationLevel }
     });
 
@@ -75,6 +78,7 @@ export const recoveryService = {
       .from('invoices')
       .update(updateData)
       .eq('id', invoiceId)
+      .eq('organization_id', organizationId)
       .select()
       .single();
 
@@ -84,6 +88,7 @@ export const recoveryService = {
     await this.logEvent({
       invoice_id: invoiceId,
       user_id: data.user_id,
+      organization_id: organizationId,
       event_type: 'recovery_escalation',
       metadata: { stage, level: escalationLevel }
     });
@@ -94,11 +99,12 @@ export const recoveryService = {
   /**
    * Calculate and update risk score for a client using Adaptive Intelligence
    */
-  async calculateRiskScore(clientId: string, userId: string) {
+  async calculateRiskScore(clientId: string, userId: string, organizationId: string) {
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
       .select('*, payments(*), reminder_timeline(*)')
-      .eq('client_id', clientId);
+      .eq('client_id', clientId)
+      .eq('organization_id', organizationId);
 
     if (invError) throw invError;
 
@@ -161,6 +167,7 @@ export const recoveryService = {
     const riskData = {
       client_id: clientId,
       user_id: userId,
+      organization_id: organizationId,
       score,
       risk_level: riskLevel,
       metrics: {
@@ -186,7 +193,7 @@ export const recoveryService = {
   /**
    * AI-Powered Strategic Recommendations
    */
-  async getStrategicRecommendation(invoice: any, risk: any) {
+  async getStrategicRecommendation(invoice: any, risk: any, organizationId: string) {
     const daysOverdue = Math.floor((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 86400));
     const prob = risk?.metrics?.recovery_probability || 70;
     
@@ -237,12 +244,17 @@ export const recoveryService = {
     clientName: string;
     businessName: string;
     riskLevel: string;
+    organizationId: string;
     previousTone?: string;
     hasPartialPayments?: boolean;
   }) {
     // Security: Rate Limit AI Generation
     const allowed = await securityService.checkRateLimit('ai_reminder_generation', 5, 3600);
     if (!allowed) throw new Error('AI Generation limit exceeded. Please wait or upgrade.');
+
+    // Plan Enforcement
+    const entitled = await this.checkEntitlement('ai_generations', context.organizationId);
+    if (!entitled) throw new Error('AI Generation quota reached for this organization.');
 
     if (!process.env.GEMINI_API_KEY) throw new Error('AI Service Unconfigured');
 
@@ -275,11 +287,11 @@ export const recoveryService = {
   /**
    * Get overall recovery analytics
    */
-  async getRecoveryStats(userId: string) {
+  async getRecoveryStats(organizationId: string) {
     const { data: invoices, error } = await supabase
       .from('invoices')
       .select('*, payments(*)')
-      .eq('user_id', userId);
+      .eq('organization_id', organizationId);
 
     if (error) throw error;
 
@@ -328,10 +340,49 @@ export const recoveryService = {
     return stats;
   },
 
-  async recordLegalNotice(invoiceId: string, userId: string, details: any) {
+  /**
+   * Usage & Plan Enforcement
+   */
+  async checkEntitlement(metric: string, organizationId: string) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data, error } = await supabase.rpc('security.increment_usage', {
+      p_org_id: organizationId,
+      p_metric: metric,
+      p_amount: 1,
+      p_user_id: user.id
+    });
+
+    if (error) {
+      console.error('Usage check failed:', error);
+      // Fallback to allow if system error, but log it
+      return true;
+    }
+
+    return data as boolean;
+  },
+
+  async getUsageStats(organizationId: string) {
+    const { data, error } = await supabase
+      .from('usage_counters')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('period_start', new Date().toISOString().slice(0, 7) + '-01T00:00:00Z'); // Current month
+
+    if (error) throw error;
+    return data;
+  },
+
+  async recordLegalNotice(invoiceId: string, userId: string, organizationId: string, details: any) {
+    // Plan Enforcement: Check if user can send legal notice
+    const allowed = await this.checkEntitlement('legal_notices_sent', organizationId);
+    if (!allowed) throw new Error('Legal Notice limit reached for your current plan.');
+
     const { error } = await supabase.from('legal_notices').insert([{
       invoice_id: invoiceId,
       user_id: userId,
+      organization_id: organizationId,
       ...details
     }]);
 
@@ -342,11 +393,12 @@ export const recoveryService = {
        recovery_stage: 'legal_warning',
        escalation_level: 5,
        updated_at: new Date().toISOString()
-    }).eq('id', invoiceId);
+    }).eq('id', invoiceId).eq('organization_id', organizationId);
 
     await this.logEvent({
       invoice_id: invoiceId,
       user_id: userId,
+      organization_id: organizationId,
       event_type: 'legal_action',
       metadata: { template: details.template }
     });

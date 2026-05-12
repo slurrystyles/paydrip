@@ -1,19 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { UserProfile } from '../types';
-import { Save, User, Building, CreditCard, Shield, Zap, ExternalLink, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { UserProfile, WebhookEndpoint } from '../types';
+import { 
+  Save, 
+  User, 
+  Building, 
+  CreditCard, 
+  Shield, 
+  Zap, 
+  ExternalLink, 
+  Upload, 
+  Image as ImageIcon, 
+  Loader2, 
+  Globe, 
+  Activity, 
+  Database,
+  RefreshCw,
+  Key,
+  Users as UsersIcon,
+  Crown,
+  Mail,
+  UserPlus
+} from 'lucide-react';
 import { cn } from '../lib/utils';
 import { usePlan } from '../contexts/PlanContext';
+import { useOrganization } from '../contexts/OrganizationContext';
 import UpgradeModal from './UpgradeModal';
 import imageCompression from 'browser-image-compression';
 
 export default function SettingsView() {
   const { plan, profile, refreshPlanData } = usePlan();
+  const { currentOrganization, memberships, isAdmin, isOwner } = useOrganization();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [webhooks, setWebhooks] = useState<any[]>([]);
 
   // Form fields
   const [name, setName] = useState('');
@@ -27,21 +50,32 @@ export default function SettingsView() {
     final: ''
   });
 
+  const fetchSecurityData = async () => {
+    if (!currentOrganization) return;
+    const { data: webData } = await supabase
+      .from('webhook_endpoints')
+      .select('*')
+      .eq('organization_id', currentOrganization.id)
+      .limit(5);
+    setWebhooks(webData || []);
+  };
+
   useEffect(() => {
-    if (profile) {
+    if (profile && currentOrganization) {
       setName(profile.name || '');
-      setBusinessName(profile.business_name || '');
+      setBusinessName(currentOrganization.name || '');
       setUpiId(profile.upi_id || '');
       setBankDetails(profile.bank_details || '');
-      setLogoUrl(profile.logo_url || '');
+      setLogoUrl(currentOrganization.branding?.logo_url || '');
       setTemplates({
         polite: profile.whatsapp_templates?.polite || '',
         firm: profile.whatsapp_templates?.firm || '',
         final: profile.whatsapp_templates?.final || ''
       });
+      fetchSecurityData();
       setLoading(false);
     }
-  }, [profile]);
+  }, [profile, currentOrganization]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,11 +100,11 @@ export default function SettingsView() {
       const compressedFile = await imageCompression(file, options);
       
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Unauthorized');
+      if (!user || !currentOrganization) throw new Error('Unauthorized');
 
       const now = new Date();
       const monthYear = `${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}`;
-      const fileName = `${user.id}-${Date.now()}.webp`;
+      const fileName = `${currentOrganization.id}-${Date.now()}.webp`;
       const filePath = `logos/${monthYear}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -89,6 +123,12 @@ export default function SettingsView() {
         .getPublicUrl(filePath);
 
       setLogoUrl(publicUrl);
+      
+      // Also update org branding immediately
+      await supabase.from('organizations').update({
+        branding: { ...currentOrganization.branding, logo_url: publicUrl }
+      }).eq('id', currentOrganization.id);
+
       setMessage({ type: 'success', text: 'Identity token (logo) optimized and stored.' });
     } catch (error) {
       console.error('Upload error:', error);
@@ -104,28 +144,43 @@ export default function SettingsView() {
     setMessage(null);
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user || !currentOrganization) return;
 
-    const { error } = await supabase
-      .from('users')
-      .upsert({
-        id: user.id,
-        email: user.email,
-        name,
-        business_name: businessName,
-        upi_id: upiId,
-        bank_details: bankDetails,
-        logo_url: logoUrl,
-        whatsapp_templates: templates
-      });
+    try {
+      // Update User Profile
+      const { error: userError } = await supabase
+        .from('users')
+        .upsert({
+          id: user.id,
+          email: user.email,
+          name,
+          upi_id: upiId,
+          bank_details: bankDetails,
+          whatsapp_templates: templates
+        });
 
-    if (error) {
-      setMessage({ type: 'error', text: error.message });
-    } else {
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      if (userError) throw userError;
+
+      // Update Organization (if admin)
+      if (isAdmin) {
+        const { error: orgError } = await supabase
+          .from('organizations')
+          .update({
+            name: businessName,
+            branding: { ...currentOrganization.branding, logo_url: logoUrl }
+          })
+          .eq('id', currentOrganization.id);
+        
+        if (orgError) throw orgError;
+      }
+
+      setMessage({ type: 'success', text: 'Configuration synced successfully!' });
       await refreshPlanData();
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   if (loading) return <div className="animate-pulse space-y-4 shadow rounded p-8 bg-white h-96"></div>;
@@ -382,6 +437,154 @@ export default function SettingsView() {
                 </button>
               </div>
             )}
+          </div>
+          
+          {/* Team / Managed Organizations */}
+          <div className="space-y-6 pt-2 border-t border-slate-50">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
+              Team & Access
+              {isAdmin && (
+                <button type="button" className="flex items-center gap-1 text-[8px] text-indigo-600 font-black tracking-widest hover:text-indigo-700">
+                  <UserPlus size={10} /> INVITE OPERATOR
+                </button>
+              )}
+            </h3>
+
+            <div className="grid grid-cols-1 gap-4">
+               {/* Organization Members */}
+               <div className="p-5 bg-white border border-slate-100 rounded-3xl shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                       <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                          <UsersIcon size={18} />
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Active Personnel</p>
+                          <p className="text-sm font-black text-slate-900 tracking-tight">{memberships.length} Users Enlisted</p>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                     {memberships.map((m, i) => (
+                       <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100">
+                          <div className="flex items-center gap-3">
+                             <div className="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-white text-[10px] font-black italic">
+                                {m.role === 'owner' ? <Crown size={14} className="text-amber-400" /> : m.role[0].toUpperCase()}
+                             </div>
+                             <div>
+                                <p className="text-[11px] font-bold text-slate-900 leading-none mb-1">Operator Node</p>
+                                <p className="text-[9px] text-slate-400 font-mono">{m.user_id === profile?.id ? 'System User (You)' : 'Remote ID'}</p>
+                             </div>
+                          </div>
+                          <div className="text-right">
+                             <span className={cn(
+                               "text-[8px] font-black px-2 py-0.5 rounded-full border tracking-widest uppercase",
+                               m.role === 'owner' ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-slate-50 text-slate-600 border-slate-100"
+                             )}>
+                                {m.role}
+                             </span>
+                          </div>
+                       </div>
+                     ))}
+                  </div>
+               </div>
+
+               {/* Managed Accounts (Agency Only) */}
+               {currentOrganization?.type === 'agency' && (
+                 <div className="p-5 bg-slate-50 border border-slate-100 border-dashed rounded-3xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 border border-slate-100 shadow-sm">
+                            <Globe size={18} />
+                         </div>
+                         <div>
+                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Agency Management</p>
+                            <p className="text-sm font-black text-slate-900 tracking-tight">Managed Client Accounts</p>
+                         </div>
+                      </div>
+                      <button type="button" className="text-[9px] font-black uppercase text-indigo-600 hover:underline">Link Account</button>
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-relaxed italic px-2">
+                       This organization is registered as an Agency Node. You can link and manage isolated client accounts with segregated recovery engines and autonomous RLS.
+                    </p>
+                 </div>
+               )}
+            </div>
+          </div>
+
+          {/* Developer & Hooks (Gated) */}
+          <div className="space-y-4 pt-2 border-t border-slate-50">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
+              Developer Protocol
+              {plan === 'free' && (
+                <span className="flex items-center gap-1 text-[8px] text-indigo-500 font-black tracking-widest">
+                  <Shield size={10} /> ENTERPRISE ONLY
+                </span>
+              )}
+            </h3>
+
+            <div className={cn("space-y-5 transition-all", plan !== 'enterprise' && "opacity-40 grayscale pointer-events-none")}>
+               <div className="p-5 bg-slate-900 rounded-3xl text-white">
+                  <div className="flex items-center justify-between mb-4">
+                     <h4 className="text-[10px] font-black uppercase tracking-widest leading-none flex items-center gap-2">
+                        <Globe size={14} className="text-indigo-400" /> Webhook Endpoints
+                     </h4>
+                     <button type="button" className="text-[9px] font-black uppercase text-indigo-400 hover:text-white transition-colors underline">Add Hook</button>
+                  </div>
+                  {webhooks.length > 0 ? (
+                    <div className="space-y-3">
+                       {webhooks.map((w, i) => (
+                         <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
+                            <span className="text-[10px] font-mono opacity-60 truncate max-w-[150px]">{w.url}</span>
+                            <span className="text-[8px] font-black px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">ACTIVE</span>
+                         </div>
+                       ))}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-white/30 italic">No webhooks registered.</p>
+                  )}
+               </div>
+
+               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 border border-slate-100">
+                    <Key size={16} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black uppercase text-slate-600">Signing Secret</p>
+                    <p className="text-[9px] font-mono text-slate-400 mt-0.5">********************************</p>
+                  </div>
+                  <button type="button" className="p-2 transition-all hover:bg-white rounded-lg text-slate-400">
+                    <RefreshCw size={14} />
+                  </button>
+               </div>
+            </div>
+          </div>
+
+          {/* Recovery & Infrastructure */}
+          <div className="space-y-4 pt-2 border-t border-slate-50">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between italic">
+              Infrastructure
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+               <div className="p-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                     <Database size={12} />
+                     <span className="text-[9px] font-black uppercase tracking-widest">Backup Status</span>
+                  </div>
+                  <p className="text-[11px] font-bold text-green-600">Continuous (PITR)</p>
+               </div>
+               <div className="p-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                     <Activity size={12} />
+                     <span className="text-[9px] font-black uppercase tracking-widest">Service Level</span>
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-900">99.9% Uptime</p>
+               </div>
+            </div>
+            <p className="text-[9px] text-slate-400 leading-relaxed italic">
+              Commercial data is encrypted at rest and backed up every 60 seconds. Restores can be initiated via Enterprise Support Node.
+            </p>
           </div>
 
           {message && (

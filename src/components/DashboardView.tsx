@@ -31,6 +31,7 @@ import { usePlan } from '../contexts/PlanContext';
 
 export default function DashboardView() {
   const { plan, isLimitReached, refreshPlanData } = usePlan();
+  const { currentOrganization } = useOrganization();
   const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,35 +41,47 @@ export default function DashboardView() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   async function fetchData() {
+    if (!currentOrganization) return;
     setLoading(true);
     await refreshPlanData();
+    
+    // Scoped query for current organization
     const { data: invData, error: invError } = await supabase
       .from('invoices')
       .select('*, client:clients(*)')
+      .eq('organization_id', currentOrganization.id)
       .order('created_at', { ascending: false });
     
     if (!invError && invData) {
-      // Fetch payments for these invoices to calculate balances
+      // Fetch payments for these invoices
       const invoiceIds = invData.map(i => i.id);
-      const { data: paymentsData } = await supabase
-        .from('payments')
-        .select('*')
-        .in('invoice_id', invoiceIds);
+      if (invoiceIds.length > 0) {
+        const { data: paymentsData } = await supabase
+          .from('payments')
+          .select('*')
+          .in('invoice_id', invoiceIds);
 
-      const computedInvoices = invData.map(inv => {
-        const invPayments = paymentsData?.filter(p => p.invoice_id === inv.id) || [];
-        const totalPaid = invPayments.reduce((sum, p) => sum + p.amount, 0);
-        return {
-          ...inv,
-          totalPaid,
-          remainingBalance: Math.max(0, inv.amount - totalPaid)
-        };
-      });
-
-      setInvoices(computedInvoices);
+        const computedInvoices = invData.map(inv => {
+          const invPayments = paymentsData?.filter(p => p.invoice_id === inv.id) || [];
+          const totalPaid = invPayments.reduce((sum, p) => sum + p.amount, 0);
+          return {
+            ...inv,
+            totalPaid,
+            remainingBalance: Math.max(0, inv.amount - totalPaid)
+          };
+        });
+        setInvoices(computedInvoices);
+      } else {
+        setInvoices([]);
+      }
     }
 
-    const { data: clientData } = await supabase.from('clients').select('*').order('name');
+    const { data: clientData } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('organization_id', currentOrganization.id)
+      .order('name');
+    
     if (clientData) setClients(clientData);
 
     setLoading(false);
@@ -76,7 +89,7 @@ export default function DashboardView() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentOrganization]);
 
   const totalOutstanding = invoices
     .reduce((sum, i) => sum + (i.remainingBalance ?? i.amount), 0);

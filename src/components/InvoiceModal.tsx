@@ -4,6 +4,7 @@ import { Client } from '../types';
 import { X, Calendar, FileText, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePlan } from '../contexts/PlanContext';
+import { useOrganization } from '../contexts/OrganizationContext';
 
 interface Props {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface Props {
 
 export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Props) {
   const { isLimitReached } = usePlan();
+  const { currentOrganization } = useOrganization();
   const [clientId, setClientId] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -23,6 +25,8 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!currentOrganization) return;
+    
     if (isLimitReached) {
       setError("Free plan limit reached (3 invoices). Please upgrade to continue.");
       return;
@@ -33,23 +37,20 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Fetch limit check (existing logic)...
+    // Fetch limit check relative to organization
     const { count, error: countError } = await supabase
       .from('invoices')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
+      .eq('organization_id', currentOrganization.id);
 
     if (countError) throw countError;
-
-    if (count !== null && count >= 100) { // Increased for Pro/Dev purposes or check tier
-      // Implementation of tier check can go here
-    }
 
     // NEW Snapshot Rule: Fetch client data for immutable storage
     const { data: clientData, error: clientFetchError } = await supabase
       .from('clients')
       .select('*')
       .eq('id', clientId)
+      .eq('organization_id', currentOrganization.id) // Scoped fetch
       .single();
 
     if (clientFetchError) {
@@ -64,6 +65,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
       .from('invoices')
       .insert([{
         user_id: user.id,
+        organization_id: currentOrganization.id,
         client_id: clientId,
         invoice_number: invoiceNumber,
         amount: parseFloat(amount),
@@ -79,6 +81,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
       // Production Audit: Log Event
       await supabase.from('events').insert([{
         user_id: user.id,
+        organization_id: currentOrganization.id,
         type: 'invoice_created',
         meta: { invoice_id: newInvoice.id, amount: parseFloat(amount) }
       }]);

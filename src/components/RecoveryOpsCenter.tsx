@@ -24,9 +24,10 @@ import { supabase } from '../lib/supabase';
 import { recoveryService } from '../lib/recoveryService';
 import { EscalationQueueItem, Invoice, AuditLog, SecurityAbuseFlag } from '../types';
 import { formatCurrency, cn } from '../lib/utils';
+import OperationsHealth from './OperationsHealth';
 
 export default function RecoveryOpsCenter() {
-  const [activeView, setActiveView] = useState<'board' | 'queue' | 'logs' | 'security'>('board');
+  const [activeView, setActiveView] = useState<'board' | 'queue' | 'logs' | 'security' | 'health'>('board');
   const [queue, setQueue] = useState<EscalationQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -87,7 +88,8 @@ export default function RecoveryOpsCenter() {
              { id: 'board', label: 'Kanban', icon: <Kanban size={14} /> },
              { id: 'queue', label: 'Monitor', icon: <ListIcon size={14} /> },
              { id: 'logs', label: 'Logs', icon: <History size={14} /> },
-             { id: 'security', label: 'Security', icon: <ShieldAlert size={14} /> }
+             { id: 'security', label: 'Security', icon: <ShieldAlert size={14} /> },
+             { id: 'health', label: 'Health', icon: <Activity size={14} /> }
            ].map((tab) => (
              <button
                key={tab.id}
@@ -391,6 +393,15 @@ export default function RecoveryOpsCenter() {
                    </div>
                 </div>
              </div>
+          </motion.div>
+        )}
+        {activeView === 'health' && (
+          <motion.div 
+            key="health"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+             <OperationsHealth />
           </motion.div>
         )}
       </AnimatePresence>

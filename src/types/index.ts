@@ -122,6 +122,90 @@ export interface SecurityAbuseFlag {
   created_at: string;
 }
 
+export interface DeadLetterJob {
+  id: string;
+  original_queue_id?: string;
+  user_id: string;
+  action_type: string;
+  payload: any;
+  last_error?: string;
+  failure_reason: 'poison_job' | 'max_retries' | 'quota_exceeded' | 'invalid_payload' | 'system_error';
+  quarantined_at: string;
+  resolved_at?: string;
+  resolution_note?: string;
+}
+
+export interface UsageCounter {
+  id: string;
+  user_id: string;
+  metric: string;
+  count: number;
+  period_start: string;
+  period_end: string;
+}
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing';
+  current_period_start: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  slug: string;
+  price_monthly: number;
+  limits: {
+    ai_generations: number;
+    invoices_month: number;
+    automations_active: number;
+    team_seats: number;
+    retention_days: number;
+  };
+}
+
+export type OrganizationType = 'standard' | 'agency' | 'enterprise';
+export type MembershipRole = 'owner' | 'admin' | 'manager' | 'operator' | 'analyst' | 'finance' | 'support' | 'read_only';
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  type: OrganizationType;
+  branding: {
+    primary_color: string;
+    logo_url: string | null;
+    company_name: string | null;
+    support_email: string | null;
+  };
+  is_active: boolean;
+  metadata: any;
+  created_at: string;
+}
+
+export interface Membership {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: MembershipRole;
+  is_active: boolean;
+  joined_at: string;
+  organization?: Organization;
+}
+
+export interface OrganizationLink {
+  id: string;
+  parent_org_id: string;
+  child_org_id: string;
+  link_type: string;
+  permissions: string[];
+  created_at: string;
+}
+
 export interface InvoiceEvent {
   id: string;
   invoice_id: string;

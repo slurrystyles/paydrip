@@ -17,6 +17,7 @@ import PrivacyPage from './components/PrivacyPage';
 import TermsPage from './components/TermsPage';
 import ContactPage from './components/ContactPage';
 import { PlanProvider } from './contexts/PlanContext';
+import { OrganizationProvider } from './contexts/OrganizationContext';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -55,9 +56,10 @@ export default function App() {
 
   return (
     <Router>
-      <PlanProvider>
-        <ScrollToTop />
-        <Routes>
+      <OrganizationProvider>
+        <PlanProvider>
+          <ScrollToTop />
+          <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage user={user} />} />
           <Route path="/v/:token" element={<PublicInvoiceView />} />
@@ -77,6 +79,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </PlanProvider>
-    </Router>
-  );
+    </OrganizationProvider>
+  </Router>
+);
 }

@@ -18,26 +18,29 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from '@supabase/supabase-js';
 import { usePlan } from '../contexts/PlanContext';
+import { useOrganization } from '../contexts/OrganizationContext';
 import UpgradeModal from './UpgradeModal';
+import OrganizationSwitcher from './OrganizationSwitcher';
 
 interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   path: string;
   active: boolean;
-  key?: React.Key;
+  disabled?: boolean;
 }
 
-function NavItem({ icon, label, path, active }: NavItemProps) {
+function NavItem({ icon, label, path, active, disabled }: NavItemProps) {
   const navigate = useNavigate();
   return (
     <button
-      onClick={() => navigate(path)}
+      onClick={() => !disabled && navigate(path)}
       className={cn(
         "flex items-center w-full px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-300 relative group overflow-hidden",
         active 
           ? "bg-slate-900 text-white shadow-2xl shadow-slate-200" 
-          : "text-slate-400 hover:text-slate-900 hover:bg-slate-50"
+          : "text-slate-400 hover:text-slate-900 hover:bg-slate-50",
+        disabled && "opacity-30 grayscale cursor-not-allowed"
       )}
     >
       <span className={cn("mr-3 transition-colors z-10", active ? "text-indigo-400" : "text-slate-300 group-hover:text-indigo-600")}>{icon}</span>
@@ -61,6 +64,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   const navigate = useNavigate();
   const location = useLocation();
   const { plan } = usePlan();
+  const { currentOrganization, capabilities } = useOrganization();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -69,13 +73,15 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   }, []);
 
   const navItems = [
-    { icon: <LayoutDashboard size={18} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <Zap size={18} />, label: 'Intelligence', path: '/recovery' },
-    { icon: <SettingsIcon size={18} />, label: 'Operations', path: '/operations' },
-    { icon: <FileText size={18} />, label: 'Invoices', path: '/invoices' },
-    { icon: <Users size={18} />, label: 'Clients', path: '/clients' },
-    { icon: <SettingsIcon size={18} />, label: 'Settings', path: '/settings' },
+    { icon: <LayoutDashboard size={18} />, label: 'Dashboard', path: '/dashboard', required: 'read' },
+    { icon: <Zap size={18} />, label: 'Intelligence', path: '/recovery', required: 'recover' },
+    { icon: <SettingsIcon size={18} />, label: 'Operations', path: '/operations', required: 'recover' },
+    { icon: <FileText size={18} />, label: 'Invoices', path: '/invoices', required: 'read' },
+    { icon: <Users size={18} />, label: 'Clients', path: '/clients', required: 'read' },
+    { icon: <SettingsIcon size={18} />, label: 'Settings', path: '/settings', required: 'settings' },
   ];
+
+  const filteredNavItems = navItems.filter(item => capabilities.includes(item.required));
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -87,11 +93,11 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
       
       {/* Desktop Sidebar */}
-      <aside className="w-56 border-r border-slate-100 bg-white hidden lg:flex flex-col sticky top-0 h-screen z-30">
-        <div className="p-5">
+      <aside className="w-64 border-r border-slate-100 bg-white hidden lg:flex flex-col sticky top-0 h-screen z-30">
+        <div className="p-5 space-y-6">
           <div 
             onClick={() => navigate('/')}
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-3 cursor-pointer group px-2"
           >
             <motion.div 
               whileHover={{ scale: 1.05 }}
@@ -100,12 +106,17 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
             >
               P
             </motion.div>
-            <span className="text-lg font-black tracking-tighter text-slate-900 italic group-hover:text-indigo-600 transition-colors">Paydrip</span>
+            <div className="flex flex-col">
+              <span className="text-lg font-black tracking-tighter text-slate-900 italic group-hover:text-indigo-600 transition-colors leading-none">Paydrip</span>
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mt-1">Enterprise Core</span>
+            </div>
           </div>
+
+          <OrganizationSwitcher />
         </div>
 
-        <nav className="flex-1 px-2.5 py-1.5 space-y-0.5">
-          {navItems.map((item) => (
+        <nav className="flex-1 px-3 py-1 space-y-0.5 mt-2">
+          {filteredNavItems.map((item) => (
             <NavItem 
               key={item.path}
               icon={item.icon}
