@@ -32,13 +32,20 @@ serve(async (req) => {
     for (const item of (queueItems || [])) {
       try {
         // 2. Queue Locking - mark as processing to prevent duplicates
-        const { error: lockError } = await supabase
-          .from("escalation_queue")
-          .update({ status: "processing", updated_at: new Date().toISOString() })
-          .eq("id", item.id)
-          .eq("status", "pending");
+const { data: lockedRow } = await supabase
+  .from("escalation_queue")
+  .update({
+    status: "processing",
+    locked_at: new Date().toISOString(),
+    locked_by: crypto.randomUUID(),
+    updated_at: new Date().toISOString()
+  })
+  .eq("id", item.id)
+  .eq("status", "pending")
+  .select()
+  .single();
 
-        if (lockError) continue; // Skip if already being processed
+if (!lockedRow) continue;
 
         // 3. Process Action
         if (item.action_type === "send_reminder") {
@@ -57,7 +64,7 @@ serve(async (req) => {
           await supabase.from("invoices").update({
             last_reminder_sent_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          }).eq("id", item.id);
+          }).eq("id", item.invoice_id);
         }
 
         if (item.action_type === "change_stage") {
