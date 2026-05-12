@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { securityService } from './securityService';
 import { 
   Invoice, 
   RecoveryStage, 
@@ -57,6 +58,14 @@ export const recoveryService = {
    * Update invoice recovery stage with event logging
    */
   async updateRecoveryStage(invoiceId: string, stage: RecoveryStage, escalationLevel?: number) {
+    // Security: Log audit
+    await securityService.logAudit({
+      action: 'stage_update',
+      resourceType: 'invoice',
+      resourceId: invoiceId,
+      metadata: { stage, level: escalationLevel }
+    });
+
     const updateData: any = { recovery_stage: stage, updated_at: new Date().toISOString() };
     if (escalationLevel !== undefined) {
       updateData.escalation_level = escalationLevel;
@@ -231,6 +240,10 @@ export const recoveryService = {
     previousTone?: string;
     hasPartialPayments?: boolean;
   }) {
+    // Security: Rate Limit AI Generation
+    const allowed = await securityService.checkRateLimit('ai_reminder_generation', 5, 3600);
+    if (!allowed) throw new Error('AI Generation limit exceeded. Please wait or upgrade.');
+
     if (!process.env.GEMINI_API_KEY) throw new Error('AI Service Unconfigured');
 
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });

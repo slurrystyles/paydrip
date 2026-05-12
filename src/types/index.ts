@@ -97,6 +97,31 @@ export interface ClientRiskScore {
   last_calculated_at: string;
 }
 
+export interface AuditLog {
+  id: string;
+  actor_id?: string;
+  actor_type: 'user' | 'system' | 'worker' | 'anonymous';
+  action: string;
+  resource_type: string;
+  resource_id?: string;
+  severity: string;
+  ip_address: string;
+  user_agent?: string;
+  payload_snapshot?: any;
+  created_at: string;
+}
+
+export interface SecurityAbuseFlag {
+  id: string;
+  user_id?: string;
+  ip_address?: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  reason: string;
+  is_active: boolean;
+  expires_at?: string;
+  created_at: string;
+}
+
 export interface InvoiceEvent {
   id: string;
   invoice_id: string;

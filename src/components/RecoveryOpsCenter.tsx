@@ -14,32 +14,41 @@ import {
   Kanban,
   List as ListIcon,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Fingerprint,
+  Activity,
+  UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { recoveryService } from '../lib/recoveryService';
-import { EscalationQueueItem, Invoice } from '../types';
+import { EscalationQueueItem, Invoice, AuditLog, SecurityAbuseFlag } from '../types';
 import { formatCurrency, cn } from '../lib/utils';
 
 export default function RecoveryOpsCenter() {
-  const [activeView, setActiveView] = useState<'board' | 'queue' | 'logs'>('board');
+  const [activeView, setActiveView] = useState<'board' | 'queue' | 'logs' | 'security'>('board');
   const [queue, setQueue] = useState<EscalationQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [abuseFlags, setAbuseFlags] = useState<SecurityAbuseFlag[]>([]);
 
   const fetchData = async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [queueData, invoiceData] = await Promise.all([
+    const [queueData, invoiceData, auditData, abuseData] = await Promise.all([
       supabase.from('escalation_queue').select('*').order('scheduled_at', { ascending: true }),
-      supabase.from('invoices').select('*, client:clients(*)').order('created_at', { ascending: false })
+      supabase.from('invoices').select('*, client:clients(*)').order('created_at', { ascending: false }),
+      supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(20),
+      supabase.from('abuse_flags').select('*').order('created_at', { ascending: false }).limit(20)
     ]);
 
     setQueue(queueData.data || []);
     setInvoices(invoiceData.data || []);
+    setAuditLogs(auditData.data || []);
+    setAbuseFlags(abuseData.data || []);
     setLoading(false);
   };
 
@@ -77,7 +86,8 @@ export default function RecoveryOpsCenter() {
            {[
              { id: 'board', label: 'Kanban', icon: <Kanban size={14} /> },
              { id: 'queue', label: 'Monitor', icon: <ListIcon size={14} /> },
-             { id: 'logs', label: 'Logs', icon: <History size={14} /> }
+             { id: 'logs', label: 'Logs', icon: <History size={14} /> },
+             { id: 'security', label: 'Security', icon: <ShieldAlert size={14} /> }
            ].map((tab) => (
              <button
                key={tab.id}
@@ -257,6 +267,126 @@ export default function RecoveryOpsCenter() {
                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Resolved Nodes</p>
                          <p className="text-4xl font-black mt-2">{queue.filter(q => q.status === 'processed').length}</p>
                          <p className="text-[9px] font-bold mt-4">+12 from yesterday</p>
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </motion.div>
+        )}
+
+        {activeView === 'security' && (
+          <motion.div 
+            key="security"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl flex items-center gap-6">
+                   <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                      <Fingerprint size={28} />
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Defenses</p>
+                      <p className="text-2xl font-black text-slate-900 tracking-tighter">Hardened</p>
+                   </div>
+                </div>
+                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl flex items-center gap-6">
+                   <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-600">
+                      <Activity size={28} />
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Recent Audits</p>
+                      <p className="text-2xl font-black text-slate-900 tracking-tighter">{auditLogs.length}</p>
+                   </div>
+                </div>
+                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl flex items-center gap-6">
+                   <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-600">
+                      <UserCheck size={28} />
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Blocked IPs</p>
+                      <p className="text-2xl font-black text-slate-900 tracking-tighter">{abuseFlags.length}</p>
+                   </div>
+                </div>
+             </div>
+
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl overflow-hidden">
+                   <div className="p-8 border-b border-slate-50">
+                      <h3 className="font-black text-slate-900 uppercase tracking-widest text-[11px] flex items-center gap-3">
+                         <Fingerprint size={18} className="text-indigo-600" /> Enterprise Audit Trail
+                      </h3>
+                   </div>
+                   <div className="p-4 space-y-2">
+                      {auditLogs.map((log) => (
+                        <div key={log.id} className="p-4 hover:bg-slate-50 rounded-2xl transition-colors flex items-center justify-between group">
+                           <div className="flex items-center gap-4">
+                              <div className={cn(
+                                "w-1.5 h-8 rounded-full",
+                                log.severity === 'critical' ? 'bg-red-500' : 'bg-slate-200'
+                              )}></div>
+                              <div>
+                                 <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{log.action.replace('_', ' ')}</p>
+                                 <p className="text-[9px] font-bold text-slate-400 mt-0.5">{log.resource_type} • {log.ip_address}</p>
+                              </div>
+                           </div>
+                           <span className="text-[8px] font-mono text-slate-300 group-hover:text-slate-500 transition-colors uppercase">
+                              {new Date(log.created_at).toLocaleTimeString()}
+                           </span>
+                        </div>
+                      ))}
+                      {auditLogs.length === 0 && (
+                        <div className="py-20 text-center">
+                           <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No audit signals detected</p>
+                        </div>
+                      )}
+                   </div>
+                </div>
+
+                <div className="space-y-8">
+                   <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full -mr-32 -mt-32 blur-[80px] opacity-20"></div>
+                      <h3 className="text-2xl font-black italic tracking-tighter mb-6 leading-tight">Security Posture: EXCELLENT</h3>
+                      <div className="space-y-4">
+                         {[
+                           { label: 'Rate Limiting', status: 'ACTIVE' },
+                           { label: 'Spam Filtering', status: 'LEARNING' },
+                           { label: 'Brute Force Shield', status: 'ACTIVE' },
+                           { label: 'Worker Verification', status: 'PENDING' }
+                         ].map((item, i) => (
+                            <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                               <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{item.label}</span>
+                               <span className={cn(
+                                 "text-[9px] font-black px-2 py-0.5 rounded-full",
+                                 item.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/40'
+                               )}>{item.status}</span>
+                            </div>
+                         ))}
+                      </div>
+                   </div>
+
+                   <div className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl p-8">
+                      <h3 className="font-black text-slate-900 uppercase tracking-widest text-[11px] mb-6 flex items-center gap-3">
+                         <ShieldAlert size={18} className="text-red-500" /> Active Threats
+                      </h3>
+                      <div className="space-y-4">
+                         {abuseFlags.map((flag) => (
+                           <div key={flag.id} className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">
+                              <div>
+                                 <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">{flag.severity} RISK</p>
+                                 <p className="text-[11px] font-bold text-slate-900 mt-1">{flag.reason}</p>
+                              </div>
+                              <button className="p-2 bg-white text-red-600 rounded-xl shadow-sm hover:bg-red-50 transition-all">
+                                 <X size={14} />
+                              </button>
+                           </div>
+                         ))}
+                         {abuseFlags.length === 0 && (
+                            <div className="py-10 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Environment Secure • 0 Threats</p>
+                            </div>
+                         )}
                       </div>
                    </div>
                 </div>
