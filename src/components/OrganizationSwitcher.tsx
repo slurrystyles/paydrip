@@ -43,6 +43,7 @@ export default function OrganizationSwitcher() {
   return (
     <div className="relative">
       <button 
+        id="org-switcher-button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full h-12 px-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between hover:bg-slate-50 transition-all group overflow-hidden"
       >

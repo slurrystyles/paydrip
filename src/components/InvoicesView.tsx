@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Invoice, Client, InvoiceStatus } from '../types';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, 
   Search, 
@@ -14,7 +15,10 @@ import {
   Clock,
   AlertCircle,
   FileText,
-  Zap
+  Zap,
+  Pause,
+  Play,
+  X
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import InvoiceModal from './InvoiceModal';

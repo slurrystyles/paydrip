@@ -32,6 +32,7 @@ import UpgradeModal from './UpgradeModal';
 import { recoveryService } from '../lib/recoveryService';
 import { RiskBadge } from './RiskBadge';
 import { useOrganization } from '../contexts/OrganizationContext';
+import LegalNoticeModal from './LegalNoticeModal';
 
 interface Props {
   invoice: Invoice;

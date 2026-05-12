@@ -29,6 +29,8 @@ import InvoiceDetailModal from './InvoiceDetailModal';
 import UpgradeModal from './UpgradeModal';
 import { usePlan } from '../contexts/PlanContext';
 
+import { useOrganization } from '../contexts/OrganizationContext';
+
 export default function DashboardView() {
   const { plan, isLimitReached, refreshPlanData } = usePlan();
   const { currentOrganization } = useOrganization();
@@ -121,7 +123,41 @@ export default function DashboardView() {
     </div>
   );
 
-  // SECTION 1: ONBOARDING EXPERIENCE
+  // SECTION 0: NO ORGANIZATION STATE
+  if (!currentOrganization) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-xl w-full bento-card p-12 bg-white shadow-2xl shadow-indigo-100/50"
+        >
+          <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center text-white mx-auto mb-8 shadow-xl shadow-indigo-200">
+            <Zap size={40} />
+          </div>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-4 italic">Initialize your workspace</h2>
+          <p className="text-slate-500 font-medium mb-12">You are currently in a disconnected state. Establish a new organization node to begin.</p>
+          
+          <button 
+            onClick={() => {
+              // Trigger the create modal in switcher or just use a local state
+              // For now, let's just show the switcher is the way. 
+              // But we can also add a local "Show Create" if we want.
+              // Let's just assume they can use the switcher.
+              // Actually, better to have a button here that works.
+              const el = document.querySelector('[id^="org-switcher-button"]') as HTMLButtonElement;
+              el?.click();
+            }}
+            className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-slate-900 transition-all shadow-xl shadow-indigo-200 active:scale-95"
+          >
+            Create Organization
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // SECTION 1: ONBOARDING EXPERIENCE (Already exists but for context)
   if (invoices.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">

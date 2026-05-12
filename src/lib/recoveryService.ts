@@ -9,7 +9,7 @@ import {
 } from '../types';
 import { GoogleGenAI } from '@google/genai';
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export const recoveryService = {
   /**
@@ -262,7 +262,6 @@ export const recoveryService = {
 
     if (!process.env.GEMINI_API_KEY) throw new Error('AI Service Unconfigured');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const prompt = `
       Act as an Adaptive AI Recovery Agent for "${context.businessName}".
       Generate a high-conversion payment nudge for client "${context.clientName}".
@@ -283,8 +282,12 @@ export const recoveryService = {
       - Output Structure: JSON ONLY { "subject": "Brief Meta", "message": "The body", "strategy_node": "Why this message works" }
     `;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json|```/g, '').trim();
+    const result = await client.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+    });
+
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/```json|```/g, '').trim() || '{}';
     return JSON.parse(text);
   },
 

@@ -23,6 +23,7 @@ import UpgradeModal from './UpgradeModal';
 import OrganizationSwitcher from './OrganizationSwitcher';
 
 interface NavItemProps {
+  key?: string;
   icon: React.ReactNode;
   label: string;
   path: string;

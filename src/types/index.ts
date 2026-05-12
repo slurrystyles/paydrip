@@ -153,6 +153,17 @@ export interface UsageCounter {
   period_end: string;
 }
 
+export interface WebhookEndpoint {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  url: string;
+  events: string[];
+  is_active: boolean;
+  secret: string;
+  created_at: string;
+}
+
 export interface Subscription {
   id: string;
   user_id: string;

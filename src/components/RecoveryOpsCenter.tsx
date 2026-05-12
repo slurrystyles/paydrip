@@ -67,8 +67,9 @@ export default function RecoveryOpsCenter() {
   }, [currentOrganization]);
 
   const handleRetry = async (id: string) => {
+    if (!currentOrganization) return;
     try {
-      await recoveryService.retryQueueItem(id);
+      await recoveryService.retryQueueItem(id, currentOrganization.id);
     } catch (e) {
       console.error(e);
     }
