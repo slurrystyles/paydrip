@@ -96,7 +96,8 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       const { data: emails } = await supabase
         .from('audit_log')
         .select('*')
-        .eq('invoice_id', invoice.id)
+        .eq('entity_id', invoice.id)
+        .eq('entity_type', 'invoice')
         .in('audit_type', ['email_sent', 'email_failed', 'email_cap_reached'])
         .order('created_at', { ascending: false });
       if (emails) setEmailLogs(emails);
@@ -130,7 +131,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         onUpdate();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reminder_timeline', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_log', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_log', filter: `entity_id=eq.${invoice.id}` }, refreshLogs)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoice_events', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'invoices', filter: `id=eq.${invoice.id}` }, () => {
         onUpdate();

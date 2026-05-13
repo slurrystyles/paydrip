@@ -1,7 +1,8 @@
 -- 1. Create audit_log in public if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.audit_log (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    invoice_id UUID REFERENCES public.invoices(id) ON DELETE CASCADE,
+    entity_id UUID NOT NULL, -- Generic ID (invoices, clients, etc.)
+    entity_type TEXT NOT NULL, -- 'invoice', 'client', etc.
     organization_id UUID REFERENCES public.organizations(id),
     audit_type TEXT NOT NULL,
     recipient_email TEXT,
@@ -11,8 +12,8 @@ CREATE TABLE IF NOT EXISTS public.audit_log (
 );
 
 -- 2. Add columns if table existed but columns were missing
-ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS recipient_email TEXT;
-ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS delivery_status TEXT;
+ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS entity_id UUID;
+ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS entity_type TEXT;
 ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES public.organizations(id);
 
 -- 3. RLS for audit_log

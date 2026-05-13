@@ -39,7 +39,8 @@ serve(async (req) => {
     } else if (canSend === false) {
       console.warn("Daily email cap reached");
       await supabase.from("audit_log").insert({
-        invoice_id,
+        entity_id: invoice_id,
+        entity_type: "invoice",
         organization_id,
         audit_type: "email_cap_reached",
         meta: { to, type, reason: "Daily limit of 90 reached" }
@@ -80,7 +81,8 @@ serve(async (req) => {
     if (res.ok) {
       // 3. Log Success
       await supabase.from("audit_log").insert({
-        invoice_id,
+        entity_id: invoice_id,
+        entity_type: "invoice",
         organization_id,
         audit_type: "email_sent",
         recipient_email: to,
@@ -95,7 +97,8 @@ serve(async (req) => {
     } else {
       // 4. Log Failure
       await supabase.from("audit_log").insert({
-        invoice_id,
+        entity_id: invoice_id,
+        entity_type: "invoice",
         organization_id,
         audit_type: "email_failed",
         recipient_email: to,
