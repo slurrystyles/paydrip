@@ -258,9 +258,10 @@ export const recoveryService = {
     const entitled = await this.checkEntitlement('ai_generations', context.organizationId);
     if (!entitled) throw new Error('AI Generation quota reached for this organization.');
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (window as any).process?.env?.GEMINI_API_KEY;
+    
     if (!apiKey) {
-      throw new Error('AI Service Unconfigured: GEMINI_API_KEY is missing in browser environment. Please set it in AI Studio Settings > Secrets.');
+      throw new Error('AI Service Unconfigured: GEMINI_API_KEY (or VITE_GEMINI_API_KEY) is missing. On Vercel, ensure you use the VITE_ prefix.');
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -297,8 +298,8 @@ export const recoveryService = {
   },
 
   async testAIConnection() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return { success: false, error: 'GEMINI_API_KEY is missing in browser environment.' };
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (window as any).process?.env?.GEMINI_API_KEY;
+    if (!apiKey) return { success: false, error: 'GEMINI_API_KEY / VITE_GEMINI_API_KEY is missing.' };
 
     try {
       const ai = new GoogleGenAI({ apiKey });
