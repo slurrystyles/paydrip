@@ -1,10 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { getEmailTemplate } from "../_shared/email-templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+const PROJECT_REF = Deno.env.get("PROJECT_REF");
+const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY");
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -20,7 +25,7 @@ serve(async (req) => {
     // 1. Fetch pending queue items that are due
     const { data: queueItems, error: fetchError } = await supabase
       .from("escalation_queue")
-      .select("*, invoices(*)")
+      .select("*, invoices(*, client_id(name, email), businesses(name))")
       .eq("status", "pending")
       .lte("scheduled_at", new Date().toISOString())
       .limit(10);
@@ -31,33 +36,90 @@ serve(async (req) => {
 
     for (const item of (queueItems || [])) {
       try {
-        // 2. Queue Locking - mark as processing to prevent duplicates
+        // 2. Queue Locking - mark as processing
         const { error: lockError } = await supabase
           .from("escalation_queue")
           .update({ status: "processing", updated_at: new Date().toISOString() })
           .eq("id", item.id)
           .eq("status", "pending");
 
-        if (lockError) continue; // Skip if already being processed
+        if (lockError) continue;
+
+        const invoice = item.invoices;
+        const client = invoice?.client_id;
+        const business = invoice?.businesses;
 
         // 3. Process Action
         if (item.action_type === "send_reminder") {
-          // Log to reminder timeline
+          const tone = item.action_data?.tone || "polite";
+          let aiMessage = null;
+
+          // A. AI Generation Step (Optional branch)
+          if (GEMINI_API_KEY) {
+            try {
+              const prompt = `Generate a ${tone} reminder for ${client?.name} for invoice #${invoice.invoice_number} of amount ₹${invoice.amount}. Business: ${business?.name}. Keep it short. Output JSON: {"message": "..."}`;
+              const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+              });
+              const aiData = await aiRes.json();
+              const text = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+              const cleanText = text.replace(/```json|```/g, "").trim();
+              aiMessage = JSON.parse(cleanText).message;
+            } catch (e) {
+              console.error("AI Generation failed in worker:", e);
+            }
+          }
+
+          // B. Email Delivery Step
+          if (client?.email) {
+            const templateType = tone === "polite" ? "reminder_polite" : tone === "firm" ? "reminder_firm" : "reminder_final";
+            const publicLink = `https://${PROJECT_REF}.supabase.co/v/${invoice.public_token}`;
+            
+            const template = getEmailTemplate(templateType, {
+              businessName: business?.name || "Paydrip Merchant",
+              invoiceNumber: invoice.invoice_number,
+              amount: invoice.amount.toString(),
+              dueDate: new Date(invoice.due_date).toLocaleDateString(),
+              publicLink,
+              clientName: client.name || "Client",
+              customMessage: aiMessage
+            });
+
+            // Call send-email function
+            await fetch(`https://${PROJECT_REF}.supabase.co/functions/v1/send-email`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${SERVICE_ROLE_KEY}`
+              },
+              body: JSON.stringify({
+                to: client.email,
+                subject: template.subject,
+                html: template.html,
+                invoice_id: invoice.id,
+                type: templateType
+              })
+            }).catch(e => console.error("Email trigger failed:", e));
+          }
+
+          // C. Log to timeline
           await supabase.from("reminder_timeline").insert([{
             invoice_id: item.invoice_id,
             user_id: item.user_id,
-            channel: item.action_data?.channel || "whatsapp",
-            tone: item.action_data?.tone || "polite",
+            channel: "email",
+            tone: tone,
             delivery_status: "sent",
             reminder_type: "automated",
-            message_content: "Automated recovery nudge deployed by system."
+            message_content: aiMessage || "Automated email reminder sent."
           }]);
 
           // Update Invoice
           await supabase.from("invoices").update({
             last_reminder_sent_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          }).eq("id", item.id);
+          }).eq("id", item.invoice_id);
         }
 
         if (item.action_type === "change_stage") {

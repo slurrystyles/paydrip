@@ -51,6 +51,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const [riskScore, setRiskScore] = useState<ClientRiskScore | null>(null);
 
   const [reminderLogs, setReminderLogs] = useState<ReminderTimeline[]>([]);
+  const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'recovery' | 'payments' | 'history'>('recovery');
 
   const { plan } = usePlan();
@@ -92,6 +93,14 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         .order('sent_at', { ascending: false });
       if (logs) setReminderLogs(logs);
 
+      const { data: emails } = await supabase
+        .from('audit_log')
+        .select('*')
+        .eq('invoice_id', invoice.id)
+        .in('audit_type', ['email_sent', 'email_failed', 'email_cap_reached'])
+        .order('created_at', { ascending: false });
+      if (emails) setEmailLogs(emails);
+
       const { data: events } = await supabase
         .from('invoice_events')
         .select('*')
@@ -121,6 +130,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         onUpdate();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reminder_timeline', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_log', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoice_events', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'invoices', filter: `id=eq.${invoice.id}` }, () => {
         onUpdate();
@@ -629,7 +639,19 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Status Section */}
                 <div className="space-y-3">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Recovery Stage</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Recovery Stage</label>
+                    {emailLogs.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
+                          emailLogs[0].audit_type === 'email_sent' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                        )}>
+                          Email {emailLogs[0].audit_type === 'email_sent' ? 'Sent' : 'Failed'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   <div className={cn(
                     "p-4 rounded-2xl border-2 flex items-center justify-between transition-all duration-500",
                     isFullyPaid ? 'bg-green-50/50 border-green-200 text-green-700 shadow-lg shadow-green-100/50' :
@@ -864,27 +886,35 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                 </div>
                 
                 <div className="space-y-6 relative pl-4 border-l-2 border-slate-100 py-2">
-                  {eventLogs.concat(reminderLogs).sort((a,b) => new Date(b.created_at || b.sent_at).getTime() - new Date(a.created_at || a.sent_at).getTime()).map((event, i) => {
+                  {eventLogs.concat(reminderLogs).concat(emailLogs).sort((a,b) => new Date(b.created_at || b.sent_at).getTime() - new Date(a.created_at || a.sent_at).getTime()).map((event, i) => {
                     const isReminder = !!event.tone;
+                    const isEmail = ['email_sent', 'email_failed', 'email_cap_reached'].includes(event.audit_type);
+                    
                     return (
                       <div key={i} className="relative">
                         <div className={cn(
                           "absolute -left-[2.35rem] top-1.5 w-7 h-7 rounded-full border-4 border-white flex items-center justify-center shadow-sm",
-                          isReminder ? "bg-indigo-600 text-white" : "bg-slate-900 text-white"
+                          isReminder ? "bg-indigo-600 text-white" : 
+                          isEmail ? "bg-indigo-400 text-white" :
+                          "bg-slate-900 text-white"
                         )}>
-                          {isReminder ? <Smartphone size={10} /> : <Zap size={10} />}
+                          {isReminder ? <Smartphone size={10} /> : 
+                           isEmail ? <FileText size={10} /> :
+                           <Zap size={10} />}
                         </div>
                         <div className="space-y-1">
                           <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none">
-                            {isReminder ? `${event.tone} Reminder` : event.event_type.replace('_', ' ')}
+                            {isReminder ? `${event.tone} Reminder` : 
+                             isEmail ? `Email ${event.audit_type.split('_')[1].toUpperCase()}` :
+                             event.event_type.replace('_', ' ')}
                           </p>
                           <p className="text-[8px] font-mono text-slate-400 uppercase">
                             {new Date(event.created_at || event.sent_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                           </p>
-                          {event.metadata && (
+                          {(event.metadata || event.meta) && (
                             <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
                                <p className="text-[9px] text-slate-500 font-medium leading-relaxed italic">
-                                 {JSON.stringify(event.metadata)}
+                                 {JSON.stringify(event.metadata || event.meta)}
                                </p>
                             </div>
                           )}
