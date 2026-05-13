@@ -336,7 +336,15 @@ export const recoveryService = {
       try {
         if (typeof error.context?.json === 'function') {
           const body = await error.context.json();
-          if (body.error) errorMessage = body.error;
+          if (body.error) {
+            if (typeof body.error === 'string') {
+              errorMessage = body.error;
+            } else if (body.error.message) {
+              errorMessage = body.error.message;
+            } else {
+              errorMessage = JSON.stringify(body.error);
+            }
+          }
         }
       } catch (e) {
         console.error('Error parsing function error response:', e);
