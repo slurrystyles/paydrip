@@ -344,6 +344,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const [showReminderEditor, setShowReminderEditor] = useState(false);
   const [editingMessage, setEditingMessage] = useState('');
   const [editingType, setEditingType] = useState<'polite' | 'firm' | 'final' | 'receipt' | null>(null);
+  const [deliveryChannel, setDeliveryChannel] = useState<'whatsapp' | 'email'>('whatsapp');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [eventLogs, setEventLogs] = useState<any[]>([]);
   const [showLegalModal, setShowLegalModal] = useState(false);
@@ -414,7 +415,18 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const startWhatsAppFlow = (type: 'polite' | 'firm' | 'final' | 'receipt') => {
     if (type !== 'receipt' && isFullyPaid) return;
     
+    setDeliveryChannel('whatsapp');
     const initialMessage = getWhatsAppMessage(type);
+    setEditingMessage(initialMessage);
+    setEditingType(type);
+    setShowReminderEditor(true);
+  };
+
+  const startEmailFlow = (type: 'polite' | 'firm' | 'final' | 'receipt') => {
+    if (type !== 'receipt' && isFullyPaid) return;
+    
+    setDeliveryChannel('email');
+    const initialMessage = getWhatsAppMessage(type); // Reuse templates for body
     setEditingMessage(initialMessage);
     setEditingType(type);
     setShowReminderEditor(true);
@@ -504,6 +516,48 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       .eq('invoice_id', invoice.id)
       .order('sent_at', { ascending: false });
     if (logs) setReminderLogs(logs);
+  };
+
+  const confirmAndSendEmail = async () => {
+    if (!editingType) return;
+    if (!clientInfo.email) {
+      alert("Client email address missing.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const publicLink = `${window.location.origin}/v/${invoice.public_token}`;
+      const templateType = editingType === 'receipt' ? 'invoice_paid' : 
+                          editingType === 'polite' ? 'reminder_polite' : 
+                          editingType === 'firm' ? 'reminder_firm' : 'reminder_final';
+
+      await recoveryService.sendManualEmail({
+        to: clientInfo.email,
+        subject: editingType === 'receipt' ? `Receipt for Invoice #${invoice.invoice_number}` : `Reminder: Invoice #${invoice.invoice_number}`,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px;">
+            <p>${editingMessage.replace(/\n/g, '<br/>')}</p>
+          </div>
+        `,
+        invoice_id: invoice.id,
+        type: templateType,
+        organization_id: invoice.organization_id
+      });
+
+      // Update status to 'sent' if it was draft
+      if (invoice.status === 'draft') {
+        await supabase.from('invoices').update({ status: 'sent' }).eq('id', invoice.id).eq('organization_id', invoice.organization_id);
+      }
+
+      setShowReminderEditor(false);
+      onUpdate();
+    } catch (e) {
+      console.error('Email failed:', e);
+      alert(e instanceof Error ? e.message : 'Failed to send email');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // UPI Link generation: upi://pay?pa=VPA&pn=NAME&am=AMOUNT&cu=INR
@@ -734,23 +788,26 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Tools Ready</span>
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <WhatsAppTemplateButton 
                       label="Gentle follow-up" 
                       description="Day 1 reminder"
                       onClick={() => startWhatsAppFlow('polite')}
+                      onEmailClick={() => startEmailFlow('polite')}
                       icon={<Shield size={16} className="text-indigo-500" />}
                     />
                     <WhatsAppTemplateButton 
                       label="Firm mandate" 
                       description="Overdue escalation"
                       onClick={() => startWhatsAppFlow('firm')}
+                      onEmailClick={() => startEmailFlow('firm')}
                       icon={<AlertCircle size={16} className="text-orange-500" />}
                     />
                     <WhatsAppTemplateButton 
                       label="Final ultimatum" 
                       description="Last notice before fail"
                       onClick={() => startWhatsAppFlow('final')}
+                      onEmailClick={() => startEmailFlow('final')}
                       icon={<Zap size={16} className="text-red-500" />}
                     />
                   </div>
@@ -984,6 +1041,30 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
               </div>
               <div className="p-8 space-y-6">
                 <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Channel</label>
+                    <div className="flex bg-slate-100 p-1 rounded-xl">
+                      <button 
+                        onClick={() => setDeliveryChannel('whatsapp')}
+                        className={cn(
+                          "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all",
+                          deliveryChannel === 'whatsapp' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400"
+                        )}
+                      >
+                        WhatsApp
+                      </button>
+                      <button 
+                        onClick={() => setDeliveryChannel('email')}
+                        className={cn(
+                          "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all",
+                          deliveryChannel === 'email' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400"
+                        )}
+                      >
+                        Email
+                      </button>
+                    </div>
+                  </div>
+
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 font-mono">Payload Content</label>
                   <textarea 
                     value={editingMessage}
@@ -1004,10 +1085,10 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                     Abort
                   </button>
                   <button 
-                    onClick={confirmAndSendWhatsApp}
+                    onClick={deliveryChannel === 'whatsapp' ? confirmAndSendWhatsApp : confirmAndSendEmail}
                     className="flex-2 py-4 px-6 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 group"
                   >
-                    Open WhatsApp
+                    {deliveryChannel === 'whatsapp' ? 'Open WhatsApp' : 'Dispatch Email'}
                     <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
@@ -1028,30 +1109,42 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   );
 }
 
-function WhatsAppTemplateButton({ label, description, onClick, icon }: { 
+function WhatsAppTemplateButton({ label, description, onClick, onEmailClick, icon }: { 
   label: string, 
   description: string, 
   onClick: () => void,
+  onEmailClick: () => void,
   icon: React.ReactNode 
 }) {
   return (
-    <button 
-      onClick={onClick}
-      className="w-full flex font-sans items-center justify-between p-4 bg-slate-50/50 hover:bg-white hover:border-slate-300 border border-slate-200/50 rounded-2xl transition-all group text-left shadow-sm hover:shadow-md"
-    >
-      <div className="flex items-center">
-        <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center mr-4 group-hover:scale-110 transition-transform border border-slate-100">
-          {icon}
-        </div>
-        <div>
-          <p className="text-xs font-black text-slate-800 uppercase tracking-tight">{label}</p>
-          <p className="text-[10px] text-slate-400 font-mono italic">{description}</p>
-        </div>
+    <div className="group relative">
+      <div className="flex gap-2">
+        <button 
+          onClick={onClick}
+          className="flex-1 flex font-sans items-center justify-between p-4 bg-slate-50/50 hover:bg-white hover:border-slate-300 border border-slate-200/50 rounded-2xl transition-all text-left shadow-sm hover:shadow-md"
+        >
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center mr-4 group-hover:scale-110 transition-transform border border-slate-100">
+              {icon}
+            </div>
+            <div>
+              <p className="text-xs font-black text-slate-800 uppercase tracking-tight">{label}</p>
+              <p className="text-[10px] text-slate-400 font-mono italic">{description}</p>
+            </div>
+          </div>
+          <div className="p-2 bg-indigo-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
+            <Smartphone size={14} className="text-indigo-600" />
+          </div>
+        </button>
+        <button 
+          onClick={onEmailClick}
+          className="w-14 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center hover:bg-white hover:border-indigo-300 transition-all group/email shadow-sm"
+          title="Send Email"
+        >
+          <FileText size={18} className="text-slate-400 group-hover/email:text-indigo-600" />
+        </button>
       </div>
-      <div className="p-2 bg-indigo-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
-        <Smartphone size={14} className="text-indigo-600" />
-      </div>
-    </button>
+    </div>
   );
 }
 
