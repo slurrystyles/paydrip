@@ -177,8 +177,36 @@ SELECT cron.schedule(
   'process-follow-ups',
   '30 3 * * *',
   $$ SELECT net.http_post(
-    url := current_setting('app.supabase_url') || '/functions/v1/process-follow-ups',
-    headers := '{"Authorization": "Bearer ' || current_setting('app.service_role_key') || '"}',
-    body := '{}'
+    url := 'https://peohtfpdwzntqnppswtl.supabase.co/functions/v1/process-follow-ups',
+    headers := '{"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlb2h0ZnBkd3pudHFucHBzd3RsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzUzMTk0NSwiZXhwIjoyMDkzMTA3OTQ1fQ.AZ-rCdgHGvLa2Syfe0WWLxPSUy3h14W6l_WZgOyyv08"}',
+    body := '{}'::jsonb
   ) $$
 );
+
+CREATE POLICY "Users can insert own org sequences" ON public.follow_up_sequences
+  FOR INSERT WITH CHECK (
+    organization_id IN (
+      SELECT organization_id FROM public.memberships WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can insert own org steps" ON public.follow_up_steps
+  FOR INSERT WITH CHECK (
+    sequence_id IN (
+      SELECT id FROM public.follow_up_sequences WHERE organization_id IN (
+        SELECT organization_id FROM public.memberships WHERE user_id = auth.uid()
+      )
+    )
+  );
+  
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_follow_up_seq_updated_at
+  BEFORE UPDATE ON public.follow_up_sequences
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
