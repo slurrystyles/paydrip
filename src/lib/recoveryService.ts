@@ -283,7 +283,7 @@ export const recoveryService = {
     `;
 
     const result = await client.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: [{ role: 'user', parts: [{ text: prompt }] }]
     });
 
