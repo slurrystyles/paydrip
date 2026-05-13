@@ -107,7 +107,7 @@ export default function DashboardView() {
   
   const isOverdue = (invoice: Invoice) => {
     const dueDate = new Date(invoice.due_date);
-    return invoice.status !== 'paid' && dueDate < now;
+    return invoice.status !== 'paid' && invoice.status !== 'payment_reported' && dueDate < now;
   };
 
   const totalOverall = totalPaid + totalOutstanding;
@@ -211,8 +211,11 @@ export default function DashboardView() {
     );
   }
 
-  // Define sorting rules: overdue first, then upcoming (due date closest to now), then paid
+  // Define sorting rules: reported first, then overdue, then upcoming, then paid
   const sortedInvoices = [...invoices].sort((a, b) => {
+    if (a.status === 'payment_reported' && b.status !== 'payment_reported') return -1;
+    if (a.status !== 'payment_reported' && b.status === 'payment_reported') return 1;
+
     const isAOverdue = isOverdue(a);
     const isBOverdue = isOverdue(b);
     
@@ -517,6 +520,11 @@ function StatusBadge({ status, isOverdue }: { status: string, isOverdue: boolean
   if (status === 'paid') return (
     <span className="px-2 py-0.5 bg-green-50 text-green-600 border border-green-100 rounded-full text-[9px] font-black uppercase tracking-widest">
       Settled
+    </span>
+  );
+  if (status === 'payment_reported') return (
+    <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[9px] font-black uppercase tracking-widest">
+      Reported
     </span>
   );
   if (isOverdue) return (

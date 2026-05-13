@@ -164,10 +164,13 @@ export default function InvoicesView() {
   );
 
   // SECTION 6: SORTING
-  // Default: overdue first -> upcoming (by due date) -> paid
+  // Default: reported first -> overdue first -> upcoming (by due date) -> paid
   const sortedInvoices = [...filteredInvoices].sort((a, b) => {
-    const isOverdueA = (inv: Invoice) => inv.status !== 'paid' && new Date(inv.due_date) < new Date();
-    const isOverdueB = (inv: Invoice) => inv.status !== 'paid' && new Date(inv.due_date) < new Date();
+    if (a.status === 'payment_reported' && b.status !== 'payment_reported') return -1;
+    if (a.status !== 'payment_reported' && b.status === 'payment_reported') return 1;
+
+    const isOverdueA = (inv: Invoice) => inv.status !== 'paid' && inv.status !== 'payment_reported' && new Date(inv.due_date) < new Date();
+    const isOverdueB = (inv: Invoice) => inv.status !== 'paid' && inv.status !== 'payment_reported' && new Date(inv.due_date) < new Date();
     
     const overdueA = isOverdueA(a);
     const overdueB = isOverdueB(b);

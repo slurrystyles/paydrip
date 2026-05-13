@@ -137,8 +137,15 @@ export default function RecoveryOpsCenter() {
                      {invoices.filter(i => i.recovery_stage === stage).map((inv) => (
                        <div key={inv.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 group hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer">
                           <div className="flex justify-between items-start mb-3">
-                             <span className="text-[10px] font-black text-slate-900 italic tracking-tighter">#{inv.invoice_number}</span>
-                             {inv.automation_paused && <Pause size={12} className="text-orange-400" />}
+                             <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-black text-slate-900 italic tracking-tighter">#{inv.invoice_number}</span>
+                                {inv.status === 'payment_reported' && (
+                                   <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[7px] font-black uppercase tracking-widest w-fit">
+                                     Reported
+                                   </span>
+                                )}
+                             </div>
+                             {inv.automation_paused && <Pause size={12} className={cn(inv.status === 'payment_reported' ? "text-amber-400" : "text-orange-400")} />}
                           </div>
                           <p className="text-xs font-bold text-slate-700 truncate mb-1">{inv.client?.name}</p>
                           <p className="text-xl font-black text-slate-900 tracking-tighter mb-4">{formatCurrency(inv.amount)}</p>
