@@ -44,7 +44,7 @@ export default function PublicInvoiceView() {
       setInvoice(data);
 
       // Audit: Log the public view
-      await supabase.from('audit_log').insert([{
+      await supabase.from('audit_logs').insert([{
         entity_id: data.id,
         entity_type: 'invoice',
         audit_type: 'invoice_viewed',
@@ -188,7 +188,7 @@ export default function PublicInvoiceView() {
       if (updateError) throw updateError;
 
       // 3. Audit Log: invoice_paid
-      await supabase.from('audit_log').insert({
+      await supabase.from('audit_logs').insert({
         entity_id: invoice.id,
         entity_type: 'invoice',
         audit_type: 'invoice_paid',

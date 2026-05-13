@@ -111,7 +111,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       if (logs) setReminderLogs(logs);
 
       const { data: emails } = await supabase
-        .from('audit_log')
+        .from('audit_logs')
         .select('*')
         .eq('entity_id', invoice.id)
         .eq('entity_type', 'invoice')
@@ -169,7 +169,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         onUpdate();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reminder_timeline', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_log', filter: `entity_id=eq.${invoice.id}` }, refreshLogs)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_logs', filter: `entity_id=eq.${invoice.id}` }, refreshLogs)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoice_events', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'follow_up_sequences', filter: `invoice_id=eq.${invoice.id}` }, refreshSequence)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'follow_up_steps' }, (payload: any) => {

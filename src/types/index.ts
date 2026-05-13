@@ -54,6 +54,7 @@ export interface Invoice {
   notes?: string;
   snapshot_json?: any;
   public_token: string;
+  public_token_expires_at?: string;
   is_disputed: boolean;
   automation_paused: boolean;
   created_at: string;
