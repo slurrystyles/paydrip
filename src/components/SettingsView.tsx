@@ -25,6 +25,7 @@ import {
 import { cn } from '../lib/utils';
 import { usePlan } from '../contexts/PlanContext';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { recoveryService } from '../lib/recoveryService';
 import UpgradeModal from './UpgradeModal';
 import imageCompression from 'browser-image-compression';
 
@@ -513,6 +514,41 @@ export default function SettingsView() {
             </div>
           </div>
 
+          {/* AI Engine Protocol */}
+          <div className="space-y-4 pt-2 border-t border-slate-50">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
+              AI Strategy Engine
+              <Zap size={10} className="text-indigo-500" />
+            </h3>
+            
+            <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Model Status</p>
+                  <p className="text-sm font-black text-slate-900 tracking-tight">Gemini 3 Flash Preview</p>
+                </div>
+                <button 
+                  type="button"
+                  onClick={async () => {
+                    const result = await recoveryService.testAIConnection();
+                    if (result.success) {
+                      setMessage({ type: 'success', text: `AI Connection Verified: ${result.text}` });
+                    } else {
+                      setMessage({ type: 'error', text: `AI Connection Failed: ${result.error}` });
+                    }
+                  }}
+                  className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                >
+                  Test Connection
+                </button>
+              </div>
+              <p className="text-[9px] text-slate-400 leading-relaxed italic">
+                The Strategic Engine requires a <strong>GEMINI_API_KEY</strong> set in the <strong>AI Studio Settings &gt; Secrets</strong> panel. 
+                Supabase Secrets are reserved for background Edge Functions.
+              </p>
+            </div>
+          </div>
+
           {/* Developer & Hooks (Gated) */}
           <div className="space-y-4 pt-2 border-t border-slate-50">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
@@ -527,9 +563,12 @@ export default function SettingsView() {
             <div className={cn("space-y-5 transition-all", plan !== 'enterprise' && "opacity-40 grayscale pointer-events-none")}>
                <div className="p-5 bg-slate-900 rounded-3xl text-white">
                   <div className="flex items-center justify-between mb-4">
-                     <h4 className="text-[10px] font-black uppercase tracking-widest leading-none flex items-center gap-2">
-                        <Globe size={14} className="text-indigo-400" /> Webhook Endpoints
-                     </h4>
+                     <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest leading-none flex items-center gap-2">
+                           <Globe size={14} className="text-indigo-400" /> Webhook Endpoints
+                        </h4>
+                        <p className="text-[8px] text-slate-400 mt-1 uppercase tracking-wider">Triggers: invoice.updated, remider.sent</p>
+                     </div>
                      <button type="button" className="text-[9px] font-black uppercase text-indigo-400 hover:text-white transition-colors underline">Add Hook</button>
                   </div>
                   {webhooks.length > 0 ? (

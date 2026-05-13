@@ -9,8 +9,6 @@ import {
 } from '../types';
 import { GoogleGenAI } from '@google/genai';
 
-const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-
 export const recoveryService = {
   /**
    * Log an event to the system trail
@@ -260,8 +258,12 @@ export const recoveryService = {
     const entitled = await this.checkEntitlement('ai_generations', context.organizationId);
     if (!entitled) throw new Error('AI Generation quota reached for this organization.');
 
-    if (!process.env.GEMINI_API_KEY) throw new Error('AI Service Unconfigured');
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('AI Service Unconfigured: GEMINI_API_KEY is missing in browser environment. Please set it in AI Studio Settings > Secrets.');
+    }
 
+    const ai = new GoogleGenAI({ apiKey });
     const prompt = `
       Act as an Adaptive AI Recovery Agent for "${context.businessName}".
       Generate a high-conversion payment nudge for client "${context.clientName}".
@@ -282,13 +284,32 @@ export const recoveryService = {
       - Output Structure: JSON ONLY { "subject": "Brief Meta", "message": "The body", "strategy_node": "Why this message works" }
     `;
 
-    const result = await client.models.generateContent({
+    const result = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json"
+      }
     });
 
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/```json|```/g, '').trim() || '{}';
+    const text = result.text?.replace(/```json|```/g, '').trim() || '{}';
     return JSON.parse(text);
+  },
+
+  async testAIConnection() {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return { success: false, error: 'GEMINI_API_KEY is missing in browser environment.' };
+
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const result = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: 'Say "Connection Successful"'
+      });
+      return { success: true, text: result.text };
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
   },
 
   /**
