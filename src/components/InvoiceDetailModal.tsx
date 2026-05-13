@@ -63,6 +63,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [riskScore, setRiskScore] = useState<ClientRiskScore | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const [reminderLogs, setReminderLogs] = useState<ReminderTimeline[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
@@ -249,10 +250,12 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         await supabase.from('audit_log').insert({
           entity_id: invoice.id,
           entity_type: 'invoice',
-          audit_type: 'payment_verified',
+          audit_type: 'payment_confirmed',
           organization_id: invoice.organization_id,
-          meta: { ref: invoice.payment_reference, action: 'confirmed' }
+          meta: { payment_reference: invoice.payment_reference }
         });
+        
+        setToast("Payment verified. Invoice marked as paid.");
       } else {
         // Reject
         const newStatus = new Date(invoice.due_date) < new Date() ? 'overdue' : 'sent';
@@ -268,13 +271,19 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
           entity_type: 'invoice',
           audit_type: 'payment_rejected',
           organization_id: invoice.organization_id,
-          meta: { ref: invoice.payment_reference, action: 'rejected' }
+          meta: { payment_reference: invoice.payment_reference }
         });
+
+        setToast("Payment rejected. Recovery sequence resumed.");
       }
+      
+      // Auto-clear toast after 3s
+      setTimeout(() => setToast(null), 3000);
       onUpdate();
     } catch (e) {
       console.error(e);
-      alert('Verification action failed.');
+      setToast('Verification action failed.');
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setLoading(false);
     }
@@ -742,6 +751,20 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] relative z-10"
       >
+        {/* Toast Notofication */}
+        <AnimatePresence>
+          {toast && (
+            <motion.div 
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 20, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              className="absolute top-0 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-3 whitespace-nowrap"
+            >
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              {toast}
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Preview Panel */}
         <div className="flex-1 bg-slate-50/50 overflow-y-auto p-8 md:p-12 border-r border-slate-100 hidden md:block">
           <div className="bg-white p-12 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-200/60 min-h-[800px] flex flex-col">
