@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Invoice, UserProfile, Payment, RecoveryStage, ReminderTimeline, ClientRiskScore } from '../types';
+import { 
+  Invoice, 
+  UserProfile, 
+  Payment, 
+  RecoveryStage, 
+  ReminderTimeline, 
+  ClientRiskScore,
+  FollowUpSequence,
+  FollowUpStep
+} from '../types';
 import { 
   X, 
   Download, 
@@ -20,7 +29,11 @@ import {
   Layers,
   ArrowRight,
   Scale,
-  ShieldAlert
+  ShieldAlert,
+  Play,
+  Pause,
+  Ban,
+  Clock
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
@@ -53,6 +66,8 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const [reminderLogs, setReminderLogs] = useState<ReminderTimeline[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'recovery' | 'payments' | 'history'>('recovery');
+  const [sequence, setSequence] = useState<FollowUpSequence | null>(null);
+  const [sequenceSteps, setSequenceSteps] = useState<FollowUpStep[]>([]);
 
   const { plan } = usePlan();
 
@@ -68,6 +83,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
 
       refreshLogs();
       refreshPayments();
+      refreshSequence();
 
       if (invoice.client_id) {
         const { data: risk } = await supabase
@@ -121,6 +137,27 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       if (payData) setPayments(payData);
     };
 
+    const refreshSequence = async () => {
+      const { data: seq } = await supabase
+        .from('follow_up_sequences')
+        .select('*')
+        .eq('invoice_id', invoice.id)
+        .single();
+      
+      if (seq) {
+        setSequence(seq);
+        const { data: steps } = await supabase
+          .from('follow_up_steps')
+          .select('*')
+          .eq('sequence_id', seq.id)
+          .order('scheduled_at', { ascending: true });
+        if (steps) setSequenceSteps(steps);
+      } else {
+        setSequence(null);
+        setSequenceSteps([]);
+      }
+    };
+
     fetchData();
 
     // Real-time Subscriptions
@@ -133,6 +170,12 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reminder_timeline', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_log', filter: `entity_id=eq.${invoice.id}` }, refreshLogs)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoice_events', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'follow_up_sequences', filter: `invoice_id=eq.${invoice.id}` }, refreshSequence)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'follow_up_steps' }, (payload: any) => {
+        // Since we can't filter by sequence_id in the subscription payload easily without knowing sequence.id,
+        // we just refresh if any step changes. A bit more broad but safe.
+         refreshSequence();
+      })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'invoices', filter: `id=eq.${invoice.id}` }, () => {
         onUpdate();
         fetchData();
@@ -204,6 +247,37 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     }
     
     if (!error) onUpdate();
+    setLoading(false);
+  }
+
+  async function updateSequenceStatus(status: 'active' | 'paused') {
+    if (!sequence) return;
+    setLoading(true);
+    const { error } = await supabase
+      .from('follow_up_sequences')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', sequence.id);
+    if (!error) {
+       setSequence({ ...sequence, status });
+    }
+    setLoading(false);
+  }
+
+  async function cancelSequence() {
+    if (!confirm('Cancel this follow-up sequence? This will skip all pending steps.')) return;
+    setLoading(true);
+    const { error } = await supabase.rpc('cancel_follow_up_sequence', { p_invoice_id: invoice.id });
+    if (!error) {
+       const refreshSequence = async () => {
+          const { data: seq } = await supabase.from('follow_up_sequences').select('*').eq('invoice_id', invoice.id).single();
+          if (seq) {
+            setSequence(seq);
+            const { data: steps } = await supabase.from('follow_up_steps').select('*').eq('sequence_id', seq.id).order('scheduled_at', { ascending: true });
+            if (steps) setSequenceSteps(steps);
+          }
+       };
+       await refreshSequence();
+    }
     setLoading(false);
   }
 
@@ -732,6 +806,104 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                     )}
                   </div>
                 </div>
+
+                {/* Recovery Sequence Panel */}
+                {sequence && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Recovery Sequence</label>
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
+                          sequence.status === 'active' ? "bg-green-100 text-green-700" : 
+                          sequence.status === 'paused' ? "bg-orange-100 text-orange-700" :
+                          sequence.status === 'completed' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-700"
+                        )}>
+                          {sequence.status}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-slate-50 border border-slate-100 rounded-3xl p-6 space-y-6">
+                      <div className="flex gap-2">
+                        {sequence.status === 'active' && (
+                          <button 
+                            onClick={() => updateSequenceStatus('paused')}
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-orange-300 transition-all"
+                          >
+                            <Pause size={12} /> Pause
+                          </button>
+                        )}
+                        {sequence.status === 'paused' && (
+                          <button 
+                            onClick={() => updateSequenceStatus('active')}
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all"
+                          >
+                            <Play size={12} /> Resume
+                          </button>
+                        )}
+                        {(sequence.status === 'active' || sequence.status === 'paused') && (
+                          <button 
+                            onClick={cancelSequence}
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-red-300 transition-all text-red-500"
+                          >
+                            <Ban size={12} /> Cancel
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4">
+                        {sequenceSteps.map((step, idx) => (
+                          <div key={step.id} className="flex gap-4 relative">
+                            {idx !== sequenceSteps.length - 1 && (
+                               <div className="absolute left-4 top-10 bottom-0 w-0.5 bg-slate-200"></div>
+                            )}
+                            <div className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10",
+                              step.status === 'sent' ? "bg-green-500 text-white" :
+                              step.status === 'failed' ? "bg-red-500 text-white" :
+                              step.status === 'pending' ? "bg-white border-2 border-slate-200 text-slate-400" : "bg-slate-200 text-slate-400"
+                            )}>
+                              {step.status === 'sent' ? <CheckCircle2 size={14} /> : 
+                               step.status === 'failed' ? <AlertCircle size={14} /> : 
+                               step.status === 'skipped' ? <Ban size={14} /> :
+                               <Clock size={14} />}
+                            </div>
+                            <div className="flex-1 pb-4">
+                               <div className="flex justify-between items-start">
+                                  <div>
+                                     <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{step.template_type.replace('_', ' ')}</p>
+                                     <p className="text-[9px] text-slate-400 font-medium">Scheduled for {new Date(step.scheduled_at).toLocaleDateString()}</p>
+                                  </div>
+                                  <span className={cn(
+                                    "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full",
+                                    step.status === 'sent' ? "bg-green-50 text-green-600" :
+                                    step.status === 'failed' ? "bg-red-50 text-red-600" :
+                                    "bg-slate-100 text-slate-400"
+                                  )}>
+                                    {step.status}
+                                  </span>
+                               </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {sequence.status === 'completed' && (
+                        <div className="pt-4 border-t border-slate-200 text-center">
+                           <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Sequence Completed</p>
+                           <p className="text-[9px] text-slate-400 mt-1">Total {sequenceSteps.filter(s => s.status === 'sent').length} contact attempts made.</p>
+                        </div>
+                      )}
+                      
+                      {sequence.status === 'cancelled' && (
+                        <div className="pt-4 border-t border-slate-200 text-center">
+                           <p className="text-[10px] font-black text-red-500 uppercase tracking-widest">Sequence Cancelled</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* AI Recommendation Panel */}
                 {!isFullyPaid && (

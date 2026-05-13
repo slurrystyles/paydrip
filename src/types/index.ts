@@ -301,3 +301,30 @@ export interface AuditEvent {
   meta: any;
   created_at: string;
 }
+
+export type FollowUpStatus = 'active' | 'paused' | 'completed' | 'cancelled';
+
+export interface FollowUpSequence {
+  id: string;
+  organization_id: string;
+  invoice_id: string;
+  status: FollowUpStatus;
+  current_step: number;
+  next_run_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FollowUpStepStatus = 'pending' | 'sent' | 'failed' | 'skipped';
+
+export interface FollowUpStep {
+  id: string;
+  sequence_id: string;
+  step_number: number;
+  type: 'email' | 'whatsapp_prompt' | 'internal_flag';
+  template_type: 'reminder_polite' | 'reminder_firm' | 'reminder_final';
+  scheduled_at: string;
+  executed_at: string | null;
+  status: FollowUpStepStatus;
+  meta: any;
+}
