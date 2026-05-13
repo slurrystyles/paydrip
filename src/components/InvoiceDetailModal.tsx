@@ -353,7 +353,16 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         previousTone: reminderLogs[0]?.tone,
         hasPartialPayments: payments.length > 0
       });
-      setEditingMessage(result.message);
+      const publicLink = `${window.location.origin}/v/${invoice.public_token}`;
+      let finalMessage = result.message;
+      
+      // Auto-replace placeholders that AI often uses
+      finalMessage = finalMessage.replace(/{{link}}/g, publicLink);
+      finalMessage = finalMessage.replace(/\[link\]/g, publicLink);
+      finalMessage = finalMessage.replace(/{{name}}/gi, clientInfo.name || 'there');
+      finalMessage = finalMessage.replace(/\[name\]/gi, clientInfo.name || 'there');
+
+      setEditingMessage(finalMessage);
       setEditingType(tone);
       setShowReminderEditor(true);
     } catch (error) {
