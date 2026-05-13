@@ -313,6 +313,43 @@ export const recoveryService = {
     }
   },
 
+  async sendManualEmail(params: {
+    to: string;
+    subject: string;
+    html: string;
+    invoice_id: string;
+    type: string;
+    organization_id: string;
+  }) {
+    // 1. Check Entitlement
+    const entitled = await this.checkEntitlement('email_reminders', params.organization_id);
+    if (!entitled) throw new Error('Daily email reminder limit reached.');
+
+    // 2. Invoke Edge Function
+    const { data, error } = await supabase.functions.invoke('send-email', {
+      body: params,
+    });
+
+    if (error) throw error;
+
+    // 3. Log to timeline
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await this.logReminder({
+        invoice_id: params.invoice_id,
+        user_id: user.id,
+        organization_id: params.organization_id,
+        channel: 'email',
+        tone: params.type.includes('polite') ? 'polite' : params.type.includes('firm') ? 'firm' : 'final',
+        delivery_status: 'sent',
+        reminder_type: 'manual',
+        message_content: `Email template: ${params.type}`
+      });
+    }
+
+    return data;
+  },
+
   /**
    * Get overall recovery analytics
    */
