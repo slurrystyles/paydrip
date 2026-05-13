@@ -31,6 +31,54 @@ export const recoveryService = {
   },
 
   /**
+   * High-level method to send an invoice
+   */
+  async sendInvoice(params: {
+    to: string;
+    invoice_id: string;
+    invoice_number: string;
+    business_name: string;
+    organization_id: string;
+  }) {
+    // 1. Update status to 'sent'
+    const { error: updateError } = await supabase
+      .from('invoices')
+      .update({ status: 'sent', updated_at: new Date().toISOString() })
+      .eq('id', params.invoice_id)
+      .eq('organization_id', params.organization_id);
+
+    if (updateError) throw updateError;
+
+    // 2. Call Edge Function (send-email)
+    try {
+      const { error: dispatchError } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: params.to,
+          subject: `Invoice #${params.invoice_number} from ${params.business_name}`,
+          invoice_id: params.invoice_id,
+          type: 'invoice_created',
+          organization_id: params.organization_id
+        }
+      });
+      if (dispatchError) throw dispatchError;
+    } catch (e) {
+      console.error('Email notification failed but status is updated:', e);
+      // We don't rethrow here because the invoice status is updated and follow-ups will start
+    }
+
+    // 3. Log Audit
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from('audit_log').insert({
+      entity_id: params.invoice_id,
+      entity_type: 'invoice',
+      audit_type: 'invoice_sent',
+      organization_id: params.organization_id,
+      user_id: user?.id,
+      meta: { client_email: params.to, invoice_number: params.invoice_number }
+    });
+  },
+
+  /**
    * Log a reminder to the timeline
    */
   async logReminder(reminder: Omit<ReminderTimeline, 'id' | 'created_at' | 'updated_at'> & { organization_id: string }) {
