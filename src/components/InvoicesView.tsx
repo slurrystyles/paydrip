@@ -109,7 +109,7 @@ export default function InvoicesView() {
 
       // Audit Log
       const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from('audit_logs').insert({
+      await supabase.from('audit_log').insert({
         entity_id: invoice.id,
         entity_type: 'invoice',
         audit_type: 'invoice_paid',

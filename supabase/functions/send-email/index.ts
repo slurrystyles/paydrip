@@ -64,7 +64,7 @@ serve(async (req) => {
       console.warn("RPC check_daily_email_cap not found or failed. Skipping cap check.");
     } else if (canSend === false) {
       console.warn("Daily email cap reached");
-      await supabase.from("audit_logs").insert({
+      await supabase.from("audit_log").insert({
         entity_id: invoice_id,
         entity_type: "invoice",
         organization_id,
@@ -106,7 +106,7 @@ serve(async (req) => {
 
     if (res.ok) {
       // 3. Log Success
-      await supabase.from("audit_logs").insert({
+      await supabase.from("audit_log").insert({
         entity_id: invoice_id,
         entity_type: "invoice",
         organization_id,
@@ -122,7 +122,7 @@ serve(async (req) => {
       });
     } else {
       // 4. Log Failure
-      await supabase.from("audit_logs").insert({
+      await supabase.from("audit_log").insert({
         entity_id: invoice_id,
         entity_type: "invoice",
         organization_id,

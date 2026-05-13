@@ -44,7 +44,7 @@ export default function PublicInvoiceView() {
       setInvoice(data);
 
       // Audit: Log the public view
-      await supabase.from('audit_logs').insert([{
+      await supabase.from('audit_log').insert([{
         entity_id: data.id,
         entity_type: 'invoice',
         audit_type: 'invoice_viewed',
@@ -52,14 +52,14 @@ export default function PublicInvoiceView() {
         meta: { public_token: token, user_agent: navigator.userAgent }
       }]);
 
-      // Fetch the business profile of the sender
+      // Fetch the business profile of the sender via secure view
       const { data: profile } = await supabase
-        .from('users')
+        .from('public_business_profiles')
         .select('*')
         .eq('id', data.user_id)
         .single();
       
-      setUserProfile(profile);
+      setUserProfile(profile as UserProfile);
 
       // Fetch payments
       const { data: payData } = await supabase
@@ -188,7 +188,7 @@ export default function PublicInvoiceView() {
       if (updateError) throw updateError;
 
       // 3. Audit Log: invoice_paid
-      await supabase.from('audit_logs').insert({
+      await supabase.from('audit_log').insert({
         entity_id: invoice.id,
         entity_type: 'invoice',
         audit_type: 'invoice_paid',

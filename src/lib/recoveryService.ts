@@ -73,7 +73,7 @@ export const recoveryService = {
 
     // 3. Log Audit
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('audit_logs').insert({
+    await supabase.from('audit_log').insert({
       entity_id: params.invoice_id,
       entity_type: 'invoice',
       audit_type: 'invoice_sent',
