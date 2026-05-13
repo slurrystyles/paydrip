@@ -63,6 +63,7 @@ export default function App() {
           {/* Public Routes */}
           <Route path="/" element={<LandingPage user={user} />} />
           <Route path="/pay/:token" element={<PublicInvoiceView />} />
+          <Route path="/v/:token" element={<PublicInvoiceView />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/contact" element={<ContactPage />} />
