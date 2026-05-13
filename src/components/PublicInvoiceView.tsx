@@ -7,7 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Download, Shield, Landmark, CheckCircle, ArrowDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function PublicInvoiceView() {
   const { token } = useParams<{ token: string }>();
@@ -16,6 +16,8 @@ export default function PublicInvoiceView() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     async function fetchInvoice() {
@@ -33,11 +35,21 @@ export default function PublicInvoiceView() {
         return;
       }
 
+      if (data.public_token_expires_at && new Date(data.public_token_expires_at) < new Date()) {
+        setError("This secure link has expired. Please contact the business for a new one.");
+        setLoading(false);
+        return;
+      }
+
       setInvoice(data);
 
       // Audit: Log the public view
-      await supabase.from('invoice_views').insert([{
-        invoice_id: data.id
+      await supabase.from('audit_log').insert([{
+        entity_id: data.id,
+        entity_type: 'invoice',
+        audit_type: 'invoice_viewed',
+        organization_id: data.organization_id,
+        meta: { public_token: token, user_agent: navigator.userAgent }
       }]);
 
       // Fetch the business profile of the sender
@@ -149,6 +161,57 @@ export default function PublicInvoiceView() {
     doc.text(footerText, margin, finalY + 60);
 
     doc.save(`${isReceipt ? 'Receipt' : 'Invoice'}_${invoice.invoice_number}.pdf`);
+  };
+
+  const handleMarkAsPaid = async () => {
+    if (!invoice || !userProfile) return;
+    setIsProcessing(true);
+    
+    try {
+      // 1. Record payment
+      const { error: payError } = await supabase.from('payments').insert([{
+        invoice_id: invoice.id,
+        organization_id: invoice.organization_id,
+        amount: remainingBalance,
+        method: 'upi',
+        paid_at: new Date().toISOString()
+      }]);
+      
+      if (payError) throw payError;
+
+      // 2. Update invoice status
+      const { error: updateError } = await supabase
+        .from('invoices')
+        .update({ status: 'paid', updated_at: new Date().toISOString() })
+        .eq('id', invoice.id);
+      
+      if (updateError) throw updateError;
+
+      // 3. Audit Log: invoice_paid
+      await supabase.from('audit_log').insert({
+        entity_id: invoice.id,
+        entity_type: 'invoice',
+        audit_type: 'invoice_paid',
+        organization_id: invoice.organization_id,
+        meta: { method: 'upi', amount: remainingBalance, source: 'public_page' }
+      });
+
+      // Refresh local state
+      setInvoice({ ...invoice, status: 'paid' });
+      const { data: payData } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('invoice_id', invoice.id)
+        .order('paid_at', { ascending: false });
+      if (payData) setPayments(payData);
+      
+      setShowConfirmation(true);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to process payment report. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (loading) {
@@ -263,10 +326,22 @@ export default function PublicInvoiceView() {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 text-center">Scan to Pay via UPI</p>
                   <a 
                     href={upiLink} 
-                    className="w-full py-5 bg-slate-900 text-white rounded-2xl text-center text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 active:scale-95 transition-all"
+                    className="w-full py-5 bg-slate-900 text-white rounded-2xl text-center text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 active:scale-95 transition-all mb-4"
                   >
                     Open Wallet App
                   </a>
+                  <button 
+                    onClick={handleMarkAsPaid}
+                    disabled={isProcessing}
+                    className="w-full py-5 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl text-center text-xs font-black uppercase tracking-widest hover:border-indigo-600 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    {isProcessing ? (
+                      <div className="w-4 h-4 border-2 border-slate-300 border-t-indigo-600 rounded-full animate-spin" />
+                    ) : (
+                      <CheckCircle size={16} className="text-green-500" />
+                    )}
+                    I've Made the Payment
+                  </button>
                 </div>
               )}
 
@@ -377,6 +452,30 @@ export default function PublicInvoiceView() {
           Direct inquiries to <span className="text-slate-900">{userProfile.business_name}</span>.
         </motion.p>
       </div>
+
+      <AnimatePresence>
+        {showConfirmation && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-xl">
+             <motion.div 
+               initial={{ scale: 0.9, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               className="bg-white rounded-[3rem] p-12 max-w-sm w-full text-center shadow-2xl border border-slate-100"
+             >
+                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-500 mx-auto mb-8">
+                   <CheckCircle size={48} />
+                </div>
+                <h2 className="text-2xl font-black tracking-tight text-slate-900 mb-4 italic">Payment Reported</h2>
+                <p className="text-slate-500 text-sm mb-10 leading-relaxed font-medium">Thank you! Your payment report has been sent to <span className="font-bold text-slate-900">{userProfile.business_name}</span> for verification.</p>
+                <button 
+                  onClick={() => setShowConfirmation(false)}
+                  className="w-full py-5 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
+                >
+                  Close Confirmation
+                </button>
+             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

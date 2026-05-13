@@ -33,7 +33,8 @@ import {
   Play,
   Pause,
   Ban,
-  Clock
+  Clock,
+  Send
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
@@ -287,6 +288,32 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     if (!error) {
       onUpdate();
       onClose();
+    }
+  }
+
+  async function handleSendInvoice() {
+    if (!userProfile || !clientInfo.email) {
+      alert("Missing business profile or client email.");
+      return;
+    }
+
+    if (!confirm(`Send invoice #${invoice.invoice_number} to ${clientInfo.name || 'Client'} at ${clientInfo.email}? This will start the automated follow-up sequence.`)) return;
+
+    setLoading(true);
+    try {
+      await recoveryService.sendInvoice({
+        to: clientInfo.email,
+        invoice_id: invoice.id,
+        invoice_number: invoice.invoice_number,
+        business_name: userProfile.business_name,
+        organization_id: invoice.organization_id
+      });
+      onUpdate();
+    } catch (e) {
+      console.error('Send failed:', e);
+      alert(e instanceof Error ? e.message : 'Failed to send invoice');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -766,6 +793,25 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
 
             {activeTab === 'recovery' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* Send Invoice Button for Drafts */}
+                {invoice.status === 'draft' && (
+                  <div className="p-4 bg-indigo-50 border-2 border-indigo-200 rounded-[2rem] border-dashed">
+                     <button
+                        onClick={handleSendInvoice}
+                        disabled={loading}
+                        className="w-full flex items-center justify-center gap-3 py-5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50"
+                     >
+                        {loading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white" />
+                        ) : (
+                          <Send size={16} />
+                        )}
+                        {loading ? 'Sending...' : 'Send Invoice Now'}
+                     </button>
+                     <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest text-center mt-4">Automated sequences will activate after sending</p>
+                  </div>
+                )}
+
                 {/* Status Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">

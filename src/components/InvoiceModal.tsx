@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Client } from '../types';
-import { X, Calendar, FileText, ChevronRight } from 'lucide-react';
+import { X, Calendar, FileText, ChevronRight, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePlan } from '../contexts/PlanContext';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { recoveryService } from '../lib/recoveryService';
 
 interface Props {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitMode, setSubmitMode] = useState<'draft' | 'send'>('draft');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -86,6 +88,23 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
         event_type: 'creation',
         metadata: { amount: parseFloat(amount) }
       }]);
+
+      if (submitMode === 'send') {
+        const { data: profile } = await supabase.from('users').select('business_name').eq('id', user.id).single();
+        if (clientData.email && profile) {
+          try {
+            await recoveryService.sendInvoice({
+              to: clientData.email,
+              invoice_id: newInvoice.id,
+              invoice_number: invoiceNumber,
+              business_name: profile.business_name,
+              organization_id: currentOrganization.id
+            });
+          } catch (e) {
+            console.error('Initial send failed:', e);
+          }
+        }
+      }
 
       onSuccess();
       onClose();
@@ -195,22 +214,29 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
 
               <div className="flex gap-3 pt-2">
                 <button 
-                  type="button" 
-                  onClick={onClose}
-                  className="flex-1 py-3 px-4 bg-slate-50 text-slate-500 rounded-xl font-black uppercase tracking-[0.2em] text-[9px] hover:bg-slate-100 transition-all active:scale-95 border border-slate-200"
+                  type="submit"
+                  disabled={loading}
+                  onClick={() => setSubmitMode('draft')}
+                  className="flex-1 py-4 px-4 bg-slate-50 text-slate-500 rounded-2xl font-black uppercase tracking-widest text-[9px] hover:bg-slate-100 transition-all border border-slate-200"
                 >
-                  Cancel
+                  {loading && submitMode === 'draft' ? (
+                    <div className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  ) : (
+                    'Save as Draft'
+                  )}
                 </button>
                 <button 
-                  disabled={loading}
                   type="submit"
-                  className="flex-1 py-3 px-4 bg-indigo-600 text-white rounded-xl font-black uppercase tracking-[0.2em] text-[9px] hover:bg-slate-900 transition-all disabled:opacity-50 active:scale-95 shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 group"
+                  disabled={loading}
+                  onClick={() => setSubmitMode('send')}
+                  className="flex-[1.5] py-4 px-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[9px] hover:bg-slate-900 transition-all disabled:opacity-50 shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 group"
                 >
-                  {loading ? (
+                  {loading && submitMode === 'send' ? (
                     <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     <>
-                      Create Invoice
+                      <Send size={12} />
+                      Send Now
                       <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                     </>
                   )}

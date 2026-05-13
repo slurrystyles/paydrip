@@ -65,6 +65,66 @@ export default function InvoicesView() {
     }
   };
 
+  const handleQuickSend = async (invoice: Invoice) => {
+    const clientInfo = invoice.client || invoice.snapshot_json;
+    if (!clientInfo?.email) {
+      alert("Missing client email.");
+      return;
+    }
+
+    if (!confirm(`Send invoice #${invoice.invoice_number} to ${clientInfo.name}?`)) return;
+
+    try {
+      const { data: profile } = await supabase.from('users').select('business_name').eq('id', invoice.user_id).single();
+      
+      await recoveryService.sendInvoice({
+        to: clientInfo.email,
+        invoice_id: invoice.id,
+        invoice_number: invoice.invoice_number,
+        business_name: profile?.business_name || 'Business',
+        organization_id: invoice.organization_id
+      });
+      fetchData();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to send invoice');
+    }
+  };
+
+  const handleMarkAsPaid = async (invoice: Invoice) => {
+    if (!confirm(`Mark invoice #${invoice.invoice_number} as paid? This will stop all automated reminders.`)) return;
+
+    try {
+      const { error } = await supabase.from('invoices').update({ status: 'paid' }).eq('id', invoice.id).eq('organization_id', invoice.organization_id);
+      if (error) throw error;
+      
+      // Log payment
+      await supabase.from('payments').insert([{
+        invoice_id: invoice.id,
+        organization_id: invoice.organization_id,
+        amount: invoice.amount,
+        method: 'cash',
+        paid_at: new Date().toISOString()
+      }]);
+
+      // Audit Log
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.from('audit_log').insert({
+        entity_id: invoice.id,
+        entity_type: 'invoice',
+        audit_type: 'invoice_paid',
+        organization_id: invoice.organization_id,
+        user_id: user?.id,
+        meta: { method: 'manual', amount: invoice.amount }
+      });
+
+      fetchData();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to mark as paid');
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [currentOrganization]);
@@ -238,8 +298,28 @@ export default function InvoicesView() {
                       )}
                     </td>
                     <td className="px-5 py-2.5 text-right">
-                      <div className="inline-flex items-center justify-center p-1.5 rounded-xl bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                        <ChevronRight size={12} />
+                      <div className="flex items-center justify-end gap-2">
+                        {invoice.status === 'draft' && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleQuickSend(invoice); }}
+                            className="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                            title="Send Invoice"
+                          >
+                            <Send size={14} />
+                          </button>
+                        )}
+                        {invoice.status === 'sent' && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(invoice); }}
+                            className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm"
+                            title="Mark as Paid"
+                          >
+                            <CheckCircle size={14} />
+                          </button>
+                        )}
+                        <div className="inline-flex items-center justify-center p-2 rounded-xl bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                          <ChevronRight size={14} />
+                        </div>
                       </div>
                     </td>
                   </tr>
