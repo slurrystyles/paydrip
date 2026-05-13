@@ -49,15 +49,20 @@ export const recoveryService = {
 
     if (updateError) throw updateError;
 
+    // Fetch token for link
+    const { data: inv } = await supabase.from('invoices').select('public_token').eq('id', params.invoice_id).single();
+
     // 2. Call Edge Function (send-email)
     try {
+      const public_link = inv?.public_token ? `${window.location.origin}/pay/${inv.public_token}` : '';
       const { error: dispatchError } = await supabase.functions.invoke('send-email', {
         body: {
           to: params.to,
           subject: `Invoice #${params.invoice_number} from ${params.business_name}`,
           invoice_id: params.invoice_id,
           type: 'invoice_created',
-          organization_id: params.organization_id
+          organization_id: params.organization_id,
+          public_link
         }
       });
       if (dispatchError) throw dispatchError;

@@ -18,9 +18,35 @@ serve(async (req) => {
   try {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
     const body = await req.json();
-    const { to, subject, html, invoice_id, type, organization_id } = body;
+    const { to, subject, html, invoice_id, type, organization_id, public_link } = body;
 
     console.log(`Sending email to ${to}, type: ${type}, org: ${organization_id}`);
+
+    let finalHtml = html;
+    let finalSubject = subject;
+
+    // Fetch invoice data if needed for template
+    if (!finalHtml || !finalSubject) {
+      const { data: invoice, error: invError } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', invoice_id)
+        .single();
+      
+      if (!invError && invoice) {
+        const { getEmailTemplate } = await import("../_shared/email-templates.ts");
+        const template = getEmailTemplate(type || 'invoice_created', {
+          businessName: invoice.business_name || "Paydrip Merchant",
+          invoiceNumber: invoice.invoice_number,
+          amount: invoice.amount.toString(),
+          dueDate: new Date(invoice.due_date).toLocaleDateString(),
+          publicLink: public_link || `${SUPABASE_URL?.replace('.supabase.co', '.supabase.co/pay')}/${invoice.public_token}`, // Still fallback, but better
+          clientName: invoice.snapshot_json?.name || 'Client'
+        });
+        finalHtml = template.html;
+        finalSubject = subject || template.subject;
+      }
+    }
 
     if (!RESEND_API_KEY) {
       console.error("RESEND_API_KEY is missing");
@@ -61,10 +87,10 @@ serve(async (req) => {
       body: JSON.stringify({
         from: "Paydrip Treasury <onboarding@resend.dev>",
         to: [to],
-        subject: subject,
+        subject: finalSubject,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #334155;">
-            ${html}
+            ${finalHtml}
             <hr style="margin-top: 40px; border: 0; border-top: 1px solid #e2e8f0;" />
             <p style="font-size: 11px; color: #94a3b8; text-align: center;">
               Sent via Paydrip Invoice Recovery.<br/>

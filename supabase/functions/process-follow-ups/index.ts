@@ -72,6 +72,7 @@ serve(async (req) => {
         const amount = invoice.amount;
         const dueDate = new Date(invoice.due_date).toLocaleDateString();
         const daysOverdue = Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)));
+        const appUrl = Deno.env.get("APP_URL") || `https://${PROJECT_REF}.supabase.co`; // Fallback to supabase domain but with /pay/ route if APP_URL missing
 
         if (!clientEmail) {
           await supabase.from("follow_up_steps").update({ status: 'failed', executed_at: new Date().toISOString(), meta: { error: 'client_email_missing' } }).eq("id", step.id);
@@ -82,7 +83,7 @@ serve(async (req) => {
         let emailContent = null;
         if (GEMINI_API_KEY) {
           try {
-            const systemPrompt = `You are a professional payment recovery assistant for ${businessName}. Generate a ${step.template_type} email for ${clientName} regarding invoice #${invoice.invoice_number} for ₹${amount}, due on ${dueDate} (${daysOverdue} days overdue). Keep it under 150 words. Be professional, not aggressive. Return only the email body, no subject line.`;
+            const systemPrompt = `You are a professional payment recovery assistant for ${businessName}. Generate a ${step.template_type} email for ${clientName} regarding invoice #${invoice.invoice_number} for ₹${amount}, due on ${dueDate} (${daysOverdue} days overdue). Keep it under 150 words. Be professional, not aggressive. Return only the email body, no subject line. Include this link for payment: ${appUrl}/pay/${invoice.public_token}`;
             
             const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
               method: "POST",
@@ -104,7 +105,7 @@ serve(async (req) => {
             amount: amount.toString(),
             dueDate,
             clientName,
-            publicLink: `https://${PROJECT_REF}.supabase.co/v/${invoice.public_token}`
+            publicLink: `${appUrl}/pay/${invoice.public_token}`
           });
           emailContent = template.html;
         } else {
