@@ -2,7 +2,8 @@
 
 -- 0. Schema Fixes: Add missing columns
 ALTER TABLE public.invoices 
-  ADD COLUMN IF NOT EXISTS public_token_expires_at TIMESTAMPTZ;
+  ADD COLUMN IF NOT EXISTS public_token_expires_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS payment_reference TEXT;
 
 -- Ensure payments has organization_id
 ALTER TABLE public.payments 
@@ -18,7 +19,7 @@ AND p.organization_id IS NULL;
 -- 1. Create a secure view for business profiles
 -- This avoids exposing sensitive fields like email and full name to the public
 CREATE OR REPLACE VIEW public.public_business_profiles AS
-  SELECT id, business_name, upi_id, bank_details
+  SELECT id, business_name, upi_id
   FROM public.users;
 
 -- 2. RLS for public invoice viewing
@@ -40,7 +41,7 @@ CREATE POLICY "Public can insert payments" ON public.payments
     EXISTS (
       SELECT 1 FROM public.invoices
       WHERE id = invoice_id
-      AND status = 'sent'
+      AND status IN ('sent', 'payment_reported')
       AND (public_token_expires_at IS NULL OR public_token_expires_at > now())
     )
   );
@@ -56,11 +57,12 @@ CREATE POLICY "Public can view payments for invoice" ON public.payments
     )
   );
 
--- 6. Allow public to update invoice status to paid only for valid sent invoices
-DROP POLICY IF EXISTS "Public can update invoice status to paid" ON public.invoices;
-CREATE POLICY "Public can update invoice status to paid" ON public.invoices
+-- 6. Allow public to update invoice status to payment_reported for valid sent invoices
+DROP POLICY IF EXISTS "Public can update invoice status to reported" ON public.invoices;
+DROP POLICY IF EXISTS "Public can update invoice status to payment_reported" ON public.invoices;
+CREATE POLICY "Public can update invoice status to payment_reported" ON public.invoices
   FOR UPDATE USING (
     status = 'sent'
     AND (public_token_expires_at IS NULL OR public_token_expires_at > now())
   )
-  WITH CHECK (status = 'paid');
+  WITH CHECK (status = 'payment_reported');

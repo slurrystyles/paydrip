@@ -27,7 +27,7 @@ export interface Client {
   created_at: string;
 }
 
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue';
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'payment_reported';
 
 export type RecoveryStage = 
   | 'pending' 
@@ -55,6 +55,7 @@ export interface Invoice {
   snapshot_json?: any;
   public_token: string;
   public_token_expires_at?: string;
+  payment_reference?: string;
   is_disputed: boolean;
   automation_paused: boolean;
   created_at: string;

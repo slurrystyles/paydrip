@@ -18,6 +18,8 @@ export default function PublicInvoiceView() {
   const [error, setError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [transactionRef, setTransactionRef] = useState('');
+  const [showRefInput, setShowRefInput] = useState(false);
 
   useEffect(() => {
     async function fetchInvoice() {
@@ -163,49 +165,44 @@ export default function PublicInvoiceView() {
     doc.save(`${isReceipt ? 'Receipt' : 'Invoice'}_${invoice.invoice_number}.pdf`);
   };
 
-  const handleMarkAsPaid = async () => {
+  const handleReportPayment = async () => {
     if (!invoice || !userProfile) return;
+    if (!transactionRef.trim()) {
+      alert('Please enter a Transaction ID or payment reference.');
+      return;
+    }
     setIsProcessing(true);
     
     try {
-      // 1. Record payment
-      const { error: payError } = await supabase.from('payments').insert([{
-        invoice_id: invoice.id,
-        organization_id: invoice.organization_id,
-        amount: remainingBalance,
-        method: 'upi',
-        paid_at: new Date().toISOString()
-      }]);
-      
-      if (payError) throw payError;
-
-      // 2. Update invoice status
+      // 1. Update invoice status to payment_reported
       const { error: updateError } = await supabase
         .from('invoices')
-        .update({ status: 'paid', updated_at: new Date().toISOString() })
+        .update({ 
+          status: 'payment_reported', 
+          payment_reference: transactionRef,
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', invoice.id);
       
       if (updateError) throw updateError;
+      
+      // 2. Clear any active sequences (optional, or just pause them)
+      // They will be resumed if rejected
+      await supabase.from('invoices').update({ automation_paused: true }).eq('id', invoice.id);
 
-      // 3. Audit Log: invoice_paid
+      // 3. Audit Log: payment_reported
       await supabase.from('audit_log').insert({
         entity_id: invoice.id,
         entity_type: 'invoice',
-        audit_type: 'invoice_paid',
+        audit_type: 'payment_reported',
         organization_id: invoice.organization_id,
-        meta: { method: 'upi', amount: remainingBalance, source: 'public_page' }
+        meta: { reference: transactionRef, source: 'public_page' }
       });
 
       // Refresh local state
-      setInvoice({ ...invoice, status: 'paid' });
-      const { data: payData } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('invoice_id', invoice.id)
-        .order('paid_at', { ascending: false });
-      if (payData) setPayments(payData);
-      
+      setInvoice({ ...invoice, status: 'payment_reported', payment_reference: transactionRef });
       setShowConfirmation(true);
+      setShowRefInput(false);
     } catch (e) {
       console.error(e);
       alert('Failed to process payment report. Please try again.');
@@ -324,24 +321,70 @@ export default function PublicInvoiceView() {
                     <QRCodeSVG value={upiLink} size={160} />
                   </div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 text-center">Scan to Pay via UPI</p>
-                  <a 
-                    href={upiLink} 
-                    className="w-full py-5 bg-slate-900 text-white rounded-2xl text-center text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 active:scale-95 transition-all mb-4"
-                  >
-                    Open Wallet App
-                  </a>
-                  <button 
-                    onClick={handleMarkAsPaid}
-                    disabled={isProcessing}
-                    className="w-full py-5 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl text-center text-xs font-black uppercase tracking-widest hover:border-indigo-600 transition-all active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    {isProcessing ? (
-                      <div className="w-4 h-4 border-2 border-slate-300 border-t-indigo-600 rounded-full animate-spin" />
-                    ) : (
-                      <CheckCircle size={16} className="text-green-500" />
-                    )}
-                    I've Made the Payment
-                  </button>
+                  
+                  {!showRefInput ? (
+                    <div className="w-full space-y-4">
+                      <a 
+                        href={upiLink} 
+                        className="block w-full py-5 bg-slate-900 text-white rounded-2xl text-center text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 active:scale-95 transition-all"
+                      >
+                        Open Wallet App
+                      </a>
+                      <button 
+                        onClick={() => setShowRefInput(true)}
+                        className="w-full py-5 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl text-center text-xs font-black uppercase tracking-widest hover:border-indigo-600 transition-all active:scale-95 flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle size={16} className="text-green-500" />
+                        I've Made the Payment
+                      </button>
+                    </div>
+                  ) : (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="w-full space-y-4"
+                    >
+                      <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Enter Transaction ID / Ref</label>
+                        <input 
+                          type="text"
+                          value={transactionRef}
+                          onChange={(e) => setTransactionRef(e.target.value)}
+                          placeholder="e.g. 412389471..."
+                          className="w-full p-4 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button 
+                          onClick={() => setShowRefInput(false)}
+                          className="py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900"
+                        >
+                          Back
+                        </button>
+                        <button 
+                          onClick={handleReportPayment}
+                          disabled={isProcessing}
+                          className="py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
+                        >
+                          {isProcessing ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            'Submit Report'
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              )}
+
+              {invoice.status === 'payment_reported' && (
+                <div className="bg-indigo-50/50 p-10 rounded-[2rem] border border-indigo-100 flex flex-col items-center justify-center text-center">
+                  <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-6">
+                    <CheckCircle size={48} className="animate-pulse" />
+                  </div>
+                  <h3 className="text-xl font-black text-indigo-900 mb-2 font-mono uppercase tracking-tighter">Verification Pending</h3>
+                  <p className="text-indigo-700/60 text-sm font-medium">Your payment of {formatCurrency(remainingBalance)} is being verified by the issuer. Ref: {invoice.payment_reference}</p>
                 </div>
               )}
 

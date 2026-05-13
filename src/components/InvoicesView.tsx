@@ -189,6 +189,7 @@ export default function InvoicesView() {
         <div className="flex items-center space-x-1 bg-white border border-slate-200 p-1 rounded-xl shadow-sm overflow-x-auto">
           <FilterButton active={filters === 'all'} onClick={() => setFilters('all')}>All</FilterButton>
           <FilterButton active={filters === 'paid'} onClick={() => setFilters('paid')}>Paid</FilterButton>
+          <FilterButton active={filters === 'payment_reported'} onClick={() => setFilters('payment_reported')}>Reported</FilterButton>
           <FilterButton active={filters === 'sent'} onClick={() => setFilters('sent')}>Sent</FilterButton>
           <FilterButton active={filters === 'draft'} onClick={() => setFilters('draft')}>Draft</FilterButton>
         </div>
@@ -285,13 +286,16 @@ export default function InvoicesView() {
                       <span className={cn(
                         "px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border",
                         invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100 shadow-sm' :
+                        invoice.status === 'payment_reported' ? 'bg-amber-50 text-amber-600 border-amber-100 shadow-sm' :
                         isOverdue(invoice) ? 'bg-red-50 text-red-600 border-red-100 shadow-sm' :
                         invoice.status === 'sent' ? 'bg-yellow-50 text-yellow-600 border-yellow-100 shadow-sm' :
                         'bg-slate-50 text-slate-400 border-slate-100 shadow-sm'
                       )}>
-                        {invoice.status === 'paid' ? 'Settled' : invoice.status}
+                        {invoice.status === 'paid' ? 'Settled' : 
+                         invoice.status === 'payment_reported' ? 'Reported' : 
+                         invoice.status}
                       </span>
-                      {isOverdue(invoice) && invoice.recovery_stage && (
+                      {isOverdue(invoice) && invoice.status !== 'payment_reported' && invoice.recovery_stage && (
                         <p className="text-[7px] font-black text-slate-400 uppercase tracking-tighter mt-1 italic">
                           Stage: {invoice.recovery_stage.replace('_', ' ')}
                         </p>

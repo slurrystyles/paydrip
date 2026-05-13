@@ -223,6 +223,63 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     setLoading(false);
   }
 
+  async function verifyPayment(confirm: boolean) {
+    setLoading(true);
+    try {
+      if (confirm) {
+        // 1. Record final payment
+        const { error: payError } = await supabase.from('payments').insert([{
+          invoice_id: invoice.id,
+          organization_id: invoice.organization_id,
+          amount: remainingBalance,
+          method: 'upi',
+          paid_at: new Date().toISOString()
+        }]);
+        if (payError) throw payError;
+
+        // 2. Update status to paid
+        await supabase.from('invoices').update({ 
+          status: 'paid', 
+          payment_reference: null,
+          automation_paused: false,
+          updated_at: new Date().toISOString() 
+        }).eq('id', invoice.id);
+
+        // 3. Log Audit
+        await supabase.from('audit_log').insert({
+          entity_id: invoice.id,
+          entity_type: 'invoice',
+          audit_type: 'payment_verified',
+          organization_id: invoice.organization_id,
+          meta: { ref: invoice.payment_reference, action: 'confirmed' }
+        });
+      } else {
+        // Reject
+        const newStatus = new Date(invoice.due_date) < new Date() ? 'overdue' : 'sent';
+        await supabase.from('invoices').update({ 
+          status: newStatus,
+          payment_reference: null,
+          automation_paused: false, 
+          updated_at: new Date().toISOString() 
+        }).eq('id', invoice.id);
+
+        await supabase.from('audit_log').insert({
+          entity_id: invoice.id,
+          entity_type: 'invoice',
+          audit_type: 'payment_rejected',
+          organization_id: invoice.organization_id,
+          meta: { ref: invoice.payment_reference, action: 'rejected' }
+        });
+      }
+      onUpdate();
+    } catch (e) {
+      console.error(e);
+      alert('Verification action failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function updateStatus(status: 'paid' | 'sent') {
     setLoading(true);
     const { error } = await supabase.from('invoices').update({ status }).eq('id', invoice.id).eq('organization_id', invoice.organization_id);
@@ -793,6 +850,37 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
 
             {activeTab === 'recovery' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* Verify Payment Section */}
+                {invoice.status === 'payment_reported' && (
+                  <div className="p-6 bg-amber-50 border-2 border-amber-200 rounded-[2rem] space-y-4 shadow-xl shadow-amber-100/50">
+                    <div className="flex items-center gap-3 text-amber-800">
+                      <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+                        <Smartphone size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest leading-none">Payment Reported</p>
+                        <p className="text-sm font-black mt-1">Ref: {invoice.payment_reference || 'No Reference'}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => verifyPayment(true)}
+                        disabled={loading}
+                        className="flex-1 py-4 bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-100"
+                      >
+                        Confirm
+                      </button>
+                      <button 
+                        onClick={() => verifyPayment(false)}
+                        disabled={loading}
+                        className="flex-1 py-4 bg-white border-2 border-red-100 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Send Invoice Button for Drafts */}
                 {invoice.status === 'draft' && (
                   <div className="p-4 bg-indigo-50 border-2 border-indigo-200 rounded-[2rem] border-dashed">
