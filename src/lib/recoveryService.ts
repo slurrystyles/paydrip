@@ -330,7 +330,19 @@ export const recoveryService = {
       body: params,
     });
 
-    if (error) throw error;
+    if (error) {
+      // Try to parse the error response body if available
+      let errorMessage = error.message;
+      try {
+        if (typeof error.context?.json === 'function') {
+          const body = await error.context.json();
+          if (body.error) errorMessage = body.error;
+        }
+      } catch (e) {
+        console.error('Error parsing function error response:', e);
+      }
+      throw new Error(errorMessage || 'Email Dispatch failed');
+    }
 
     // 3. Log to timeline
     const { data: { user } } = await supabase.auth.getUser();

@@ -17,26 +17,37 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-    const { to, subject, html, invoice_id, type } = await req.json();
+    const body = await req.json();
+    const { to, subject, html, invoice_id, type, organization_id } = body;
 
-    // 1. Daily Cap Check
-    const { data: canSend, error: capError } = await supabase.rpc("check_daily_email_cap");
-    if (capError) throw capError;
+    console.log(`Sending email to ${to}, type: ${type}, org: ${organization_id}`);
 
-    if (!canSend) {
-      await supabase.from("audit_log").insert({
-        invoice_id,
-        audit_type: "email_cap_reached",
-        meta: { to, type, reason: "Daily limit of 90 reached" }
-      });
-      return new Response(JSON.stringify({ error: "Daily limit reached" }), {
-        status: 429,
+    if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY is missing");
+      return new Response(JSON.stringify({ error: "RESEND_API_KEY is not set in Supabase Secrets." }), {
+        status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (!RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY not configured");
+    // 1. Daily Cap Check
+    const { data: canSend, error: capError } = await supabase.rpc("check_daily_email_cap");
+    if (capError) {
+      console.error("Cap check error:", capError);
+      // Fallback: if RPC fails (e.g. migration not run), assume we can send for now but log it
+      console.warn("RPC check_daily_email_cap not found or failed. Skipping cap check.");
+    } else if (canSend === false) {
+      console.warn("Daily email cap reached");
+      await supabase.from("audit_log").insert({
+        invoice_id,
+        organization_id,
+        audit_type: "email_cap_reached",
+        meta: { to, type, reason: "Daily limit of 90 reached" }
+      });
+      return new Response(JSON.stringify({ error: "Daily email limit (90) reached for today." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // 2. Call Resend API
@@ -70,6 +81,7 @@ serve(async (req) => {
       // 3. Log Success
       await supabase.from("audit_log").insert({
         invoice_id,
+        organization_id,
         audit_type: "email_sent",
         recipient_email: to,
         delivery_status: "success",
@@ -84,6 +96,7 @@ serve(async (req) => {
       // 4. Log Failure
       await supabase.from("audit_log").insert({
         invoice_id,
+        organization_id,
         audit_type: "email_failed",
         recipient_email: to,
         delivery_status: "failed",

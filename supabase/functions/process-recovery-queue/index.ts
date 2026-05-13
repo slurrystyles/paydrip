@@ -99,7 +99,8 @@ serve(async (req) => {
                 subject: template.subject,
                 html: template.html,
                 invoice_id: invoice.id,
-                type: templateType
+                type: templateType,
+                organization_id: invoice.organization_id
               })
             }).catch(e => console.error("Email trigger failed:", e));
           }
