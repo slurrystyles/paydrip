@@ -181,10 +181,10 @@ export const RecoveryDashboard: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-6">
                         {[
-                          { stage: 'Gentle follow-up', value: 45000, color: 'bg-indigo-500' },
-                          { stage: 'Firm follow-up', value: 32000, color: 'bg-orange-500' },
-                          { stage: 'Final notice', value: 18500, color: 'bg-red-500' },
-                          { stage: 'Legal Warning', value: 50000, color: 'bg-slate-900' }
+                          { stage: 'Gentle follow-up', value: stats?.stageBreakdown?.gentle_followup || 0, color: 'bg-indigo-500' },
+                          { stage: 'Firm follow-up', value: stats?.stageBreakdown?.firm_followup || 0, color: 'bg-orange-500' },
+                          { stage: 'Final notice', value: stats?.stageBreakdown?.final_notice || 0, color: 'bg-red-500' },
+                          { stage: 'Legal Warning', value: stats?.stageBreakdown?.legal_warning || 0, color: 'bg-slate-900' }
                         ].map((item, i) => (
                           <div key={i} className="group">
                             <div className="flex justify-between items-end text-[10px] font-black uppercase tracking-widest mb-2">

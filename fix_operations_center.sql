@@ -1,5 +1,9 @@
 -- Path: /fix_operations_center.sql
 
+-- 0. Schema Permissions
+GRANT USAGE ON SCHEMA security TO authenticated;
+GRANT USAGE ON SCHEMA security TO service_role;
+
 -- 1. Create PUBLIC views for SECURITY schema tables to expose them to the API
 -- This maintains the hardened storage while allowing the frontend to query via public schema
 

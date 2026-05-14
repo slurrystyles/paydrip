@@ -442,7 +442,17 @@ export const recoveryService = {
       activeEscalations: 0,
       successRate: 0,
       avgRecoveryDays: 0,
-      highRiskClients: 0
+      highRiskClients: 0,
+      stageBreakdown: {
+        pending: 0,
+        due_today: 0,
+        gentle_followup: 0,
+        firm_followup: 0,
+        final_notice: 0,
+        legal_warning: 0,
+        recovered: 0,
+        failed: 0
+      }
     };
 
     let recoveredCount = 0;
@@ -450,6 +460,10 @@ export const recoveryService = {
 
     invoices?.forEach(inv => {
       const amount = Number(inv.amount);
+      if (inv.recovery_stage) {
+        stats.stageBreakdown[inv.recovery_stage as keyof typeof stats.stageBreakdown] = (stats.stageBreakdown[inv.recovery_stage as keyof typeof stats.stageBreakdown] || 0) + amount;
+      }
+      
       if (inv.status === 'paid') {
         stats.recoveredRevenue += amount;
         recoveredCount++;

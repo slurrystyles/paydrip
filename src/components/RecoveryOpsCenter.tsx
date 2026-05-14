@@ -124,12 +124,13 @@ export default function RecoveryOpsCenter() {
             exit={{ opacity: 0, y: -20 }}
             className="flex gap-6 overflow-x-auto pb-8 snap-x"
           >
-             {['gentle_followup', 'firm_followup', 'final_notice', 'legal_warning'].map((stage) => (
+             {['pending', 'gentle_followup', 'firm_followup', 'final_notice', 'legal_warning'].map((stage) => (
                <div key={stage} className="min-w-[320px] w-[320px] snap-center">
                   <div className="mb-4 flex items-center justify-between px-2">
                      <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                         <div className={cn(
                           "w-2 h-2 rounded-full",
+                          stage === 'pending' ? 'bg-slate-300' :
                           stage === 'legal_warning' ? 'bg-red-500' : 'bg-indigo-500'
                         )}></div>
                         {stage.replace('_', ' ')}
@@ -170,7 +171,7 @@ export default function RecoveryOpsCenter() {
                           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-slate-200 mb-4 shadow-sm border border-slate-50">
                              <Activity size={20} />
                           </div>
-                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">No active cases</p>
+                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">No cases in {stage.replace('_', ' ')}</p>
                        </div>
                      )}
                   </div>
@@ -285,15 +286,24 @@ export default function RecoveryOpsCenter() {
                    <div className="grid grid-cols-2 gap-8 mt-10">
                       <div>
                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Success Velocity</p>
-                         <p className="text-4xl font-black mt-2">94%</p>
+                         <p className="text-4xl font-black mt-2">
+                           {queue.filter(q => q.status === 'processed').length + queue.filter(q => q.status === 'failed').length > 0 
+                             ? Math.round((queue.filter(q => q.status === 'processed').length / (queue.filter(q => q.status === 'processed').length + queue.filter(q => q.status === 'failed').length)) * 100) 
+                             : 100}%
+                         </p>
                          <div className="w-full h-1 bg-white/10 rounded-full mt-4">
-                            <div className="h-full bg-white w-[94%] rounded-full"></div>
+                            <div 
+                              className="h-full bg-white rounded-full transition-all duration-1000" 
+                              style={{ width: `${queue.filter(q => q.status === 'processed').length + queue.filter(q => q.status === 'failed').length > 0 
+                                ? (queue.filter(q => q.status === 'processed').length / (queue.filter(q => q.status === 'processed').length + queue.filter(q => q.status === 'failed').length)) * 100 
+                                : 100}%` }}
+                            ></div>
                          </div>
                       </div>
                       <div>
                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Resolved Nodes</p>
                          <p className="text-4xl font-black mt-2">{queue.filter(q => q.status === 'processed').length}</p>
-                         <p className="text-[9px] font-bold mt-4">+12 from yesterday</p>
+                         <p className="text-[9px] font-bold mt-4">Lifetime Processing</p>
                       </div>
                    </div>
                 </div>
