@@ -9,7 +9,7 @@ import { useUserRole } from '../hooks/useUserRole';
 
 export default function ClientsView() {
   const { currentOrganization } = useOrganization();
-  const { capabilities } = useUserRole();
+  const { capabilities = { canManageInvoices: false } } = useUserRole() || {};
   const canWrite = capabilities.canManageInvoices; // In our roles, anyone who can manage invoices can manage clients
   const [clients, setClients] = useState<(Client & { risk_score?: any })[]>([]);
   const [loading, setLoading] = useState(true);

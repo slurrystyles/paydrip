@@ -23,7 +23,7 @@ import RecoveryAnalytics from './RecoveryAnalytics';
 
 export const RecoveryDashboard: React.FC = () => {
   const { currentOrganization } = useOrganization();
-  const { capabilities } = useUserRole();
+  const { capabilities = { canManageRecovery: false } } = useUserRole() || {};
   const canUpdate = capabilities.canManageRecovery;
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);

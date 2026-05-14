@@ -30,7 +30,7 @@ import OperationsHealth from './OperationsHealth';
 
 export default function RecoveryOpsCenter() {
   const { currentOrganization } = useOrganization();
-  const { capabilities } = useUserRole();
+  const { capabilities = { canManageRecovery: false } } = useUserRole() || {};
   const canUpdate = capabilities.canManageRecovery;
   const [activeView, setActiveView] = useState<'board' | 'queue' | 'logs' | 'security' | 'health'>('board');
   const [queue, setQueue] = useState<EscalationQueueItem[]>([]);

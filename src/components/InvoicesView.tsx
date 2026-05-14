@@ -26,13 +26,14 @@ import InvoiceDetailModal from './InvoiceDetailModal';
 import UpgradeModal from './UpgradeModal';
 import { RiskBadge } from './RiskBadge';
 import { usePlan } from '../contexts/PlanContext';
+import { useOrganization } from '../contexts/OrganizationContext';
 import { useUserRole } from '../hooks/useUserRole';
 import { recoveryService } from '../lib/recoveryService';
 
 export default function InvoicesView() {
   const { isLimitReached, refreshPlanData } = usePlan();
   const { currentOrganization } = useOrganization();
-  const { capabilities } = useUserRole();
+  const { capabilities = { canManageInvoices: false } } = useUserRole() || {};
   const canWrite = capabilities.canManageInvoices;
   const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);

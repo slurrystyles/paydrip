@@ -21,7 +21,7 @@ import { useUserRole } from '../hooks/useUserRole';
 
 export default function OperationsHealth() {
   const { currentOrganization } = useOrganization();
-  const { capabilities } = useUserRole();
+  const { capabilities = { canManageRecovery: false } } = useUserRole() || {};
   const canUpdate = capabilities.canManageRecovery;
   const [dlqJobs, setDlqJobs] = useState<DeadLetterJob[]>([]);
   const [usage, setUsage] = useState<UsageCounter[]>([]);

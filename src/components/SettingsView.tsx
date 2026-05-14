@@ -41,11 +41,10 @@ export default function SettingsView() {
   const { 
     isOwner: rbacIsOwner, 
     isAdminOrOwner: rbacIsAdminOrOwner, 
-    canManageMembers, 
-    canManageBilling,
-    canDeleteOrg,
+    capabilities = { canManageMembers: false, canManageBilling: false, canDeleteOrg: false },
     role: currentUserRole
-  } = useUserRole();
+  } = useUserRole() || {};
+  const { canManageMembers, canManageBilling, canDeleteOrg } = capabilities;
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

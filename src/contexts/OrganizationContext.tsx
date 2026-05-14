@@ -29,15 +29,16 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
     const { data, error } = await supabase
       .from('memberships')
-      .select(`
-        *,
-        organization:organizations(*)
-      `)
+      .select('*, organization:organizations(*)')
       .eq('user_id', user.id)
       .eq('is_active', true);
 
     if (error) {
       console.error('Error fetching memberships:', error);
+      // If 404, the table might be missing or renamed in the target DB
+      if (error.code === 'PGRST116') {
+        console.warn('Membership table or organizations relation not found (404). Check schema.');
+      }
     } else {
       setMemberships(data || []);
       

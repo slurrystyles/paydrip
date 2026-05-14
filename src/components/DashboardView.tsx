@@ -34,7 +34,7 @@ import { useUserRole } from '../hooks/useUserRole';
 export default function DashboardView() {
   const { plan, isLimitReached, refreshPlanData } = usePlan();
   const { currentOrganization } = useOrganization();
-  const { capabilities } = useUserRole();
+  const { capabilities = { canManageInvoices: false } } = useUserRole() || {};
   const canUpdate = capabilities.canManageInvoices;
   const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);

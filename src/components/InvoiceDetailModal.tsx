@@ -57,7 +57,7 @@ interface Props {
 
 export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUpdate }: Props) {
   const { currentOrganization } = useOrganization();
-  const { capabilities } = useUserRole();
+  const { capabilities = { canManageInvoices: false, canManageRecovery: false } } = useUserRole() || {};
   const canUpdate = capabilities.canManageInvoices;
   const [invoice, setInvoice] = useState<Invoice>(propInvoice);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);

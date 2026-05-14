@@ -20,18 +20,18 @@ export function useUserRole() {
   const isMemberPlus = isOwner || isAdmin || isMember;
   
   const capabilities = {
-    canEdit: isMemberPlus,
-    canDelete: isAdminOrOwner,
-    canManageMembers: isAdminOrOwner,
-    canManageBilling: isOwner,
-    canDeleteOrg: isOwner,
-    canManageInvoices: isMemberPlus,
-    canManageRecovery: isMemberPlus,
+    canEdit: !!isMemberPlus,
+    canDelete: !!isAdminOrOwner,
+    canManageMembers: !!isAdminOrOwner,
+    canManageBilling: !!isOwner,
+    canDeleteOrg: !!isOwner,
+    canManageInvoices: !!isMemberPlus,
+    canManageRecovery: !!isMemberPlus,
   };
 
   const isLoading = orgLoading || (currentOrganization && !role);
 
-  if (isLoading || !role) {
+  if (isLoading || !role || !currentMembership) {
     return {
       role: null,
       isOwner: false,
