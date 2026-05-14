@@ -2,7 +2,7 @@ import { useOrganization } from '../contexts/OrganizationContext';
 import { MembershipRole } from '../types';
 
 export function useUserRole() {
-  const { memberships, currentOrganization } = useOrganization();
+  const { memberships, currentOrganization, loading: orgLoading } = useOrganization();
   
   const currentMembership = memberships.find(
     (m) => m.organization_id === currentOrganization?.id
@@ -19,12 +19,39 @@ export function useUserRole() {
   const isAdminOrOwner = isOwner || isAdmin;
   const isMemberPlus = isOwner || isAdmin || isMember;
   
-  // Permission flags
-  const canEdit = isMemberPlus;
-  const canDelete = isAdminOrOwner;
-  const canManageMembers = isAdminOrOwner;
-  const canManageBilling = isOwner;
-  const canDeleteOrg = isOwner;
+  const capabilities = {
+    canEdit: isMemberPlus,
+    canDelete: isAdminOrOwner,
+    canManageMembers: isAdminOrOwner,
+    canManageBilling: isOwner,
+    canDeleteOrg: isOwner,
+    canManageInvoices: isMemberPlus,
+    canManageRecovery: isMemberPlus,
+  };
+
+  const isLoading = orgLoading || (currentOrganization && !role);
+
+  if (isLoading || !role) {
+    return {
+      role: null,
+      isOwner: false,
+      isAdmin: false,
+      isMember: false,
+      isViewer: false,
+      isAdminOrOwner: false,
+      isMemberPlus: false,
+      capabilities: {
+        canEdit: false,
+        canDelete: false,
+        canManageMembers: false,
+        canManageBilling: false,
+        canDeleteOrg: false,
+        canManageInvoices: false,
+        canManageRecovery: false,
+      },
+      isLoading: true
+    };
+  }
 
   return {
     role,
@@ -34,10 +61,7 @@ export function useUserRole() {
     isViewer,
     isAdminOrOwner,
     isMemberPlus,
-    canEdit,
-    canDelete,
-    canManageMembers,
-    canManageBilling,
-    canDeleteOrg
+    capabilities,
+    isLoading: false
   };
 }

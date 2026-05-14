@@ -120,6 +120,9 @@ DROP POLICY IF EXISTS "Admins can invite members" ON public.memberships;
 DROP POLICY IF EXISTS "Owners can change roles" ON public.memberships;
 DROP POLICY IF EXISTS "Admins can remove members" ON public.memberships;
 
+CREATE POLICY "Users can read own memberships" ON public.memberships
+    FOR SELECT USING (user_id = auth.uid());
+
 CREATE POLICY "Memberships View: All Teammates" ON public.memberships
     FOR SELECT USING (public.has_role(organization_id, 'owner', 'admin', 'member', 'viewer'));
 
