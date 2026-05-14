@@ -247,11 +247,13 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         }).eq('id', invoice.id);
 
         // 3. Log Audit
+        const { data: { user } } = await supabase.auth.getUser();
         await supabase.from('audit_log').insert({
           entity_id: invoice.id,
           entity_type: 'invoice',
           audit_type: 'payment_confirmed',
           organization_id: invoice.organization_id,
+          user_id: user?.id,
           meta: { payment_reference: invoice.payment_reference }
         });
         
@@ -266,11 +268,13 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
           updated_at: new Date().toISOString() 
         }).eq('id', invoice.id);
 
+        const { data: { user } } = await supabase.auth.getUser();
         await supabase.from('audit_log').insert({
           entity_id: invoice.id,
           entity_type: 'invoice',
           audit_type: 'payment_rejected',
           organization_id: invoice.organization_id,
+          user_id: user?.id,
           meta: { payment_reference: invoice.payment_reference }
         });
 
@@ -891,14 +895,14 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
                         disabled={loading}
                         className="flex-1 py-4 bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-100"
                       >
-                        Confirm
+                        Confirm Payment
                       </button>
                       <button 
                         onClick={() => verifyPayment(false)}
                         disabled={loading}
                         className="flex-1 py-4 bg-white border-2 border-red-100 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all"
                       >
-                        Reject
+                        Reject Payment
                       </button>
                     </div>
                   </div>

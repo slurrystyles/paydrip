@@ -21,6 +21,7 @@ import { usePlan } from '../contexts/PlanContext';
 import { useOrganization } from '../contexts/OrganizationContext';
 import UpgradeModal from './UpgradeModal';
 import OrganizationSwitcher from './OrganizationSwitcher';
+import NotificationCenter from './NotificationCenter';
 
 interface NavItemProps {
   key?: string;
@@ -233,10 +234,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                 className="bg-transparent border-none outline-none text-[10px] font-bold text-slate-600 w-full placeholder:text-slate-300" 
               />
             </div>
-            <button className="p-2 bg-white border border-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-all shadow-sm relative">
-              <Bell size={14} />
-              <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-indigo-600 rounded-full border-2 border-white"></div>
-            </button>
+            
+            <NotificationCenter />
             
             <div className="relative">
               <button 

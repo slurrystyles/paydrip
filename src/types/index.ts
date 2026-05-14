@@ -304,6 +304,19 @@ export interface AuditEvent {
   created_at: string;
 }
 
+export interface Notification {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string;
+  entity_id?: string;
+  entity_type?: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 export type FollowUpStatus = 'active' | 'paused' | 'completed' | 'cancelled';
 
 export interface FollowUpSequence {
