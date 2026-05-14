@@ -222,7 +222,7 @@ export default function InvoicesView() {
         onClose={() => setShowUpgradeModal(false)} 
       />
 
-      <div className="hidden sm:block bento-card overflow-hidden">
+      <div className="hidden md:block bento-card overflow-hidden">
         <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[800px]">
               <thead>
@@ -363,84 +363,96 @@ export default function InvoicesView() {
       </div>
 
       {/* Mobile Card Layout */}
-      <div className="sm:hidden space-y-4">
-        {sortedInvoices.map((invoice) => (
-          <div 
-            key={invoice.id}
-            onClick={() => setSelectedInvoice(invoice)}
-            className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm active:scale-[0.98] transition-all"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="font-black text-slate-900 tracking-tight text-sm leading-tight">{invoice.client?.name || invoice.snapshot_json?.name}</p>
-                <p className="text-[8px] text-slate-400 font-mono font-bold uppercase tracking-widest mt-1">#{invoice.invoice_number}</p>
-              </div>
-              <span className={cn(
-                "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border",
-                invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100' :
-                invoice.status === 'payment_reported' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                isOverdue(invoice) ? 'bg-red-50 text-red-600 border-red-100' :
-                invoice.status === 'sent' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
-                'bg-slate-50 text-slate-400 border-slate-100'
-              )}>
-                {invoice.status === 'paid' ? 'Settled' : 
-                 invoice.status === 'payment_reported' ? 'Reported' : 
-                 isOverdue(invoice) ? 'Overdue' : invoice.status}
-              </span>
-            </div>
-            
-            <div className="flex justify-between items-end">
-              <div className="space-y-1">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Amount Due</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-extrabold text-slate-900 text-lg">{formatCurrency(invoice.remainingBalance || invoice.amount)}</p>
-                  {invoice.totalPaid && invoice.totalPaid > 0 && (
-                     <p className="text-[8px] text-green-600 font-black uppercase bg-green-50 px-1.5 py-0.5 rounded-lg border border-green-100">+{formatCurrency(invoice.totalPaid)}</p>
-                  )}
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Due Date</p>
-                <p className={cn(
-                  "text-[10px] font-black uppercase tracking-widest",
-                   isOverdue(invoice) ? "text-red-500 italic" : "text-slate-600"
+      <div className="md:hidden space-y-3">
+        {sortedInvoices.map((invoice) => {
+          const overdueDays = Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)));
+          
+          return (
+            <div 
+              key={invoice.id}
+              onClick={() => setSelectedInvoice(invoice)}
+              className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 active:scale-[0.98] transition-all"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <span className="font-semibold text-slate-900 break-words max-w-[70%]">
+                  {invoice.client?.name || invoice.snapshot_json?.name}
+                </span>
+                <span className={cn(
+                  "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border shrink-0",
+                  invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100' :
+                  invoice.status === 'payment_reported' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                  isOverdue(invoice) ? 'bg-red-50 text-red-600 border-red-100' :
+                  invoice.status === 'sent' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                  'bg-slate-50 text-slate-400 border-slate-100'
                 )}>
-                  {new Date(invoice.due_date).toLocaleDateString()}
+                  {invoice.status === 'paid' ? 'Settled' : 
+                   invoice.status === 'payment_reported' ? 'Reported' : 
+                   isOverdue(invoice) ? 'Overdue' : invoice.status}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-slate-500 font-mono">#{invoice.invoice_number}</span>
+                <span className="font-bold text-slate-900 truncate">
+                  {formatCurrency(invoice.remainingBalance || invoice.amount)}
+                </span>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-slate-400 flex items-center gap-1.5 flex-wrap">
+                  <span>Due {new Date(invoice.due_date).toLocaleDateString()}</span>
+                  {isOverdue(invoice) && invoice.status !== 'paid' && (
+                    <span className="text-red-500 font-bold">• {overdueDays} days overdue</span>
+                  )}
                 </p>
               </div>
-            </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
-              <RiskBadge level={
-                 isOverdue(invoice) 
-                   ? (invoice.remainingBalance && invoice.remainingBalance > 50000 ? 'critical' : 'high')
-                   : 'minimal'
-              } />
-              <div className="flex gap-2">
+              <div className="space-y-2">
                 {invoice.status === 'draft' && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleQuickSend(invoice); }}
-                    className="p-2.5 rounded-xl bg-slate-900 text-white shadow-lg active:scale-95"
+                    className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 active:scale-95 transition-all"
                   >
-                    <Send size={14} />
+                    Send Invoice
                   </button>
                 )}
                 {invoice.status === 'sent' && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(invoice); }}
-                    className="p-2.5 rounded-xl bg-green-600 text-white shadow-lg active:scale-95"
+                    className="w-full py-3 bg-green-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-green-100 active:scale-95 transition-all"
                   >
-                    <CheckCircle size={14} />
+                    Mark as Paid
                   </button>
                 )}
-                <div className="p-2.5 rounded-xl bg-slate-50 text-slate-400">
-                  <ChevronRight size={14} />
-                </div>
+                {invoice.status === 'payment_reported' && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setSelectedInvoice(invoice); }}
+                    className="w-full py-3 bg-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-amber-100 active:scale-95 transition-all"
+                  >
+                    Verify Payment
+                  </button>
+                )}
+                {invoice.status === 'paid' && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setSelectedInvoice(invoice); }}
+                    className="w-full py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all"
+                  >
+                    View Details
+                  </button>
+                )}
               </div>
             </div>
+          );
+        })}
+        
+        {sortedInvoices.length === 0 && (
+          <div className="py-12 px-6 text-center bg-white rounded-2xl border border-dashed border-slate-200">
+             <FileText className="mx-auto text-slate-300 mb-4" size={40} />
+             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">No invoices found</p>
           </div>
-        ))}
+        )}
       </div>
+
 
       {/* FAB for Mobile */}
       <div className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-6 flex justify-center pointer-events-none">
