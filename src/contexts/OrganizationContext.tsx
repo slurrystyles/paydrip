@@ -27,28 +27,44 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    const { data, error } = await supabase
+    const { data: membershipData, error: memError } = await supabase
       .from('memberships')
-      .select('*, organization:organizations(*)')
+      .select('*')
       .eq('user_id', user.id)
       .eq('is_active', true);
 
-    if (error) {
-      console.error('Error fetching memberships:', error);
-      // If 404, the table might be missing or renamed in the target DB
-      if (error.code === 'PGRST116') {
-        console.warn('Membership table or organizations relation not found (404). Check schema.');
+    if (memError) {
+      console.error('Error fetching memberships:', memError);
+      setLoading(false);
+      return;
+    }
+
+    if (membershipData && membershipData.length > 0) {
+      const orgIds = membershipData.map(m => m.organization_id);
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('*')
+        .in('id', orgIds);
+
+      if (orgError) {
+        console.error('Error fetching organizations:', orgError);
       }
-    } else {
-      setMemberships(data || []);
+
+      const combinedData = membershipData.map(m => ({
+        ...m,
+        organization: orgData?.find(o => o.id === m.organization_id) || null
+      }));
+
+      setMemberships(combinedData);
       
       // Select first organization as default if none selected
-      if (data && data.length > 0 && !currentOrganization) {
-        // Try to get stored org ID from localStorage
+      if (combinedData.length > 0 && !currentOrganization) {
         const storedOrgId = localStorage.getItem('paydrip_org_id');
-        const selected = data.find(m => m.organization_id === storedOrgId) || data[0];
+        const selected = combinedData.find(m => m.organization_id === storedOrgId) || combinedData[0];
         setCurrentOrganization(selected.organization || null);
       }
+    } else {
+      setMemberships([]);
     }
     setLoading(false);
   };
