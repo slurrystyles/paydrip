@@ -213,7 +213,7 @@ export default function RecoveryOpsCenter() {
                    </div>
                 </div>
              </div>
-             <div className="overflow-x-auto">
+             <div className="overflow-x-auto hidden md:block">
                 <table className="w-full text-left border-collapse min-w-[800px] sm:min-w-0">
                    <thead>
                       <tr className="bg-slate-50">
@@ -264,6 +264,57 @@ export default function RecoveryOpsCenter() {
                       ))}
                    </tbody>
                 </table>
+             </div>
+
+             {/* Mobile Queue Cards */}
+             <div className="md:hidden divide-y divide-slate-50">
+                {queue.map((item) => (
+                  <div key={item.id} className="p-4 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-black text-slate-900 italic tracking-tighter uppercase">#INV-{item.invoice_id.slice(-6).toUpperCase()}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Manual node</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                         <div className={cn(
+                           "w-1.5 h-1.5 rounded-full",
+                           item.status === 'pending' ? 'bg-orange-400 animate-pulse' :
+                           item.status === 'processed' ? 'bg-green-500' : 'bg-red-500'
+                         )}></div>
+                         <span className="text-[10px] font-black uppercase text-slate-500">{item.status}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-end">
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Scheduled Action</p>
+                        <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 inline-block">
+                           {item.action_type.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Spec</p>
+                        <p className="text-[10px] font-black text-slate-700">{new Date(item.scheduled_at).toLocaleDateString()} {new Date(item.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    </div>
+
+                    {item.status === 'failed' && (
+                      <button 
+                        onClick={() => handleRetry(item.id)}
+                        className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+                      >
+                         <RefreshCw size={12} />
+                         Retry Operation
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {queue.length === 0 && (
+                  <div className="py-12 text-center p-6">
+                    <Clock size={32} className="mx-auto text-slate-200 mb-4" />
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">No activities in queue</p>
+                  </div>
+                )}
              </div>
           </motion.div>
         )}

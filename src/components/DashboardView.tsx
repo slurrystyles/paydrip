@@ -355,7 +355,7 @@ export default function DashboardView() {
           )}
 
           {/* SECTION 6: INVOICE TABLE IMPROVEMENTS */}
-          <div className="flex-1 overflow-x-auto -mx-5 sm:mx-0">
+          <div className="flex-1 overflow-x-auto -mx-5 sm:mx-0 hidden md:block">
             <table className="w-full text-left min-w-[700px]">
               <thead className="text-[9px] font-black text-slate-400 uppercase border-b border-slate-100 tracking-[0.15em] font-mono">
                 <tr className="h-10">
@@ -391,6 +391,40 @@ export default function DashboardView() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card Layout for Dashboard */}
+          <div className="flex-1 md:hidden space-y-3">
+            {sortedInvoices.slice(0, 5).map((invoice) => (
+              <div 
+                key={invoice.id}
+                onClick={() => setSelectedInvoice(invoice)}
+                className="bg-white border border-slate-50 rounded-2xl p-4 active:bg-slate-50 transition-all"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="min-w-0">
+                    <p className="font-black text-slate-900 text-sm tracking-tight truncate">{invoice.client?.name}</p>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest font-mono">#{invoice.invoice_number}</p>
+                  </div>
+                  <StatusBadge status={invoice.status} isOverdue={isOverdue(invoice)} />
+                </div>
+                <div className="flex justify-between items-end">
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Balance Due</p>
+                    <p className="font-black text-indigo-600 text-base">{formatCurrency(invoice.remainingBalance ?? invoice.amount)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Due</p>
+                    <p className={cn(
+                      "text-[10px] font-black uppercase tracking-widest",
+                      isOverdue(invoice) ? "text-red-500 italic" : "text-slate-600"
+                    )}>
+                      {new Date(invoice.due_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
           
           {invoices.length > 8 && (

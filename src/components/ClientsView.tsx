@@ -143,7 +143,7 @@ export default function ClientsView() {
       </div>
 
       {/* Clients List */}
-      <div className="bento-card overflow-hidden">
+      <div className="hidden md:block bento-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -226,6 +226,66 @@ export default function ClientsView() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Card Layout */}
+      <div className="md:hidden space-y-3">
+        {filteredClients.map((client) => (
+          <div 
+            key={client.id}
+            className="bg-white rounded-xl shadow-sm border border-slate-100 p-4"
+          >
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-xs font-black text-white italic shadow-lg shadow-slate-200 shrink-0">
+                  {client.name[0].toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-900 truncate">{client.name}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Counterparty</p>
+                </div>
+              </div>
+              <RiskBadge level={client.risk_score as any} />
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center text-xs text-slate-600">
+                <Mail size={12} className="mr-2 text-indigo-500 opacity-60" />
+                <span className="truncate">{client.email}</span>
+              </div>
+              {client.phone && (
+                <div className="flex items-center text-xs text-slate-600">
+                  <Phone size={12} className="mr-2 text-indigo-500 opacity-60" />
+                  <span>{client.phone}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <button 
+                onClick={() => openModal(client)}
+                className="flex-1 py-2.5 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-200 flex items-center justify-center gap-2"
+              >
+                <Edit2 size={12} />
+                Edit
+              </button>
+              <button 
+                onClick={() => deleteClient(client.id)}
+                className="flex-1 py-2.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center justify-center gap-2"
+              >
+                <Trash2 size={12} />
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {filteredClients.length === 0 && (
+          <div className="py-12 px-6 text-center bg-white rounded-2xl border border-dashed border-slate-200">
+             <Mail className="mx-auto text-slate-300 mb-4" size={40} />
+             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">No clients found</p>
+          </div>
+        )}
       </div>
 
       {/* Modal */}
