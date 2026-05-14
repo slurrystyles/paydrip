@@ -18,10 +18,13 @@ import { recoveryService } from '../lib/recoveryService';
 import { supabase } from '../lib/supabase';
 import { formatCurrency, cn } from '../lib/utils';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { useUserRole } from '../hooks/useUserRole';
 import RecoveryAnalytics from './RecoveryAnalytics';
 
 export const RecoveryDashboard: React.FC = () => {
   const { currentOrganization } = useOrganization();
+  const { capabilities } = useUserRole();
+  const canUpdate = capabilities.canManageRecovery;
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics'>('overview');
@@ -100,38 +103,39 @@ export const RecoveryDashboard: React.FC = () => {
     <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
         <div className="flex items-center gap-4">
-           <div className="w-14 h-14 bg-slate-900 rounded-[1.25rem] flex items-center justify-center text-white shadow-xl rotate-3">
-              <ShieldAlert size={28} />
+           <div className="w-10 h-10 sm:w-14 sm:h-14 bg-slate-900 rounded-[1rem] sm:rounded-[1.25rem] flex items-center justify-center text-white shadow-xl rotate-3">
+              <ShieldAlert size={20} className="sm:hidden" />
+              <ShieldAlert size={28} className="hidden sm:block" />
            </div>
            <div>
-             <h1 className="text-4xl font-black tracking-tighter text-slate-900 italic leading-none">Recovery Agent</h1>
-             <div className="flex items-center gap-2 mt-2">
-                <div className="flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+             <h1 className="text-2xl sm:text-4xl font-black tracking-tighter text-slate-900 italic leading-none">Recovery Agent</h1>
+             <div className="flex items-center gap-2 mt-1 sm:mt-2">
+                <div className="flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-1.5 w-1.5 rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Real-time Recovery Ops Active</p>
+                <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400">Recovery Ops Active</p>
              </div>
            </div>
         </div>
-        <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-200/60 h-fit">
+        <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-200/60 w-full sm:w-fit overflow-x-auto scrollbar-hide">
            <button 
              onClick={() => setActiveTab('overview')}
              className={cn(
-               "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+               "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                activeTab === 'overview' ? "bg-white text-indigo-600 shadow-lg shadow-indigo-100" : "text-slate-400 hover:text-slate-600"
              )}
            >
-              <LayoutDashboard size={14} /> Control
+              <LayoutDashboard size={12} className="sm:w-[14px] sm:h-[14px]" /> Control
            </button>
            <button 
              onClick={() => setActiveTab('analytics')}
              className={cn(
-               "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+               "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                activeTab === 'analytics' ? "bg-white text-indigo-600 shadow-lg shadow-indigo-100" : "text-slate-400 hover:text-slate-600"
              )}
            >
-              <PieChart size={14} /> Intelligence
+              <PieChart size={12} className="sm:w-[14px] sm:h-[14px]" /> Intelligence
            </button>
         </div>
       </div>

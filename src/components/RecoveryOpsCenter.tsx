@@ -25,10 +25,13 @@ import { recoveryService } from '../lib/recoveryService';
 import { EscalationQueueItem, Invoice, AuditLog, SecurityAbuseFlag } from '../types';
 import { formatCurrency, cn } from '../lib/utils';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { useUserRole } from '../hooks/useUserRole';
 import OperationsHealth from './OperationsHealth';
 
 export default function RecoveryOpsCenter() {
   const { currentOrganization } = useOrganization();
+  const { capabilities } = useUserRole();
+  const canUpdate = capabilities.canManageRecovery;
   const [activeView, setActiveView] = useState<'board' | 'queue' | 'logs' | 'security' | 'health'>('board');
   const [queue, setQueue] = useState<EscalationQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +78,7 @@ export default function RecoveryOpsCenter() {
   }, [currentOrganization]);
 
   const handleRetry = async (id: string) => {
-    if (!currentOrganization) return;
+    if (!currentOrganization || !canUpdate) return;
     try {
       await recoveryService.retryQueueItem(id, currentOrganization.id);
     } catch (e) {
@@ -97,18 +100,19 @@ export default function RecoveryOpsCenter() {
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto p-3 sm:p-4">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100 italic font-black text-lg sm:text-xl">
-              OP
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 overflow-hidden">
+        <div className="flex items-center gap-4 shrink-0">
+           <div className="w-10 h-10 sm:w-14 sm:h-14 bg-indigo-600 rounded-[1.25rem] sm:rounded-[2rem] flex items-center justify-center text-white shadow-xl shadow-indigo-100 rotate-3">
+              <Zap size={20} className="sm:hidden" />
+              <Zap size={28} className="hidden sm:block" />
            </div>
            <div>
-             <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-slate-900 italic leading-none">Operations Center</h1>
-             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1.5 sm:mt-2">Real-time Recovery Fleet Monitor</p>
+             <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-slate-900 italic leading-none uppercase">Ops Center</h1>
+             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1 sm:mt-1.5 leading-none">Strategic Recovery Monitor</p>
            </div>
         </div>
 
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200/50 overflow-x-auto scrollbar-hide whitespace-nowrap min-w-0 w-full sm:w-auto -mx-1 px-1 sm:mx-0 sm:px-0">
+        <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200/50 overflow-x-auto scrollbar-hide whitespace-nowrap w-full lg:w-auto">
            {[
              { id: 'board', label: 'Kanban', icon: <Kanban size={13} /> },
              { id: 'queue', label: 'Monitor', icon: <ListIcon size={13} /> },
@@ -120,11 +124,12 @@ export default function RecoveryOpsCenter() {
                key={tab.id}
                onClick={() => setActiveView(tab.id as any)}
                className={cn(
-                 "flex items-center gap-2 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0",
-                 activeView === tab.id ? "bg-white text-indigo-600 shadow-md scale-[1.02]" : "text-slate-400 hover:text-slate-600"
+                 "flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                 activeView === tab.id ? "bg-white text-indigo-600 shadow-xl shadow-indigo-100" : "text-slate-400 hover:text-slate-600"
                )}
              >
-               {tab.icon} {tab.label}
+               {tab.icon} 
+               <span className={activeView === tab.id ? "block" : "hidden sm:block"}>{tab.label}</span>
              </button>
            ))}
         </div>
@@ -137,7 +142,7 @@ export default function RecoveryOpsCenter() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="flex gap-4 sm:gap-6 overflow-x-auto pb-8 snap-x scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
+            className="flex gap-4 sm:gap-6 overflow-x-auto pb-8 snap-x scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0"
           >
              {['pending', 'gentle_followup', 'firm_followup', 'final_notice', 'legal_warning'].map((stage) => (
                <div key={stage} className="min-w-[320px] w-[320px] snap-center">
@@ -251,7 +256,7 @@ export default function RecoveryOpsCenter() {
                               </div>
                            </td>
                            <td className="px-8 py-6 text-right">
-                              {item.status === 'failed' && (
+                              {item.status === 'failed' && canUpdate && (
                                 <button 
                                   onClick={() => handleRetry(item.id)}
                                   className="p-2 bg-slate-900 text-white rounded-xl hover:bg-indigo-600 transition-all shadow-lg"
@@ -298,7 +303,7 @@ export default function RecoveryOpsCenter() {
                       </div>
                     </div>
 
-                    {item.status === 'failed' && (
+                    {item.status === 'failed' && canUpdate && (
                       <button 
                         onClick={() => handleRetry(item.id)}
                         className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"

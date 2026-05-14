@@ -17,9 +17,12 @@ import { DeadLetterJob, UsageCounter, Subscription, AuditLog } from '../types';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { useUserRole } from '../hooks/useUserRole';
 
 export default function OperationsHealth() {
   const { currentOrganization } = useOrganization();
+  const { capabilities } = useUserRole();
+  const canUpdate = capabilities.canManageRecovery;
   const [dlqJobs, setDlqJobs] = useState<DeadLetterJob[]>([]);
   const [usage, setUsage] = useState<UsageCounter[]>([]);
   const [auditStats, setAuditStats] = useState<any[]>([]);
@@ -95,9 +98,11 @@ export default function OperationsHealth() {
                     <Clock size={12} className="text-slate-300" />
                     <span className="text-[9px] font-black text-slate-400 uppercase">{new Date(job.quarantined_at).toLocaleString()}</span>
                   </div>
-                  <button className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
-                    Manual Replay →
-                  </button>
+                  {canUpdate && (
+                    <button className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
+                      Manual Replay →
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

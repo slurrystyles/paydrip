@@ -47,6 +47,7 @@ import { recoveryService } from '../lib/recoveryService';
 import { RiskBadge } from './RiskBadge';
 import { useOrganization } from '../contexts/OrganizationContext';
 import LegalNoticeModal from './LegalNoticeModal';
+import { useUserRole } from '../hooks/useUserRole';
 
 interface Props {
   invoice: Invoice;
@@ -56,6 +57,8 @@ interface Props {
 
 export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUpdate }: Props) {
   const { currentOrganization } = useOrganization();
+  const { capabilities } = useUserRole();
+  const canUpdate = capabilities.canManageInvoices;
   const [invoice, setInvoice] = useState<Invoice>(propInvoice);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -927,7 +930,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
             {activeTab === 'recovery' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Verify Payment Section */}
-                {invoice.status === 'payment_reported' && (
+                {canUpdate && invoice.status === 'payment_reported' && (
                   <div className="p-6 bg-amber-50 border-2 border-amber-200 rounded-[2rem] space-y-4 shadow-xl shadow-amber-100/50">
                     <div className="flex items-center gap-3 text-amber-800">
                       <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
@@ -958,7 +961,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                 )}
 
                 {/* Send Invoice Button for Drafts */}
-                {invoice.status === 'draft' && (
+                {canUpdate && invoice.status === 'draft' && (
                   <div className="p-4 bg-indigo-50 border-2 border-indigo-200 rounded-[2rem] border-dashed">
                      <button
                         onClick={handleSendInvoice}
@@ -1006,7 +1009,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Next Action: {invoice.next_action_at ? new Date(invoice.next_action_at).toLocaleDateString() : 'Immediate Nudge'}</p>
                         </div>
                     </div>
-                    {!isFullyPaid && (
+                    {!isFullyPaid && canUpdate && (
                         <button 
                           onClick={() => updateStatus('paid')}
                           className="text-[9px] font-black uppercase tracking-widest bg-slate-900 text-white px-3 py-2 rounded-xl"
@@ -1035,8 +1038,8 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                     </div>
                     
                     <div className="bg-slate-50 border border-slate-100 rounded-3xl p-6 space-y-6">
-                      <div className="flex gap-2">
-                        {sequence.status === 'active' && (
+                    <div className="flex gap-2">
+                        {canUpdate && sequence.status === 'active' && (
                           <button 
                             onClick={() => updateSequenceStatus('paused')}
                             className="flex-1 flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-orange-300 transition-all"
@@ -1044,7 +1047,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                             <Pause size={12} /> Pause
                           </button>
                         )}
-                        {sequence.status === 'paused' && (
+                        {canUpdate && sequence.status === 'paused' && (
                           <button 
                             onClick={() => updateSequenceStatus('active')}
                             className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all"
@@ -1052,7 +1055,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                             <Play size={12} /> Resume
                           </button>
                         )}
-                        {(sequence.status === 'active' || sequence.status === 'paused') && (
+                        {canUpdate && (sequence.status === 'active' || sequence.status === 'paused') && (
                           <button 
                             onClick={cancelSequence}
                             className="flex-1 flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-red-300 transition-all text-red-500"
@@ -1142,8 +1145,8 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                              <button
                                key={tone}
                                onClick={() => handleGenerateAI(tone)}
-                               disabled={isGeneratingAI}
-                               className="py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all border border-white/10"
+                               disabled={isGeneratingAI || !canUpdate}
+                               className="py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all border border-white/10 disabled:opacity-50"
                              >
                                {tone}
                              </button>
@@ -1163,7 +1166,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                 )}
 
                 {/* Reminder Controls */}
-                <div className={cn("space-y-4", isFullyPaid && "opacity-40 grayscale pointer-events-none")}>
+                <div className={cn("space-y-4", (isFullyPaid || !canUpdate) && "opacity-40 grayscale pointer-events-none")}>
                   <div className="flex items-center justify-between">
                     <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Escalation Arsenal</label>
                     <div className="flex items-center gap-1">
@@ -1197,7 +1200,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                 </div>
 
                 {/* Recovery Actions Group */}
-                {!isFullyPaid && (
+                {!isFullyPaid && canUpdate && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                      <div className="flex items-center gap-3">
@@ -1251,7 +1254,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
             {activeTab === 'payments' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Partial Payment Section */}
-                {!isFullyPaid && (
+                {!isFullyPaid && canUpdate && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Add Payment</label>
@@ -1288,9 +1291,11 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                         </motion.div>
                       )}
                     </AnimatePresence>
+                  </div>
+                )}
 
-                    {payments.length > 0 && (
-                      <div className="space-y-2">
+                {payments.length > 0 && (
+                  <div className="space-y-2">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest flex items-center gap-2">
                             <History size={12} /> Payment History
@@ -1316,10 +1321,8 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                     )}
                   </div>
                 )}
-              </div>
-            )}
 
-            {activeTab === 'history' && (
+              {activeTab === 'history' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="flex items-center justify-between">
                   <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Chronological Audit Trail</label>
@@ -1391,15 +1394,17 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
             </div>
           </div>
 
-          <div className="p-6 border-t border-slate-100">
-             <button 
-               onClick={deleteInvoice}
-               className="w-full flex items-center justify-center p-4 text-slate-400 hover:text-red-600 hover:bg-red-50/50 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest group border border-transparent hover:border-red-100"
-             >
-               <Trash2 size={16} className="mr-2" />
-               Delete Invoice
-             </button>
-          </div>
+          {canUpdate && (
+            <div className="p-6 border-t border-slate-100 shrink-0">
+               <button 
+                 onClick={deleteInvoice}
+                 className="w-full flex items-center justify-center p-4 text-slate-400 hover:text-red-600 hover:bg-red-50/50 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest group border border-transparent hover:border-red-100"
+               >
+                 <Trash2 size={16} className="mr-2" />
+                 Delete Invoice
+               </button>
+            </div>
+          )}
         </div>
       </motion.div>
 

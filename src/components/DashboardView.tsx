@@ -28,12 +28,14 @@ import InvoiceModal from './InvoiceModal';
 import InvoiceDetailModal from './InvoiceDetailModal';
 import UpgradeModal from './UpgradeModal';
 import { usePlan } from '../contexts/PlanContext';
-
 import { useOrganization } from '../contexts/OrganizationContext';
+import { useUserRole } from '../hooks/useUserRole';
 
 export default function DashboardView() {
   const { plan, isLimitReached, refreshPlanData } = usePlan();
   const { currentOrganization } = useOrganization();
+  const { capabilities } = useUserRole();
+  const canUpdate = capabilities.canManageInvoices;
   const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -234,7 +236,7 @@ export default function DashboardView() {
   return (
     <div className="space-y-4 pb-8">
       {/* SECTION 7: AUTOMATION NUDGE */}
-      {overdueCount > 0 && (
+      {overdueCount > 0 && canUpdate && (
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -297,7 +299,7 @@ export default function DashboardView() {
             </div>
             {/* SECTION 5: BUTTON HIERARCHY - PRIMARY */}
             <div className="flex flex-col sm:flex-row gap-2">
-              {plan === 'free' && (
+              {plan === 'free' && canUpdate && (
                 <div className="px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between gap-2.5">
                   <div>
                     <p className="text-[8px] font-black uppercase tracking-widest text-indigo-600 leading-none">Free Tier</p>
@@ -311,24 +313,26 @@ export default function DashboardView() {
                   </button>
                 </div>
               )}
-              <button 
-                onClick={() => {
-                  if (isLimitReached) {
-                    setShowUpgradeModal(true);
-                  } else {
-                    setIsInvoiceModalOpen(true);
-                  }
-                }}
-                className={cn(
-                  "px-5 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 w-full sm:w-auto flex items-center justify-center gap-2",
-                  isLimitReached 
-                    ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
-                    : "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100"
-                )}
-              >
-                + Create Invoice
-                {isLimitReached && <Clock size={10} />}
-              </button>
+              {canUpdate && (
+                <button 
+                  onClick={() => {
+                    if (isLimitReached) {
+                      setShowUpgradeModal(true);
+                    } else {
+                      setIsInvoiceModalOpen(true);
+                    }
+                  }}
+                  className={cn(
+                    "px-5 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 w-full sm:w-auto flex items-center justify-center gap-2",
+                    isLimitReached 
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
+                      : "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100"
+                  )}
+                >
+                  + Create Invoice
+                  {isLimitReached && <Clock size={10} />}
+                </button>
+              )}
             </div>
           </div>
 

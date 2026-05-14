@@ -110,9 +110,10 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   const capabilities = React.useMemo(() => {
     if (!role) return [];
     const base = ['read'];
-    if (['owner', 'admin', 'manager', 'operator'].includes(role)) base.push('write', 'recover');
-    if (['owner', 'admin', 'manager', 'analyst'].includes(role)) base.push('analyze');
-    if (['owner', 'admin'].includes(role)) base.push('billing', 'settings', 'manage_users');
+    if (['owner', 'admin', 'member'].includes(role)) base.push('write', 'recover');
+    if (['owner', 'admin', 'member'].includes(role)) base.push('analyze');
+    if (['owner', 'admin'].includes(role)) base.push('settings', 'manage_users');
+    if (role === 'owner') base.push('billing');
     return base;
   }, [role]);
 

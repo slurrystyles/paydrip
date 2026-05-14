@@ -26,12 +26,14 @@ import InvoiceDetailModal from './InvoiceDetailModal';
 import UpgradeModal from './UpgradeModal';
 import { RiskBadge } from './RiskBadge';
 import { usePlan } from '../contexts/PlanContext';
-import { useOrganization } from '../contexts/OrganizationContext';
+import { useUserRole } from '../hooks/useUserRole';
 import { recoveryService } from '../lib/recoveryService';
 
 export default function InvoicesView() {
   const { isLimitReached, refreshPlanData } = usePlan();
   const { currentOrganization } = useOrganization();
+  const { capabilities } = useUserRole();
+  const canWrite = capabilities.canManageInvoices;
   const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,24 +199,26 @@ export default function InvoicesView() {
           <FilterButton active={filters === 'draft'} onClick={() => setFilters('draft')}>Draft</FilterButton>
         </div>
         {/* SECTION 5: PRIMARY ACTION */}
-        <button 
-          onClick={() => {
-            if (isLimitReached) {
-              setShowUpgradeModal(true);
-            } else {
-              setIsNewModalOpen(true);
-            }
-          }}
-          className={cn(
-            "px-5 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 transition-all shadow-xl active:scale-95 w-full sm:w-auto",
-            isLimitReached 
-              ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
-              : "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100"
-          )}
-        >
-          {isLimitReached ? <Zap size={12} /> : <Plus size={12} />}
-          <span>{isLimitReached ? 'Upgrade to Create' : 'Create Invoice'}</span>
-        </button>
+        {canWrite && (
+          <button 
+            onClick={() => {
+              if (isLimitReached) {
+                setShowUpgradeModal(true);
+              } else {
+                setIsNewModalOpen(true);
+              }
+            }}
+            className={cn(
+              "px-5 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 transition-all shadow-xl active:scale-95 w-full sm:w-auto",
+              isLimitReached 
+                ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
+                : "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100"
+            )}
+          >
+            {isLimitReached ? <Zap size={12} /> : <Plus size={12} />}
+            <span>{isLimitReached ? 'Upgrade to Create' : 'Create Invoice'}</span>
+          </button>
+        )}
       </div>
 
       <UpgradeModal 
@@ -306,7 +310,7 @@ export default function InvoicesView() {
                     </td>
                     <td className="px-5 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {invoice.status === 'draft' && (
+                        {canWrite && invoice.status === 'draft' && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleQuickSend(invoice); }}
                             className="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
@@ -315,7 +319,7 @@ export default function InvoicesView() {
                             <Send size={14} />
                           </button>
                         )}
-                        {invoice.status === 'sent' && (
+                        {canWrite && invoice.status === 'sent' && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(invoice); }}
                             className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm"
@@ -408,7 +412,7 @@ export default function InvoicesView() {
               </div>
 
               <div className="space-y-2">
-                {invoice.status === 'draft' && (
+                {canWrite && invoice.status === 'draft' && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleQuickSend(invoice); }}
                     className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 active:scale-95 transition-all"
@@ -416,7 +420,7 @@ export default function InvoicesView() {
                     Send Invoice
                   </button>
                 )}
-                {invoice.status === 'sent' && (
+                {canWrite && invoice.status === 'sent' && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(invoice); }}
                     className="w-full py-3 bg-green-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-green-100 active:scale-95 transition-all"
@@ -424,7 +428,7 @@ export default function InvoicesView() {
                     Mark as Paid
                   </button>
                 )}
-                {invoice.status === 'payment_reported' && (
+                {canWrite && invoice.status === 'payment_reported' && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); setSelectedInvoice(invoice); }}
                     className="w-full py-3 bg-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-amber-100 active:scale-95 transition-all"
@@ -432,7 +436,7 @@ export default function InvoicesView() {
                     Verify Payment
                   </button>
                 )}
-                {invoice.status === 'paid' && (
+                {(invoice.status === 'paid' || !canWrite) && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); setSelectedInvoice(invoice); }}
                     className="w-full py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all"
@@ -455,23 +459,25 @@ export default function InvoicesView() {
 
 
       {/* FAB for Mobile */}
-      <div className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-6 flex justify-center pointer-events-none">
-        <button 
-          onClick={() => {
-            if (isLimitReached) {
-              setShowUpgradeModal(true);
-            } else {
-              setIsNewModalOpen(true);
-            }
-          }}
-          className={cn(
-            "w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all active:scale-90 pointer-events-auto",
-            isLimitReached ? "bg-slate-200 text-slate-400" : "bg-slate-900 text-white shadow-slate-300"
-          )}
-        >
-          {isLimitReached ? <Zap size={24} /> : <Plus size={24} />}
-        </button>
-      </div>
+      {canWrite && (
+        <div className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-6 flex justify-center pointer-events-none">
+          <button 
+            onClick={() => {
+              if (isLimitReached) {
+                setShowUpgradeModal(true);
+              } else {
+                setIsNewModalOpen(true);
+              }
+            }}
+            className={cn(
+              "w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all active:scale-90 pointer-events-auto",
+              isLimitReached ? "bg-slate-200 text-slate-400" : "bg-slate-900 text-white shadow-slate-300"
+            )}
+          >
+            {isLimitReached ? <Zap size={24} /> : <Plus size={24} />}
+          </button>
+        </div>
+      )}
 
       <InvoiceModal 
         isOpen={isNewModalOpen} 
@@ -490,7 +496,7 @@ export default function InvoicesView() {
 
       {/* Floating Bulk Toolbar */}
       <AnimatePresence>
-        {selectedIds.length > 0 && (
+        {canWrite && selectedIds.length > 0 && (
           <motion.div 
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

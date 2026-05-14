@@ -5,9 +5,12 @@ import { Plus, Search, Mail, Phone, Trash2, Edit2, ShieldAlert } from 'lucide-re
 import { cn } from '../lib/utils';
 import { RiskBadge } from './RiskBadge';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { useUserRole } from '../hooks/useUserRole';
 
 export default function ClientsView() {
   const { currentOrganization } = useOrganization();
+  const { capabilities } = useUserRole();
+  const canWrite = capabilities.canManageInvoices; // In our roles, anyone who can manage invoices can manage clients
   const [clients, setClients] = useState<(Client & { risk_score?: any })[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -133,13 +136,15 @@ export default function ClientsView() {
             className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl focus:border-indigo-600 outline-none transition-all text-[10px] font-black uppercase tracking-widest placeholder:text-slate-300 shadow-sm"
           />
         </div>
-        <button 
-          onClick={() => openModal()}
-          className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-95"
-        >
-          <Plus size={14} />
-          <span>New Counterparty</span>
-        </button>
+        {canWrite && (
+          <button 
+            onClick={() => openModal()}
+            className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-95"
+          >
+            <Plus size={14} />
+            <span>New Counterparty</span>
+          </button>
+        )}
       </div>
 
       {/* Clients List */}
@@ -187,18 +192,24 @@ export default function ClientsView() {
                   </td>
                   <td className="px-5 py-3 text-right">
                     <div className="flex items-center justify-end space-x-2">
-                      <button 
-                        onClick={() => openModal(client)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-100"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button 
-                        onClick={() => deleteClient(client.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-100"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {canWrite ? (
+                        <>
+                          <button 
+                            onClick={() => openModal(client)}
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-100"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => deleteClient(client.id)}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-100"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-[8px] font-black uppercase text-slate-300">Read Only</span>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -261,22 +272,24 @@ export default function ClientsView() {
               )}
             </div>
 
-            <div className="flex gap-2">
-              <button 
-                onClick={() => openModal(client)}
-                className="flex-1 py-2.5 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-200 flex items-center justify-center gap-2"
-              >
-                <Edit2 size={12} />
-                Edit
-              </button>
-              <button 
-                onClick={() => deleteClient(client.id)}
-                className="flex-1 py-2.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center justify-center gap-2"
-              >
-                <Trash2 size={12} />
-                Delete
-              </button>
-            </div>
+            {canWrite && (
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => openModal(client)}
+                  className="flex-1 py-2.5 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-200 flex items-center justify-center gap-2"
+                >
+                  <Edit2 size={12} />
+                  Edit
+                </button>
+                <button 
+                  onClick={() => deleteClient(client.id)}
+                  className="flex-1 py-2.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={12} />
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
         ))}
 

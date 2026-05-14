@@ -20,11 +20,17 @@ import {
   Users as UsersIcon,
   Crown,
   Mail,
-  UserPlus
+  UserPlus,
+  Trash2,
+  ChevronDown,
+  LogOut,
+  ArrowRightLeft,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { usePlan } from '../contexts/PlanContext';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { useUserRole } from '../hooks/useUserRole';
 import { recoveryService } from '../lib/recoveryService';
 import UpgradeModal from './UpgradeModal';
 import imageCompression from 'browser-image-compression';
@@ -32,12 +38,27 @@ import imageCompression from 'browser-image-compression';
 export default function SettingsView() {
   const { plan, profile, refreshPlanData } = usePlan();
   const { currentOrganization, memberships, isAdmin, isOwner } = useOrganization();
+  const { 
+    isOwner: rbacIsOwner, 
+    isAdminOrOwner: rbacIsAdminOrOwner, 
+    canManageMembers, 
+    canManageBilling,
+    canDeleteOrg,
+    role: currentUserRole
+  } = useUserRole();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [webhooks, setWebhooks] = useState<any[]>([]);
+
+  // Team management state
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'admin' | 'member' | 'viewer'>('member');
+  const [isInviting, setIsInviting] = useState(false);
+  const [transferringOwnership, setTransferringOwnership] = useState(false);
+  const [newOwnerId, setNewOwnerId] = useState('');
 
   // Form fields
   const [name, setName] = useState('');
@@ -169,6 +190,138 @@ export default function SettingsView() {
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
       setNotificationPreferences(notificationPreferences); // Rollback
+    }
+  };
+
+  const handleInviteMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail || !currentOrganization) return;
+    
+    setIsInviting(true);
+    setMessage(null);
+    
+    try {
+      // 1. Check if user exists
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', inviteEmail)
+        .single();
+        
+      if (userError) {
+        throw new Error('User must sign up first before being added to organization.');
+      }
+      
+      // 2. Add as member
+      const { error: inviteError } = await supabase
+        .from('memberships')
+        .insert([{
+          organization_id: currentOrganization.id,
+          user_id: userData.id,
+          role: inviteRole,
+          is_active: true
+        }]);
+        
+      if (inviteError) throw inviteError;
+      
+      // 3. Log audit event
+      await supabase.from('audit_logs').insert([{
+        organization_id: currentOrganization.id,
+        actor_id: profile?.id,
+        action: 'member_invited',
+        resource_type: 'membership',
+        resource_id: userData.id,
+        severity: 'info',
+        payload_snapshot: { email: inviteEmail, role: inviteRole },
+        ip_address: '127.0.0.1'
+      }]);
+      
+      setMessage({ type: 'success', text: `Node ${inviteEmail} initialized as ${inviteRole}.` });
+      setInviteEmail('');
+      // Force reload to refresh memberships
+      window.location.reload();
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const handleUpdateRole = async (userId: string, newRole: any) => {
+    if (!currentOrganization) return;
+    try {
+      const { error } = await supabase
+        .from('memberships')
+        .update({ role: newRole })
+        .eq('organization_id', currentOrganization.id)
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      setMessage({ type: 'success', text: 'Authorization tier updated.' });
+      window.location.reload();
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!currentOrganization || !confirm('Permanently decommission this member node?')) return;
+    try {
+      const { error } = await supabase
+        .from('memberships')
+        .delete()
+        .eq('organization_id', currentOrganization.id)
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      setMessage({ type: 'success', text: 'Member node decommissioned.' });
+      window.location.reload();
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    }
+  };
+
+  const handleTransferOwnership = async () => {
+    if (!currentOrganization || !newOwnerId || !confirm('DANGER: Transfer ultimate control of this organization? You will be demoted to Administrator.')) return;
+    
+    setTransferringOwnership(true);
+    try {
+      // 1. Promote new owner
+      const { error: promoError } = await supabase
+        .from('memberships')
+        .update({ role: 'owner' })
+        .eq('organization_id', currentOrganization.id)
+        .eq('user_id', newOwnerId);
+        
+      if (promoError) throw promoError;
+      
+      // 2. Demote current owner (you)
+      const { error: demoteError } = await supabase
+        .from('memberships')
+        .update({ role: 'admin' })
+        .eq('organization_id', currentOrganization.id)
+        .eq('user_id', profile?.id);
+        
+      if (demoteError) throw demoteError;
+
+      // 3. Log audit event
+      await supabase.from('audit_logs').insert([{
+        organization_id: currentOrganization.id,
+        actor_id: profile?.id,
+        action: 'ownership_transferred',
+        resource_type: 'organization',
+        resource_id: currentOrganization.id,
+        severity: 'critical',
+        payload_snapshot: { new_owner_id: newOwnerId },
+        ip_address: '127.0.0.1'
+      }]);
+      
+      setMessage({ type: 'success', text: 'Sovereignty transferred. Session demoted.' });
+      window.location.reload();
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    } finally {
+      setTransferringOwnership(false);
     }
   };
 
@@ -563,12 +716,48 @@ export default function SettingsView() {
           <div className="space-y-6 pt-2 border-t border-slate-50">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
               Team & Access
-              {isAdmin && (
-                <button type="button" className="flex items-center gap-1 text-[8px] text-indigo-600 font-black tracking-widest hover:text-indigo-700">
-                  <UserPlus size={10} /> INVITE OPERATOR
-                </button>
+              {canManageMembers && (
+                <div className="flex items-center gap-1 text-[8px] text-indigo-600 font-black tracking-widest">
+                  <Shield size={10} /> {currentUserRole?.toUpperCase()} CLEARANCE
+                </div>
               )}
             </h3>
+
+            {/* Invite Section (Owner/Admin) */}
+            {canManageMembers && (
+              <div className="p-5 bg-indigo-50/30 border border-indigo-100/50 rounded-3xl">
+                <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest mb-4 flex items-center gap-2">
+                  <UserPlus size={12} /> Sync New Node
+                </p>
+                <form onSubmit={handleInviteMember} className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex-1 relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400/50" size={14} />
+                    <input 
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="operator@email.com"
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-indigo-100 rounded-xl text-xs font-medium focus:ring-1 focus:ring-indigo-600 outline-none"
+                    />
+                  </div>
+                  <select 
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value as any)}
+                    className="px-4 py-2.5 bg-white border border-indigo-100 rounded-xl text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="member">Member</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                  <button 
+                    disabled={isInviting}
+                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 shadow-lg shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {isInviting ? 'Pending...' : 'Sync Node'}
+                  </button>
+                </form>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 gap-4">
                {/* Organization Members */}
@@ -587,23 +776,55 @@ export default function SettingsView() {
 
                   <div className="space-y-3">
                      {memberships.map((m, i) => (
-                       <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100">
+                       <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100 group">
                           <div className="flex items-center gap-3">
-                             <div className="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-white text-[10px] font-black italic">
+                             <div className="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-white text-[10px] font-black italic relative">
                                 {m.role === 'owner' ? <Crown size={14} className="text-amber-400" /> : m.role[0].toUpperCase()}
+                                {m.user_id === profile?.id && (
+                                   <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+                                )}
                              </div>
                              <div>
-                                <p className="text-[11px] font-bold text-slate-900 leading-none mb-1">Operator Node</p>
-                                <p className="text-[9px] text-slate-400 font-mono">{m.user_id === profile?.id ? 'System User (You)' : 'Remote ID'}</p>
+                                <p className="text-[11px] font-bold text-slate-900 leading-none mb-1">
+                                  {m.user_id === profile?.id ? 'System User (You)' : `Node-${m.user_id.slice(0, 4)}`}
+                                </p>
+                                <p className="text-[9px] text-slate-400 font-mono italic uppercase tracking-wider">{m.role}</p>
                              </div>
                           </div>
-                          <div className="text-right">
-                             <span className={cn(
-                               "text-[8px] font-black px-2 py-0.5 rounded-full border tracking-widest uppercase",
-                               m.role === 'owner' ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-slate-50 text-slate-600 border-slate-100"
-                             )}>
-                                {m.role}
-                             </span>
+                          
+                          <div className="flex items-center gap-2">
+                             {/* Role Update (Owners/Admins only) */}
+                             {canManageMembers && m.user_id !== profile?.id && m.role !== 'owner' && (
+                               <select 
+                                 defaultValue={m.role}
+                                 onChange={(e) => handleUpdateRole(m.user_id, e.target.value)}
+                                 className="opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-slate-100 rounded-lg text-[9px] font-black uppercase tracking-widest px-2 py-1 outline-none cursor-pointer"
+                               >
+                                 <option value="admin">Admin</option>
+                                 <option value="member">Member</option>
+                                 <option value="viewer">Viewer</option>
+                               </select>
+                             )}
+
+                             {/* Remove Member */}
+                             {canManageMembers && m.user_id !== profile?.id && m.role !== 'owner' && (
+                               <button 
+                                 onClick={() => handleRemoveMember(m.user_id)}
+                                 className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-slate-300 hover:text-red-500 transition-colors"
+                               >
+                                 <Trash2 size={14} />
+                               </button>
+                             )}
+
+                             {/* Leave Organization */}
+                             {m.user_id === profile?.id && m.role !== 'owner' && (
+                               <button 
+                                 onClick={() => handleRemoveMember(m.user_id)}
+                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-100 transition-all"
+                               >
+                                 <LogOut size={12} /> Leave
+                               </button>
+                             )}
                           </div>
                        </div>
                      ))}
@@ -631,6 +852,49 @@ export default function SettingsView() {
                  </div>
                )}
             </div>
+
+               {/* Danger Zone: Ownership Transfer (Owner Only) */}
+               {isOwner && memberships.length > 1 && (
+                 <div className="p-5 bg-red-50/50 border border-red-100 border-dashed rounded-3xl mt-4">
+                    <div className="flex items-center gap-3 mb-4">
+                       <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-red-500 border border-red-100 shadow-sm">
+                          <AlertTriangle size={18} />
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-black uppercase text-red-600 tracking-widest leading-none mb-1">Danger Zone</p>
+                          <p className="text-sm font-black text-slate-900 tracking-tight">System Transfer Protocol</p>
+                       </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                       <p className="text-[10px] text-slate-500 leading-relaxed italic mb-4">
+                          Relinquish ultimate node control to another operator. This action will demote your level to Administrator.
+                       </p>
+                       <div className="flex gap-2">
+                         <select 
+                           value={newOwnerId}
+                           onChange={(e) => setNewOwnerId(e.target.value)}
+                           className="flex-1 px-4 py-2 bg-white border border-red-100 rounded-xl text-xs font-medium outline-none"
+                         >
+                           <option value="">Select New Sovereign...</option>
+                           {memberships
+                             .filter(m => m.user_id !== profile?.id)
+                             .map(m => (
+                               <option key={m.user_id} value={m.user_id}>Node-{m.user_id.slice(0, 8)}</option>
+                             ))
+                           }
+                         </select>
+                         <button 
+                           onClick={handleTransferOwnership}
+                           disabled={!newOwnerId || transferringOwnership}
+                           className="px-4 py-2 bg-red-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-red-100 flex items-center gap-2 hover:bg-slate-900 transition-all disabled:opacity-50"
+                         >
+                           <ArrowRightLeft size={12} /> Transfer
+                         </button>
+                       </div>
+                    </div>
+                 </div>
+               )}
           </div>
 
           {/* AI Engine Protocol */}

@@ -197,7 +197,7 @@ export interface Plan {
 }
 
 export type OrganizationType = 'standard' | 'agency' | 'enterprise';
-export type MembershipRole = 'owner' | 'admin' | 'manager' | 'operator' | 'analyst' | 'finance' | 'support' | 'read_only';
+export type MembershipRole = 'owner' | 'admin' | 'member' | 'viewer';
 
 export interface Organization {
   id: string;
