@@ -20,7 +20,7 @@
 }
 
 body {
-  @apply bg-[#F8FAFC] text-slate-900 font-sans antialiased;
+  @apply bg-[#F8FAFC] text-slate-900 font-sans antialiased overflow-x-hidden;
 }
 
 .bento-card {

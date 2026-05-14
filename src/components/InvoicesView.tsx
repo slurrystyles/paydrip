@@ -222,7 +222,7 @@ export default function InvoicesView() {
         onClose={() => setShowUpgradeModal(false)} 
       />
 
-      <div className="bento-card overflow-hidden">
+      <div className="hidden sm:block bento-card overflow-hidden">
         <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[800px]">
               <thead>
@@ -362,6 +362,104 @@ export default function InvoicesView() {
         </div>
       </div>
 
+      {/* Mobile Card Layout */}
+      <div className="sm:hidden space-y-4">
+        {sortedInvoices.map((invoice) => (
+          <div 
+            key={invoice.id}
+            onClick={() => setSelectedInvoice(invoice)}
+            className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm active:scale-[0.98] transition-all"
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="font-black text-slate-900 tracking-tight text-sm leading-tight">{invoice.client?.name || invoice.snapshot_json?.name}</p>
+                <p className="text-[8px] text-slate-400 font-mono font-bold uppercase tracking-widest mt-1">#{invoice.invoice_number}</p>
+              </div>
+              <span className={cn(
+                "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border",
+                invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100' :
+                invoice.status === 'payment_reported' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                isOverdue(invoice) ? 'bg-red-50 text-red-600 border-red-100' :
+                invoice.status === 'sent' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                'bg-slate-50 text-slate-400 border-slate-100'
+              )}>
+                {invoice.status === 'paid' ? 'Settled' : 
+                 invoice.status === 'payment_reported' ? 'Reported' : 
+                 isOverdue(invoice) ? 'Overdue' : invoice.status}
+              </span>
+            </div>
+            
+            <div className="flex justify-between items-end">
+              <div className="space-y-1">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Amount Due</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-extrabold text-slate-900 text-lg">{formatCurrency(invoice.remainingBalance || invoice.amount)}</p>
+                  {invoice.totalPaid && invoice.totalPaid > 0 && (
+                     <p className="text-[8px] text-green-600 font-black uppercase bg-green-50 px-1.5 py-0.5 rounded-lg border border-green-100">+{formatCurrency(invoice.totalPaid)}</p>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Due Date</p>
+                <p className={cn(
+                  "text-[10px] font-black uppercase tracking-widest",
+                   isOverdue(invoice) ? "text-red-500 italic" : "text-slate-600"
+                )}>
+                  {new Date(invoice.due_date).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
+              <RiskBadge level={
+                 isOverdue(invoice) 
+                   ? (invoice.remainingBalance && invoice.remainingBalance > 50000 ? 'critical' : 'high')
+                   : 'minimal'
+              } />
+              <div className="flex gap-2">
+                {invoice.status === 'draft' && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleQuickSend(invoice); }}
+                    className="p-2.5 rounded-xl bg-slate-900 text-white shadow-lg active:scale-95"
+                  >
+                    <Send size={14} />
+                  </button>
+                )}
+                {invoice.status === 'sent' && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(invoice); }}
+                    className="p-2.5 rounded-xl bg-green-600 text-white shadow-lg active:scale-95"
+                  >
+                    <CheckCircle size={14} />
+                  </button>
+                )}
+                <div className="p-2.5 rounded-xl bg-slate-50 text-slate-400">
+                  <ChevronRight size={14} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* FAB for Mobile */}
+      <div className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-6 flex justify-center pointer-events-none">
+        <button 
+          onClick={() => {
+            if (isLimitReached) {
+              setShowUpgradeModal(true);
+            } else {
+              setIsNewModalOpen(true);
+            }
+          }}
+          className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all active:scale-90 pointer-events-auto",
+            isLimitReached ? "bg-slate-200 text-slate-400" : "bg-slate-900 text-white shadow-slate-300"
+          )}
+        >
+          {isLimitReached ? <Zap size={24} /> : <Plus size={24} />}
+        </button>
+      </div>
 
       <InvoiceModal 
         isOpen={isNewModalOpen} 
@@ -385,25 +483,25 @@ export default function InvoicesView() {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-5 rounded-[2rem] shadow-2xl z-50 flex items-center gap-8 border border-white/10 backdrop-blur-xl"
+            className="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 sm:px-8 py-4 sm:py-5 rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl z-50 flex items-center gap-4 sm:gap-8 border border-white/10 backdrop-blur-xl w-[90%] sm:w-auto overflow-x-auto scrollbar-hide"
           >
-             <div className="flex items-center gap-3 pr-8 border-r border-white/10">
-                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-black italic text-sm">
+             <div className="flex items-center gap-3 pr-4 sm:pr-8 border-r border-white/10 shrink-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-black italic text-xs sm:text-sm">
                    {selectedIds.length}
                 </div>
-                <div>
+                <div className="hidden sm:block">
                    <p className="text-[10px] font-black uppercase tracking-widest leading-none">Nodes Selected</p>
                    <p className="text-[9px] font-bold text-white/40 mt-1 uppercase">Mass Operation Active</p>
                 </div>
              </div>
 
-             <div className="flex items-center gap-3">
+             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <BulkButton onClick={() => handleBulkAction('pause')} icon={<Pause size={14} />}>Pause</BulkButton>
                 <BulkButton onClick={() => handleBulkAction('resume')} icon={<Play size={14} />}>Resume</BulkButton>
                 <BulkButton onClick={() => handleBulkAction('nudge')} variant="indigo" icon={<Zap size={14} />}>Mass Nudge</BulkButton>
                 <button 
                   onClick={() => setSelectedIds([])}
-                  className="p-3 hover:bg-white/10 rounded-xl transition-all"
+                  className="p-2 sm:p-3 hover:bg-white/10 rounded-xl transition-all"
                 >
                    <X size={16} />
                 </button>

@@ -221,32 +221,35 @@ export default function SettingsView() {
   if (loading) return <div className="animate-pulse space-y-4 shadow rounded p-8 bg-white h-96"></div>;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="max-w-2xl mx-auto space-y-4 sm:space-y-5 px-1 sm:px-0">
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
       
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 bg-slate-900 text-white rounded-xl">
+          <div className="p-2.5 bg-slate-900 text-white rounded-xl shrink-0">
             <Shield size={20} />
           </div>
           <div>
-            <h2 className="text-xl font-black tracking-tighter italic leading-tight">System Settings</h2>
+            <h2 className="text-lg sm:text-xl font-black tracking-tighter italic leading-tight">System Settings</h2>
             <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">Business Protocol Node</p>
           </div>
         </div>
         
         <div className={cn(
-          "px-3 py-1.5 rounded-xl border flex items-center gap-2.5 transition-all shadow-sm",
+          "px-3 py-1.5 rounded-xl border flex items-center justify-between sm:justify-start gap-2.5 transition-all shadow-sm self-start sm:self-auto w-full sm:w-auto",
           plan === 'free' ? "bg-slate-50 border-slate-100" : "bg-indigo-50 border-indigo-100"
         )}>
-          <div>
-            <p className="text-[7px] font-black uppercase tracking-[0.1em] text-slate-400 leading-none mb-1">Tier</p>
-            <p className="text-[10px] font-black uppercase text-slate-900 italic tracking-widest leading-none">{plan}</p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            <div>
+              <p className="text-[7px] font-black uppercase tracking-[0.1em] text-slate-400 leading-none mb-1">Node Level</p>
+              <p className="text-[10px] font-black uppercase text-slate-900 italic tracking-widest leading-none">{plan}</p>
+            </div>
           </div>
           {plan === 'free' && (
             <button 
               onClick={() => setShowUpgradeModal(true)}
-              className="p-1 bg-indigo-600 text-white rounded-md hover:bg-slate-900 transition-all shadow-md"
+              className="p-1 bg-indigo-600 text-white rounded-md hover:bg-slate-900 transition-all shadow-md ml-4"
             >
               <Zap size={10} className="fill-white" />
             </button>
@@ -677,29 +680,29 @@ export default function SettingsView() {
             </h3>
 
             <div className={cn("space-y-5 transition-all", plan !== 'enterprise' && "opacity-40 grayscale pointer-events-none")}>
-               <div className="p-5 bg-slate-900 rounded-3xl text-white">
-                  <div className="flex items-center justify-between mb-4">
-                     <div>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest leading-none flex items-center gap-2">
-                           <Globe size={14} className="text-indigo-400" /> Webhook Endpoints
-                        </h4>
-                        <p className="text-[8px] text-slate-400 mt-1 uppercase tracking-wider">Triggers: invoice.updated, remider.sent</p>
-                     </div>
-                     <button type="button" className="text-[9px] font-black uppercase text-indigo-400 hover:text-white transition-colors underline">Add Hook</button>
+            <div className="p-4 sm:p-6 bg-slate-900 rounded-[2rem] text-white">
+               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                  <div>
+                     <h4 className="text-[10px] font-black uppercase tracking-widest leading-none flex items-center gap-2">
+                        <Globe size={14} className="text-indigo-400" /> Webhook Endpoints
+                     </h4>
+                     <p className="text-[8px] text-slate-400 mt-1 uppercase tracking-wider">Triggers: invoice.updated, reminder.sent</p>
                   </div>
-                  {webhooks.length > 0 ? (
-                    <div className="space-y-3">
-                       {webhooks.map((w, i) => (
-                         <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
-                            <span className="text-[10px] font-mono opacity-60 truncate max-w-[150px]">{w.url}</span>
-                            <span className="text-[8px] font-black px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">ACTIVE</span>
-                         </div>
-                       ))}
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-white/30 italic">No webhooks registered.</p>
-                  )}
+                  <button type="button" className="text-[9px] font-black uppercase text-indigo-400 hover:text-white transition-colors underline self-start sm:self-auto">Add Hook</button>
                </div>
+               {webhooks.length > 0 ? (
+                 <div className="space-y-3">
+                    {webhooks.map((w, i) => (
+                      <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between gap-3">
+                         <span className="text-[10px] font-mono opacity-60 truncate flex-1">{w.url}</span>
+                         <span className="text-[8px] font-black px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 shrink-0">ACTIVE</span>
+                      </div>
+                    ))}
+                 </div>
+               ) : (
+                 <p className="text-[10px] text-white/30 italic">No webhooks registered.</p>
+               )}
+            </div>
 
                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 border border-slate-100">
@@ -721,7 +724,7 @@ export default function SettingsView() {
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between italic">
               Infrastructure
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                <div className="p-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                   <div className="flex items-center gap-2 text-slate-400 mb-2">
                      <Database size={12} />

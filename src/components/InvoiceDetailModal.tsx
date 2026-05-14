@@ -775,13 +775,13 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
     : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
       />
       
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
@@ -790,9 +790,9 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] relative z-10"
+        className="bg-white w-full max-w-5xl sm:rounded-3xl shadow-2xl overflow-y-auto md:overflow-hidden flex flex-col md:flex-row h-screen sm:h-[90vh] relative z-10"
       >
-        {/* Toast Notofication */}
+        {/* Toast Notification */}
         <AnimatePresence>
           {toast && (
             <motion.div 
@@ -806,9 +806,21 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Mobile Header with Close Button */}
+        <div className="lg:hidden flex items-center justify-between p-4 border-b border-slate-50 bg-white sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+             <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black italic shadow-lg">P</div>
+             <p className="font-black text-slate-900 leading-none">Invoice #{invoice.invoice_number}</p>
+          </div>
+          <button onClick={onClose} className="p-3 bg-slate-50 rounded-xl text-slate-400 active:scale-90 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center">
+             <X size={20} />
+          </button>
+        </div>
+
         {/* Preview Panel */}
-        <div className="flex-1 bg-slate-50/50 overflow-y-auto p-8 md:p-12 border-r border-slate-100 hidden md:block">
-          <div className="bg-white p-12 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-200/60 min-h-[800px] flex flex-col">
+        <div className="shrink-0 md:flex-1 bg-slate-50/50 md:overflow-y-auto p-4 sm:p-8 md:p-12 border-b md:border-b-0 md:border-r border-slate-100">
+          <div className="bg-white p-6 sm:p-8 md:p-12 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-200/60 min-h-[400px] md:min-h-[800px] flex flex-col">
             <div className="flex justify-between items-start mb-16">
               <div>
                 <h2 className="text-3xl font-black tracking-tight text-slate-900">{userProfile?.business_name || 'Your Company'}</h2>
@@ -884,8 +896,8 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
         </div>
 
         {/* Action Panel */}
-        <div className="w-full md:w-96 bg-white flex flex-col border-l border-slate-100">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="shrink-0 md:flex-1 lg:flex-none lg:w-96 bg-white flex flex-col border-l border-slate-100 min-h-0">
+          <div className="hidden lg:flex p-6 border-b border-slate-100 items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></div>
               <h3 className="font-black uppercase font-mono text-[10px] text-slate-400 tracking-widest">Management Console</h3>
@@ -895,15 +907,15 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
             </button>
           </div>
 
-          <div className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 p-4 sm:p-6 space-y-8 md:overflow-y-auto custom-scrollbar pb-32 lg:pb-6">
             {/* Nav Tabs */}
-            <div className="flex gap-1 bg-slate-50 p-1 rounded-2xl overflow-hidden">
+            <div className="flex gap-1 bg-slate-50 p-1 rounded-2xl overflow-x-auto scrollbar-hide shrink-0">
                {(['recovery', 'payments', 'history'] as const).map(tab => (
                  <button
                    key={tab}
                    onClick={() => setActiveTab(tab)}
                    className={cn(
-                     "flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all",
+                     "flex-1 min-w-[80px] py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all",
                      activeTab === tab ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
                    )}
                  >

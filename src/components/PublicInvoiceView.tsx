@@ -248,12 +248,12 @@ export default function PublicInvoiceView() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#FDFDFF] py-20 px-6 font-sans">
+    <div className="min-h-screen bg-[#FDFDFF] py-8 sm:py-20 px-4 sm:px-6 font-sans overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-10"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 sm:gap-8 mb-8 sm:mb-10"
         >
           <div className="flex items-center gap-4">
              {userProfile.plan !== 'free' && userProfile.logo_url ? (
@@ -264,17 +264,17 @@ export default function PublicInvoiceView() {
                  referrerPolicy="no-referrer"
                />
              ) : (
-               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black italic text-2xl shadow-xl shadow-indigo-100">P</div>
+               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black italic text-2xl shadow-xl shadow-indigo-100 shrink-0">P</div>
              )}
-             <div>
-               <h1 className="text-2xl font-black tracking-tighter text-slate-900">{userProfile.business_name}</h1>
+             <div className="min-w-0">
+               <h1 className="text-xl sm:text-2xl font-black tracking-tighter text-slate-900 truncate">{userProfile.business_name}</h1>
                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] leading-none mt-1">Verified Payment Request</p>
              </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
             <button 
               onClick={downloadPDF}
-              className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3.5 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
             >
               <Download size={14} />
               Save PDF
@@ -286,17 +286,17 @@ export default function PublicInvoiceView() {
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden"
+          className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden"
         >
-          <div className="p-10 md:p-16">
-            <div className="grid md:grid-cols-2 gap-16 mb-20 items-start">
+          <div className="p-6 sm:p-10 md:p-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 mb-12 sm:mb-20 items-start">
               <div>
                 <motion.div 
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
                   className={cn(
-                    "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8 inline-block",
+                    "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 sm:mb-8 inline-block",
                     isFullyPaid ? "bg-green-50 text-green-600 border border-green-100" : "bg-indigo-50 text-indigo-600 border border-indigo-100"
                   )}
                 >
@@ -304,10 +304,10 @@ export default function PublicInvoiceView() {
                 </motion.div>
                 
                 <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 font-mono">Invoice Ledger Due</h2>
-                <div className="text-7xl font-black tracking-[-0.04em] text-slate-900 mb-6 flex flex-col">
+                <div className="text-5xl sm:text-7xl font-black tracking-[-0.04em] text-slate-900 mb-6 flex flex-col">
                   {formatCurrency(remainingBalance)}
                   {totalPaid > 0 && (
-                    <span className="text-lg text-slate-400 font-medium tracking-tight mt-2 line-through opacity-50">
+                    <span className="text-base sm:text-lg text-slate-400 font-medium tracking-tight mt-2 line-through opacity-50">
                       Original: {formatCurrency(invoice.amount)}
                     </span>
                   )}
@@ -316,8 +316,8 @@ export default function PublicInvoiceView() {
               </div>
 
               {!isFullyPaid && upiLink && (
-                <div className="bg-slate-50/50 p-10 rounded-[2rem] border border-slate-100 flex flex-col items-center">
-                  <div className="bg-white p-3 rounded-2xl shadow-2xl shadow-indigo-100/50 mb-8 border border-slate-100">
+                <div className="bg-slate-50/50 p-6 sm:p-10 rounded-[2rem] border border-slate-100 flex flex-col items-center">
+                  <div className="bg-white p-3 rounded-2xl shadow-2xl shadow-indigo-100/50 mb-6 sm:mb-8 border border-slate-100">
                     <QRCodeSVG value={upiLink} size={160} />
                   </div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 text-center">Scan to Pay via UPI</p>
@@ -345,26 +345,26 @@ export default function PublicInvoiceView() {
                       className="w-full space-y-4"
                     >
                       <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Enter Transaction ID / Ref</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block px-1">Enter Transaction ID / Ref</label>
                         <input 
                           type="text"
                           value={transactionRef}
                           onChange={(e) => setTransactionRef(e.target.value)}
                           placeholder="e.g. 412389471..."
-                          className="w-full p-4 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
+                          className="w-full p-5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all min-h-[56px]"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <button 
                           onClick={() => setShowRefInput(false)}
-                          className="py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900"
+                          className="py-5 bg-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900"
                         >
                           Back
                         </button>
                         <button 
                           onClick={handleReportPayment}
                           disabled={isProcessing}
-                          className="py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
+                          className="py-5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
                         >
                           {isProcessing ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -379,31 +379,31 @@ export default function PublicInvoiceView() {
               )}
 
               {invoice.status === 'payment_reported' && (
-                <div className="bg-indigo-50/50 p-10 rounded-[2rem] border border-indigo-100 flex flex-col items-center justify-center text-center">
-                  <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-6">
-                    <CheckCircle size={48} className="animate-pulse" />
+                <div className="bg-indigo-50/50 p-8 sm:p-10 rounded-[2rem] border border-indigo-100 flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-6">
+                    <CheckCircle size={40} className="animate-pulse" />
                   </div>
-                  <h3 className="text-xl font-black text-indigo-900 mb-2 font-mono uppercase tracking-tighter">Verification Pending</h3>
+                  <h3 className="text-lg sm:text-xl font-black text-indigo-900 mb-2 font-mono uppercase tracking-tighter">Verification Pending</h3>
                   <p className="text-indigo-700/60 text-sm font-medium">Your payment of {formatCurrency(remainingBalance)} is being verified by the issuer. Ref: {invoice.payment_reference}</p>
                 </div>
               )}
 
               {isFullyPaid && (
-                <div className="bg-green-50/50 p-10 rounded-[2rem] border border-green-100 flex flex-col items-center justify-center text-center">
-                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6">
-                    <CheckCircle size={48} />
+                <div className="bg-green-50/50 p-8 sm:p-10 rounded-[2rem] border border-green-100 flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6">
+                    <CheckCircle size={40} />
                   </div>
-                  <h3 className="text-xl font-black text-green-900 mb-2 font-mono uppercase tracking-tighter">Paid in Full</h3>
+                  <h3 className="text-lg sm:text-xl font-black text-green-900 mb-2 font-mono uppercase tracking-tighter">Paid in Full</h3>
                   <p className="text-green-700/60 text-sm font-medium">Thank you! Your payment has been successfully recorded in the ledger.</p>
                 </div>
               )}
             </div>
 
-            <div className="grid md:grid-cols-2 gap-16 border-t border-slate-50 pt-16">
-              <div className="space-y-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 border-t border-slate-50 pt-10 sm:pt-16">
+              <div className="space-y-10 sm:space-y-12">
                 <div>
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 font-mono">Recipient</h3>
-                  <p className="font-black text-slate-900 text-xl tracking-tight leading-tight">{clientName}</p>
+                  <p className="font-black text-slate-900 text-lg sm:text-xl tracking-tight leading-tight">{clientName}</p>
                   <p className="text-slate-500 font-medium italic mt-1">{clientEmail}</p>
                 </div>
 
@@ -431,7 +431,7 @@ export default function PublicInvoiceView() {
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 font-mono">Timeline</h3>
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
                       <Landmark size={20} />
                     </div>
                     <div>
@@ -441,7 +441,7 @@ export default function PublicInvoiceView() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center",
+                      "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
                       invoice.status === 'overdue' ? "bg-red-50 text-red-500" : "bg-indigo-50 text-indigo-600"
                     )}>
                       <Shield size={20} />
@@ -461,14 +461,14 @@ export default function PublicInvoiceView() {
             </div>
 
             {invoice.notes && (
-              <div className="mt-20 p-8 bg-slate-50/50 rounded-3xl italic text-slate-500 text-sm leading-relaxed border border-slate-100 flex items-start gap-4">
-                <span className="text-4xl text-indigo-200 font-serif leading-none">“</span>
-                <p>"{invoice.notes}"</p>
+              <div className="mt-12 sm:mt-20 p-6 sm:p-8 bg-slate-50/50 rounded-3xl italic text-slate-500 text-sm leading-relaxed border border-slate-100 flex items-start gap-4">
+                <span className="text-3xl sm:text-4xl text-indigo-200 font-serif leading-none">“</span>
+                <p className="pt-2">"{invoice.notes}"</p>
               </div>
             )}
           </div>
 
-          <div className="bg-slate-900 p-12 text-center relative overflow-hidden">
+          <div className="bg-slate-900 p-8 sm:p-12 text-center relative overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -z-0" />
             <div className="relative z-10">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Enterprise Settlement Protocol</p>
@@ -490,7 +490,7 @@ export default function PublicInvoiceView() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-center mt-12 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]"
+          className="text-center mt-8 sm:mt-12 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]"
         >
           Direct inquiries to <span className="text-slate-900">{userProfile.business_name}</span>.
         </motion.p>
@@ -498,20 +498,20 @@ export default function PublicInvoiceView() {
 
       <AnimatePresence>
         {showConfirmation && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-xl">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-xl">
              <motion.div 
                initial={{ scale: 0.9, opacity: 0 }}
                animate={{ scale: 1, opacity: 1 }}
-               className="bg-white rounded-[3rem] p-12 max-w-sm w-full text-center shadow-2xl border border-slate-100"
+               className="bg-white rounded-[2.5rem] p-8 sm:p-12 max-w-sm w-full text-center shadow-2xl border border-slate-100"
              >
-                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-500 mx-auto mb-8">
-                   <CheckCircle size={48} />
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-50 rounded-full flex items-center justify-center text-green-500 mx-auto mb-6 sm:mb-8">
+                   <CheckCircle size={40} />
                 </div>
-                <h2 className="text-2xl font-black tracking-tight text-slate-900 mb-4 italic">Payment Reported</h2>
-                <p className="text-slate-500 text-sm mb-10 leading-relaxed font-medium">Thank you! Your payment report has been sent to <span className="font-bold text-slate-900">{userProfile.business_name}</span> for verification.</p>
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 mb-4 italic uppercase">Payment Reported</h2>
+                <p className="text-slate-500 text-sm mb-8 sm:mb-10 leading-relaxed font-medium">Thank you! Your payment report has been sent to <span className="font-bold text-slate-900">{userProfile.business_name}</span> for verification.</p>
                 <button 
                   onClick={() => setShowConfirmation(false)}
-                  className="w-full py-5 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
+                  className="w-full py-4 sm:py-5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
                 >
                   Close Confirmation
                 </button>

@@ -62,8 +62,11 @@ export default function RecoveryOpsCenter() {
   };
 
   useEffect(() => {
+    if (!currentOrganization) {
+      setLoading(false);
+      return;
+    }
     fetchData();
-    if (!currentOrganization) return;
     const channel = supabase.channel(`ops_center_${currentOrganization.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'escalation_queue', filter: `organization_id=eq.${currentOrganization.id}` }, fetchData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `organization_id=eq.${currentOrganization.id}` }, fetchData)
@@ -80,33 +83,45 @@ export default function RecoveryOpsCenter() {
     }
   };
 
+  if (!currentOrganization) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-slate-50 rounded-[3rem] border border-dashed border-slate-200 mx-auto max-w-7xl animate-in fade-in duration-500">
+        <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-slate-200 mb-6 shadow-xl border border-slate-50">
+          <Settings size={32} />
+        </div>
+        <h2 className="text-xl font-black italic tracking-tighter text-slate-900 mb-2">No Active Context</h2>
+        <p className="text-sm font-bold text-slate-400 max-w-xs mx-auto">Please select an organization from the settings menu to initialize the recovery fleet.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto p-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto p-3 sm:p-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-           <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100 italic font-black text-xl">
+           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100 italic font-black text-lg sm:text-xl">
               OP
            </div>
            <div>
-             <h1 className="text-3xl font-black tracking-tighter text-slate-900 italic leading-none">Operations Center</h1>
-             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">Real-time Recovery Fleet Monitor</p>
+             <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-slate-900 italic leading-none">Operations Center</h1>
+             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1.5 sm:mt-2">Real-time Recovery Fleet Monitor</p>
            </div>
         </div>
 
-        <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200/50">
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200/50 overflow-x-auto scrollbar-hide whitespace-nowrap min-w-0 w-full sm:w-auto -mx-1 px-1 sm:mx-0 sm:px-0">
            {[
-             { id: 'board', label: 'Kanban', icon: <Kanban size={14} /> },
-             { id: 'queue', label: 'Monitor', icon: <ListIcon size={14} /> },
-             { id: 'logs', label: 'Logs', icon: <History size={14} /> },
-             { id: 'security', label: 'Security', icon: <ShieldAlert size={14} /> },
-             { id: 'health', label: 'Health', icon: <Activity size={14} /> }
+             { id: 'board', label: 'Kanban', icon: <Kanban size={13} /> },
+             { id: 'queue', label: 'Monitor', icon: <ListIcon size={13} /> },
+             { id: 'logs', label: 'Logs', icon: <History size={13} /> },
+             { id: 'security', label: 'Security', icon: <ShieldAlert size={13} /> },
+             { id: 'health', label: 'Health', icon: <Activity size={13} /> }
            ].map((tab) => (
              <button
                key={tab.id}
                onClick={() => setActiveView(tab.id as any)}
                className={cn(
-                 "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                 activeView === tab.id ? "bg-white text-indigo-600 shadow-lg" : "text-slate-400 hover:text-slate-600"
+                 "flex items-center gap-2 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0",
+                 activeView === tab.id ? "bg-white text-indigo-600 shadow-md scale-[1.02]" : "text-slate-400 hover:text-slate-600"
                )}
              >
                {tab.icon} {tab.label}
@@ -122,7 +137,7 @@ export default function RecoveryOpsCenter() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="flex gap-6 overflow-x-auto pb-8 snap-x"
+            className="flex gap-4 sm:gap-6 overflow-x-auto pb-8 snap-x scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
           >
              {['pending', 'gentle_followup', 'firm_followup', 'final_notice', 'legal_warning'].map((stage) => (
                <div key={stage} className="min-w-[320px] w-[320px] snap-center">
@@ -180,26 +195,26 @@ export default function RecoveryOpsCenter() {
           </motion.div>
         )}
 
-        {activeView === 'queue' && (
+         {activeView === 'queue' && (
           <motion.div 
             key="queue"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl overflow-hidden"
+            className="bg-white rounded-3xl sm:rounded-[3rem] border border-slate-100 shadow-2xl overflow-hidden"
           >
-             <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+             <div className="p-6 sm:p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h3 className="font-black text-slate-900 uppercase tracking-widest text-[11px] flex items-center gap-3">
                    <Clock size={18} className="text-indigo-600" /> Pending Reminders Queue
                 </h3>
                 <div className="flex items-center gap-4">
-                   <div className="flex items-center gap-2 bg-green-50 text-green-600 px-3 py-1.5 rounded-full">
+                   <div className="flex items-center gap-2 bg-green-50 text-green-600 px-3 py-1.5 rounded-full w-fit">
                       <Zap size={12} />
                       <span className="text-[9px] font-black uppercase">Auto-Processing Active</span>
                    </div>
                 </div>
              </div>
              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[800px] sm:min-w-0">
                    <thead>
                       <tr className="bg-slate-50">
                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Invoice</th>
@@ -256,17 +271,17 @@ export default function RecoveryOpsCenter() {
         {activeView === 'logs' && (
           <motion.div 
             key="logs"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             className="grid grid-cols-1 md:grid-cols-2 gap-8"
           >
-             <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-2xl">
+             <div className="bg-white rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 border border-slate-100 shadow-2xl">
                 <h3 className="font-black text-slate-900 uppercase tracking-widest text-[11px] mb-8 flex items-center gap-3">
                    <ShieldAlert size={18} className="text-red-500" /> Error Forensics
                 </h3>
                 <div className="space-y-4">
                    {queue.filter(q => q.status === 'failed').map((error, i) => (
-                     <div key={i} className="p-5 bg-red-50/50 rounded-2xl border border-red-100">
+                     <div key={i} className="p-4 sm:p-5 bg-red-50/50 rounded-2xl border border-red-100">
                         <div className="flex items-center justify-between mb-2">
                            <span className="text-[9px] font-black text-red-600 uppercase tracking-widest">Logic Failure</span>
                            <span className="text-[8px] font-mono text-red-400">{new Date(error.updated_at).toLocaleString()}</span>
@@ -279,14 +294,14 @@ export default function RecoveryOpsCenter() {
                 </div>
              </div>
 
-             <div className="bg-indigo-600 rounded-[3rem] p-10 text-white shadow-2xl shadow-indigo-100 relative overflow-hidden">
+             <div className="bg-indigo-600 rounded-3xl sm:rounded-[3rem] p-8 sm:p-10 text-white shadow-2xl shadow-indigo-100 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl opacity-50 border border-white/20"></div>
                 <div className="relative z-10">
-                   <h3 className="text-3xl font-black italic tracking-tighter mb-4 italic leading-tight">Automation Pulse</h3>
-                   <div className="grid grid-cols-2 gap-8 mt-10">
+                   <h3 className="text-2xl sm:text-3xl font-black italic tracking-tighter mb-4 italic leading-tight">Automation Pulse</h3>
+                   <div className="grid grid-cols-2 gap-6 sm:gap-8 mt-10">
                       <div>
                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Success Velocity</p>
-                         <p className="text-4xl font-black mt-2">
+                         <p className="text-3xl sm:text-4xl font-black mt-2">
                            {queue.filter(q => q.status === 'processed').length + queue.filter(q => q.status === 'failed').length > 0 
                              ? Math.round((queue.filter(q => q.status === 'processed').length / (queue.filter(q => q.status === 'processed').length + queue.filter(q => q.status === 'failed').length)) * 100) 
                              : 100}%
@@ -302,7 +317,7 @@ export default function RecoveryOpsCenter() {
                       </div>
                       <div>
                          <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Resolved Nodes</p>
-                         <p className="text-4xl font-black mt-2">{queue.filter(q => q.status === 'processed').length}</p>
+                         <p className="text-3xl sm:text-4xl font-black mt-2">{queue.filter(q => q.status === 'processed').length}</p>
                          <p className="text-[9px] font-bold mt-4">Lifetime Processing</p>
                       </div>
                    </div>
@@ -311,51 +326,51 @@ export default function RecoveryOpsCenter() {
           </motion.div>
         )}
 
-        {activeView === 'security' && (
+         {activeView === 'security' && (
           <motion.div 
             key="security"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl flex items-center gap-6">
-                   <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
-                      <Fingerprint size={28} />
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-xl flex items-center gap-4 sm:gap-6">
+                   <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-50 rounded-xl sm:rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
+                      <Fingerprint size={24} className="sm:w-7 sm:h-7" />
                    </div>
                    <div>
-                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Defenses</p>
-                      <p className="text-2xl font-black text-slate-900 tracking-tighter">Hardened</p>
+                      <p className="text-[9px] sm:text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Defenses</p>
+                      <p className="text-xl sm:text-2xl font-black text-slate-900 tracking-tighter">Hardened</p>
                    </div>
                 </div>
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl flex items-center gap-6">
-                   <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-600">
-                      <Activity size={28} />
+                <div className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-xl flex items-center gap-4 sm:gap-6">
+                   <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-50 rounded-xl sm:rounded-2xl flex items-center justify-center text-green-600 shrink-0">
+                      <Activity size={24} className="sm:w-7 sm:h-7" />
                    </div>
                    <div>
-                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Recent Audits</p>
-                      <p className="text-2xl font-black text-slate-900 tracking-tighter">{auditLogs.length}</p>
+                      <p className="text-[9px] sm:text-[10px] font-black uppercase text-slate-400 tracking-widest">Recent Audits</p>
+                      <p className="text-xl sm:text-2xl font-black text-slate-900 tracking-tighter">{auditLogs.length}</p>
                    </div>
                 </div>
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl flex items-center gap-6">
-                   <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-600">
-                      <UserCheck size={28} />
+                <div className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-xl flex items-center gap-4 sm:gap-6 sm:col-span-2 lg:col-span-1">
+                   <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-50 rounded-xl sm:rounded-2xl flex items-center justify-center text-red-600 shrink-0">
+                      <UserCheck size={24} className="sm:w-7 sm:h-7" />
                    </div>
                    <div>
-                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Blocked IPs</p>
-                      <p className="text-2xl font-black text-slate-900 tracking-tighter">{abuseFlags.length}</p>
+                      <p className="text-[9px] sm:text-[10px] font-black uppercase text-slate-400 tracking-widest">Blocked IPs</p>
+                      <p className="text-xl sm:text-2xl font-black text-slate-900 tracking-tighter">{abuseFlags.length}</p>
                    </div>
                 </div>
              </div>
 
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl overflow-hidden">
-                   <div className="p-8 border-b border-slate-50">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                <div className="bg-white rounded-3xl sm:rounded-[3rem] border border-slate-100 shadow-2xl overflow-hidden">
+                   <div className="p-6 sm:p-8 border-b border-slate-50">
                       <h3 className="font-black text-slate-900 uppercase tracking-widest text-[11px] flex items-center gap-3">
                          <Fingerprint size={18} className="text-indigo-600" /> Enterprise Audit Trail
                       </h3>
                    </div>
-                   <div className="p-4 space-y-2">
+                   <div className="p-3 sm:p-4 space-y-2">
                       {auditLogs.map((log) => (
                         <div key={log.id} className="p-4 hover:bg-slate-50 rounded-2xl transition-colors flex items-center justify-between group">
                            <div className="flex items-center gap-4">
@@ -381,21 +396,21 @@ export default function RecoveryOpsCenter() {
                    </div>
                 </div>
 
-                <div className="space-y-8">
-                   <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
+                <div className="space-y-6 sm:space-y-8">
+                   <div className="bg-slate-900 rounded-3xl sm:rounded-[3rem] p-8 sm:p-10 text-white shadow-2xl relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full -mr-32 -mt-32 blur-[80px] opacity-20"></div>
-                      <h3 className="text-2xl font-black italic tracking-tighter mb-6 leading-tight">Security Posture: EXCELLENT</h3>
-                      <div className="space-y-4">
+                      <h3 className="text-xl sm:text-2xl font-black italic tracking-tighter mb-6 leading-tight">Security Posture: EXCELLENT</h3>
+                      <div className="space-y-3 sm:space-y-4">
                          {[
                            { label: 'Rate Limiting', status: 'ACTIVE' },
                            { label: 'Spam Filtering', status: 'LEARNING' },
                            { label: 'Brute Force Shield', status: 'ACTIVE' },
                            { label: 'Worker Verification', status: 'PENDING' }
                          ].map((item, i) => (
-                            <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
-                               <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{item.label}</span>
+                            <div key={i} className="flex items-center justify-between p-3 sm:p-4 bg-white/5 rounded-2xl border border-white/10">
+                               <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-60">{item.label}</span>
                                <span className={cn(
-                                 "text-[9px] font-black px-2 py-0.5 rounded-full",
+                                 "text-[8px] sm:text-[9px] font-black px-2 py-0.5 rounded-full",
                                  item.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/40'
                                )}>{item.status}</span>
                             </div>
@@ -403,7 +418,7 @@ export default function RecoveryOpsCenter() {
                       </div>
                    </div>
 
-                   <div className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl p-8">
+                   <div className="bg-white rounded-3xl sm:rounded-[3rem] border border-slate-100 shadow-2xl p-6 sm:p-8">
                       <h3 className="font-black text-slate-900 uppercase tracking-widest text-[11px] mb-6 flex items-center gap-3">
                          <ShieldAlert size={18} className="text-red-500" /> Active Threats
                       </h3>
@@ -412,7 +427,7 @@ export default function RecoveryOpsCenter() {
                            <div key={flag.id} className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">
                               <div>
                                  <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">{flag.severity} RISK</p>
-                                 <p className="text-[11px] font-bold text-slate-900 mt-1">{flag.reason}</p>
+                                 <p className="text-xs font-bold text-slate-900 mt-1">{flag.reason}</p>
                               </div>
                               <button className="p-2 bg-white text-red-600 rounded-xl shadow-sm hover:bg-red-50 transition-all">
                                  <X size={14} />

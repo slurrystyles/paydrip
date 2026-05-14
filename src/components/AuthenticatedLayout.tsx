@@ -30,13 +30,18 @@ interface NavItemProps {
   path: string;
   active: boolean;
   disabled?: boolean;
+  onClick?: () => void;
 }
 
-function NavItem({ icon, label, path, active, disabled }: NavItemProps) {
+function NavItem({ icon, label, path, active, disabled, onClick }: NavItemProps) {
   const navigate = useNavigate();
   return (
     <button
-      onClick={() => !disabled && navigate(path)}
+      onClick={() => {
+        if (disabled) return;
+        navigate(path);
+        if (onClick) onClick();
+      }}
       className={cn(
         "flex items-center w-full px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-300 relative group overflow-hidden",
         active 
@@ -151,20 +156,24 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       </aside>
 
       {/* Mobile Header */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 flex items-center justify-between z-40">
+        {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-[56px] bg-white/80 backdrop-blur-xl border-b border-slate-100 px-4 flex items-center justify-between z-40">
         <div 
           onClick={() => navigate('/')}
           className="flex items-center gap-2 cursor-pointer"
         >
-          <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-indigo-100">P</div>
-          <span className="font-black tracking-tighter">Paydrip</span>
+          <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black italic shadow-lg">P</div>
+          <span className="font-black tracking-tighter text-slate-900">Paydrip</span>
         </div>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-3 bg-slate-50 rounded-xl text-slate-600"
-        >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationCenter />
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 bg-slate-50 rounded-xl text-slate-600 transition-all active:scale-90"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -182,39 +191,65 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="absolute left-0 top-0 bottom-0 w-80 bg-white p-10 shadow-2xl" 
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute left-0 top-0 bottom-0 w-80 bg-white flex flex-col shadow-2xl" 
               onClick={e => e.stopPropagation()}
             >
-               <div className="flex items-center gap-3 mb-16">
-                 <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic">P</div>
-                 <span className="text-xl font-black tracking-tighter">Paydrip</span>
+               <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black italic shadow-lg">P</div>
+                    <span className="font-black tracking-tighter text-slate-900 uppercase italic">Protocol Node</span>
+                  </div>
+                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400">
+                    <X size={20} />
+                  </button>
                </div>
-               <nav className="space-y-4">
-                 {navItems.map((item) => (
-                   <NavItem 
-                     key={item.path}
-                     icon={item.icon}
-                     label={item.label}
-                     path={item.path}
-                     active={location.pathname === item.path}
-                   />
-                 ))}
-                 <button 
+
+               <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                 <nav className="space-y-1">
+                   {filteredNavItems.map((item) => (
+                     <NavItem 
+                       key={item.path}
+                       icon={item.icon}
+                       label={item.label}
+                       path={item.path}
+                       active={location.pathname === item.path}
+                       onClick={() => setIsMobileMenuOpen(false)}
+                     />
+                   ))}
+                 </nav>
+
+                 <div className="px-2">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Operations Context</h3>
+                    <OrganizationSwitcher />
+                 </div>
+               </div>
+
+               <div className="p-4 border-t border-slate-50 space-y-2">
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
+                    <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg">
+                      {user?.email?.[0].toUpperCase() || 'U'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Session Active</p>
+                      <p className="text-sm font-black text-slate-900 truncate">{user?.email}</p>
+                    </div>
+                  </div>
+                  <button 
                    onClick={handleSignOut}
-                   className="flex items-center w-full px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400"
-                 >
-                   <LogOut size={16} className="mr-4" />
-                   End Session
-                 </button>
-               </nav>
+                   className="w-full flex items-center gap-3 p-4 text-[10px] font-black uppercase tracking-[0.2em] text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                  >
+                    <LogOut size={16} />
+                    Terminate Session
+                  </button>
+               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         {/* Desktop Header */}
         <header className="h-14 bg-white/5 backdrop-blur-sm border-b border-slate-50 hidden lg:flex items-center justify-between px-6 sticky top-0 z-20">
           <div className="flex items-center gap-4">
