@@ -819,33 +819,33 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
         </div>
 
         {/* Preview Panel */}
-        <div className="shrink-0 md:flex-1 bg-slate-50/50 md:overflow-y-auto p-4 sm:p-8 md:p-12 border-b md:border-b-0 md:border-r border-slate-100">
-          <div className="bg-white p-6 sm:p-8 md:p-12 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-200/60 min-h-[400px] md:min-h-[800px] flex flex-col">
-            <div className="flex justify-between items-start mb-16">
-              <div>
-                <h2 className="text-3xl font-black tracking-tight text-slate-900">{userProfile?.business_name || 'Your Company'}</h2>
-                <div className="flex items-center gap-2 mt-2">
-                  <p className="text-slate-400 font-mono text-xs uppercase tracking-widest leading-none">{userProfile?.email}</p>
+        <div className="shrink-0 md:flex-1 bg-slate-50/50 md:overflow-y-auto p-3 sm:p-8 md:p-12 border-b md:border-b-0 md:border-r border-slate-100">
+          <div className="bg-white p-5 sm:p-8 md:p-12 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-200/60 min-h-[400px] md:min-h-[800px] flex flex-col">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-12 sm:mb-16">
+              <div className="min-w-0">
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 break-words">{userProfile?.business_name || 'Your Company'}</h2>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <p className="text-slate-400 font-mono text-[10px] sm:text-xs uppercase tracking-widest leading-none truncate max-w-full">{userProfile?.email}</p>
                   {riskScore && <RiskBadge level={riskScore.risk_level} />}
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-mono text-[10px] text-slate-400 uppercase tracking-widest">Digital Invoice</p>
-                <p className="text-xl font-black text-slate-900">#{invoice.invoice_number}</p>
+              <div className="text-left sm:text-right shrink-0">
+                <p className="font-mono text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-widest">Digital Invoice</p>
+                <p className="text-lg sm:text-xl font-black text-slate-900">#{invoice.invoice_number}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-12 mb-16">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 mb-12 sm:mb-16">
               <div>
-                <p className="font-mono text-[10px] uppercase text-slate-400 mb-2 tracking-widest">Bill To</p>
-                <p className="font-bold text-lg text-slate-900">{clientInfo.name}</p>
-                <p className="text-slate-500 text-sm italic">{clientInfo.email}</p>
+                <p className="font-mono text-[9px] sm:text-[10px] uppercase text-slate-400 mb-2 tracking-widest">Bill To</p>
+                <p className="font-bold text-base sm:text-lg text-slate-900">{clientInfo.name}</p>
+                <p className="text-slate-500 text-xs sm:text-sm italic truncate">{clientInfo.email}</p>
               </div>
-              <div className="text-right">
-                <p className="font-mono text-[10px] uppercase text-slate-400 mb-2 tracking-widest">Timeline</p>
+              <div className="text-left sm:text-right">
+                <p className="font-mono text-[9px] sm:text-[10px] uppercase text-slate-400 mb-2 tracking-widest">Timeline</p>
                 <div className="space-y-1">
-                  <p className="text-sm"><span className="text-slate-400">Issued:</span> <span className="font-bold">{new Date(invoice.created_at).toLocaleDateString()}</span></p>
-                  <p className="text-sm"><span className="text-slate-400">Due:</span> <span className="font-bold text-indigo-600">{new Date(invoice.due_date).toLocaleDateString()}</span></p>
+                  <p className="text-xs sm:text-sm"><span className="text-slate-400">Issued:</span> <span className="font-bold">{new Date(invoice.created_at).toLocaleDateString()}</span></p>
+                  <p className="text-xs sm:text-sm"><span className="text-slate-400">Due:</span> <span className="font-bold text-indigo-600">{new Date(invoice.due_date).toLocaleDateString()}</span></p>
                 </div>
               </div>
             </div>
@@ -870,26 +870,26 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
               </table>
             </div>
 
-            <div className="border-t-2 border-slate-900 pt-8 flex justify-between items-end">
+            <div className="border-t-2 border-slate-900 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
               <div className="max-w-[200px]">
-                <p className="text-[10px] text-slate-400 font-mono uppercase tracking-widest mb-2">Terms & Notes</p>
-                <p className="text-xs text-slate-500 leading-relaxed italic line-clamp-3">"{invoice.notes || 'Please settle within 7 days of receipt.'}"</p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-mono uppercase tracking-widest mb-2">Terms & Notes</p>
+                <p className="text-[10px] sm:text-xs text-slate-500 leading-relaxed italic line-clamp-3">"{invoice.notes || 'Please settle within 7 days of receipt.'}"</p>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right w-full sm:w-auto">
                 <div className="space-y-1 mb-2">
-                  <div className="flex justify-end gap-12 text-xs font-bold">
+                  <div className="flex justify-between sm:justify-end gap-12 text-[10px] sm:text-xs font-bold">
                     <span className="text-slate-400 uppercase tracking-widest">Subtotal</span>
                     <span className="text-slate-900">{formatCurrency(invoice.amount)}</span>
                   </div>
                   {totalPaid > 0 && (
-                    <div className="flex justify-end gap-12 text-xs font-bold">
+                    <div className="flex justify-between sm:justify-end gap-12 text-[10px] sm:text-xs font-bold">
                       <span className="text-green-500 uppercase tracking-widest">Paid to Date</span>
                       <span className="text-green-600">-{formatCurrency(totalPaid)}</span>
                     </div>
                   )}
                 </div>
-                <p className="text-[10px] text-slate-400 font-mono uppercase tracking-tighter mb-1">Final Balance Due</p>
-                <p className="text-5xl font-black tracking-tighter text-indigo-600">{formatCurrency(remainingBalance)}</p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-mono uppercase tracking-tighter mb-1">Final Balance Due</p>
+                <p className="text-4xl sm:text-5xl font-black tracking-tighter text-indigo-600">{formatCurrency(remainingBalance)}</p>
               </div>
             </div>
           </div>
