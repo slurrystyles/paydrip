@@ -140,23 +140,32 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     };
 
     const refreshSequence = async () => {
-      const { data: seq } = await supabase
-        .from('follow_up_sequences')
-        .select('*')
-        .eq('invoice_id', invoice.id)
-        .single();
-      
-      if (seq) {
-        setSequence(seq);
-        const { data: steps } = await supabase
-          .from('follow_up_steps')
+      try {
+        const { data: seq, error: seqError } = await supabase
+          .from('follow_up_sequences')
           .select('*')
-          .eq('sequence_id', seq.id)
-          .order('scheduled_at', { ascending: true });
-        if (steps) setSequenceSteps(steps);
-      } else {
-        setSequence(null);
-        setSequenceSteps([]);
+          .eq('invoice_id', invoice.id)
+          .maybeSingle();
+        
+        if (seqError && seqError.code !== 'PGRST116') { // PGRST116 is no rows
+          console.error('Sequence fetch error:', seqError);
+        }
+        
+        if (seq) {
+          setSequence(seq);
+          const { data: steps, error: stepsError } = await supabase
+            .from('follow_up_steps')
+            .select('*')
+            .eq('sequence_id', seq.id)
+            .order('scheduled_at', { ascending: true });
+          if (steps) setSequenceSteps(steps);
+          if (stepsError) console.error('Steps fetch error:', stepsError);
+        } else {
+          setSequence(null);
+          setSequenceSteps([]);
+        }
+      } catch (err) {
+        console.error('Sequence refresh caught error:', err);
       }
     };
 
@@ -239,12 +248,13 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         if (payError) throw payError;
 
         // 2. Update status to paid
-        await supabase.from('invoices').update({ 
+        const { error: updateError } = await supabase.from('invoices').update({ 
           status: 'paid', 
           payment_reference: null,
           automation_paused: false,
           updated_at: new Date().toISOString() 
         }).eq('id', invoice.id);
+        if (updateError) throw updateError;
 
         // 3. Log Audit
         const { data: { user } } = await supabase.auth.getUser();
@@ -261,12 +271,13 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       } else {
         // Reject
         const newStatus = new Date(invoice.due_date) < new Date() ? 'overdue' : 'sent';
-        await supabase.from('invoices').update({ 
+        const { error: updateError } = await supabase.from('invoices').update({ 
           status: newStatus,
           payment_reference: null,
           automation_paused: false, 
           updated_at: new Date().toISOString() 
         }).eq('id', invoice.id);
+        if (updateError) throw updateError;
 
         const { data: { user } } = await supabase.auth.getUser();
         await supabase.from('audit_log').insert({
@@ -284,10 +295,10 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       // Auto-clear toast after 3s
       setTimeout(() => setToast(null), 3000);
       onUpdate();
-    } catch (e) {
-      console.error(e);
-      setToast('Verification action failed.');
-      setTimeout(() => setToast(null), 3000);
+    } catch (e: any) {
+      console.error('Verify payment failed:', e);
+      setToast(`Verification failed: ${e.message || 'Unknown error'}`);
+      setTimeout(() => setToast(null), 5000);
     } finally {
       setLoading(false);
     }
