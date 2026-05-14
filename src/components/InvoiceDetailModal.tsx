@@ -54,8 +54,9 @@ interface Props {
   onUpdate: () => void;
 }
 
-export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props) {
+export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUpdate }: Props) {
   const { currentOrganization } = useOrganization();
+  const [invoice, setInvoice] = useState<Invoice>(propInvoice);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,11 +73,81 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const [sequenceSteps, setSequenceSteps] = useState<FollowUpStep[]>([]);
 
   const { plan } = usePlan();
+  const [recommendation, setRecommendation] = useState<any>(null);
+  const [eventLogs, setEventLogs] = useState<any[]>([]);
 
   const clientInfo = invoice.client || invoice.snapshot_json || {};
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
   const remainingBalance = Math.max(0, invoice.amount - totalPaid);
   const isFullyPaid = remainingBalance <= 0 || invoice.status === 'paid';
+
+  const refreshLogs = async () => {
+    const { data: logs } = await supabase
+      .from('reminder_timeline')
+      .select('*')
+      .eq('invoice_id', invoice.id)
+      .eq('organization_id', invoice.organization_id)
+      .order('sent_at', { ascending: false });
+    if (logs) setReminderLogs(logs);
+
+    const { data: emails } = await supabase
+      .from('audit_log')
+      .select('*')
+      .eq('entity_id', invoice.id)
+      .eq('entity_type', 'invoice')
+      .in('audit_type', ['email_sent', 'email_failed', 'email_cap_reached'])
+      .order('created_at', { ascending: false });
+    if (emails) setEmailLogs(emails);
+
+    const { data: events } = await supabase
+      .from('invoice_events')
+      .select('*')
+      .eq('invoice_id', invoice.id)
+      .eq('organization_id', invoice.organization_id)
+      .order('created_at', { ascending: false });
+    if (events) setEventLogs(events);
+  };
+
+  const refreshPayments = async () => {
+    const { data: payData } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('invoice_id', invoice.id)
+      .eq('organization_id', invoice.organization_id)
+      .order('paid_at', { ascending: false });
+    if (payData) setPayments(payData);
+  };
+
+  const refreshSequence = async () => {
+    try {
+      const { data: seqs, error: seqError } = await supabase
+        .from('follow_up_sequences')
+        .select('*')
+        .eq('invoice_id', invoice.id);
+      
+      if (seqError) {
+        console.error('Sequence fetch error:', seqError);
+      }
+      
+      const seq = seqs && seqs.length > 0 ? seqs[0] : null;
+      
+      if (seq) {
+        setSequence(seq);
+        const { data: steps, error: stepsError } = await supabase
+          .from('follow_up_steps')
+          .select('*')
+          .eq('sequence_id', seq.id)
+          .order('scheduled_at', { ascending: true });
+        if (steps) setSequenceSteps(steps);
+        if (stepsError) console.error('Steps fetch error:', stepsError);
+      } else {
+        setSequence(null);
+        setSequenceSteps([]);
+      }
+    } catch (err) {
+      console.error('Sequence refresh caught error:', err);
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -102,75 +173,6 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       }
     }
 
-    const refreshLogs = async () => {
-      const { data: logs } = await supabase
-        .from('reminder_timeline')
-        .select('*')
-        .eq('invoice_id', invoice.id)
-        .eq('organization_id', invoice.organization_id)
-        .order('sent_at', { ascending: false });
-      if (logs) setReminderLogs(logs);
-
-      const { data: emails } = await supabase
-        .from('audit_log')
-        .select('*')
-        .eq('entity_id', invoice.id)
-        .eq('entity_type', 'invoice')
-        .in('audit_type', ['email_sent', 'email_failed', 'email_cap_reached'])
-        .order('created_at', { ascending: false });
-      if (emails) setEmailLogs(emails);
-
-      const { data: events } = await supabase
-        .from('invoice_events')
-        .select('*')
-        .eq('invoice_id', invoice.id)
-        .eq('organization_id', invoice.organization_id)
-        .order('created_at', { ascending: false });
-      if (events) setEventLogs(events);
-    };
-
-    const refreshPayments = async () => {
-      const { data: payData } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('invoice_id', invoice.id)
-        .eq('organization_id', invoice.organization_id)
-        .order('paid_at', { ascending: false });
-      if (payData) setPayments(payData);
-    };
-
-    const refreshSequence = async () => {
-      try {
-        const { data: seq, error: seqError } = await supabase
-          .from('follow_up_sequences')
-          .select('*')
-          .eq('invoice_id', invoice.id)
-          .maybeSingle();
-        
-        if (seqError && seqError.code !== 'PGRST116') { // PGRST116 is no rows
-          console.error('Sequence fetch error:', seqError);
-        }
-        
-        if (seq) {
-          setSequence(seq);
-          const { data: steps, error: stepsError } = await supabase
-            .from('follow_up_steps')
-            .select('*')
-            .eq('sequence_id', seq.id)
-            .order('scheduled_at', { ascending: true });
-          if (steps) setSequenceSteps(steps);
-          if (stepsError) console.error('Steps fetch error:', stepsError);
-        } else {
-          setSequence(null);
-          setSequenceSteps([]);
-        }
-      } catch (err) {
-        console.error('Sequence refresh caught error:', err);
-      }
-    };
-
-    fetchData();
-
     // Real-time Subscriptions
     const sub = supabase
       .channel(`invoice_${invoice.id}`)
@@ -193,6 +195,8 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       })
       .subscribe();
 
+    fetchData();
+
     return () => { supabase.removeChannel(sub); };
   }, [invoice.id, invoice.user_id, invoice.client_id, onUpdate]);
 
@@ -211,7 +215,15 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
     if (!error) {
        const newTotalPaid = totalPaid + amount;
        if (newTotalPaid >= invoice.amount) {
-         await supabase.from('invoices').update({ status: 'paid' }).eq('id', invoice.id).eq('organization_id', invoice.organization_id);
+         const { error: invoiceError } = await supabase
+           .from('invoices')
+           .update({ status: 'paid' })
+           .eq('id', invoice.id)
+           .eq('organization_id', invoice.organization_id);
+         
+         if (!invoiceError) {
+            setInvoice(prev => ({ ...prev, status: 'paid' }));
+         }
        }
        
        await supabase.from('invoice_events').insert([{
@@ -227,8 +239,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
        onUpdate();
        
        // Refresh payments
-       const { data } = await supabase.from('payments').select('*').eq('invoice_id', invoice.id).eq('organization_id', invoice.organization_id).order('paid_at', { ascending: false });
-       if (data) setPayments(data);
+       refreshPayments();
     }
     setLoading(false);
   }
@@ -256,6 +267,14 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         }).eq('id', invoice.id);
         if (updateError) throw updateError;
 
+        // Update local state immediately
+        setInvoice(prev => ({ 
+          ...prev, 
+          status: 'paid', 
+          payment_reference: null,
+          automation_paused: false 
+        }));
+
         // 3. Log Audit
         const { data: { user } } = await supabase.auth.getUser();
         await supabase.from('audit_log').insert({
@@ -279,6 +298,14 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
         }).eq('id', invoice.id);
         if (updateError) throw updateError;
 
+        // Update local state immediately
+        setInvoice(prev => ({ 
+          ...prev, 
+          status: newStatus, 
+          payment_reference: null,
+          automation_paused: false 
+        }));
+
         const { data: { user } } = await supabase.auth.getUser();
         await supabase.from('audit_log').insert({
           entity_id: invoice.id,
@@ -295,6 +322,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
       // Auto-clear toast after 3s
       setTimeout(() => setToast(null), 3000);
       onUpdate();
+      refreshPayments(); // Refresh list after recording verify payment
     } catch (e: any) {
       console.error('Verify payment failed:', e);
       setToast(`Verification failed: ${e.message || 'Unknown error'}`);
@@ -529,9 +557,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate }: Props
   const [editingType, setEditingType] = useState<'polite' | 'firm' | 'final' | 'receipt' | null>(null);
   const [deliveryChannel, setDeliveryChannel] = useState<'whatsapp' | 'email'>('whatsapp');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [eventLogs, setEventLogs] = useState<any[]>([]);
   const [showLegalModal, setShowLegalModal] = useState(false);
-  const [recommendation, setRecommendation] = useState<any>(null);
 
   const handleGenerateAI = async (tone: 'polite' | 'firm' | 'final') => {
     setIsGeneratingAI(true);

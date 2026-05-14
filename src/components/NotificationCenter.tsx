@@ -51,20 +51,43 @@ export default function NotificationCenter() {
             .on(
                 'postgres_changes',
                 {
-                    event: 'INSERT',
+                    event: '*', // Listen to all events: INSERT, UPDATE, DELETE
                     schema: 'public',
                     table: 'notifications',
                     filter: `user_id=eq.${user.id}`,
                 },
                 (payload) => {
-                    const newNotif = payload.new as Notification;
-                    if (newNotif.organization_id === currentOrganization.id) {
-                        setNotifications(prev => [newNotif, ...prev]);
-                        setUnreadCount(prev => prev + 1);
+                    if (payload.eventType === 'INSERT') {
+                        const newNotif = payload.new as Notification;
+                        if (newNotif.organization_id === currentOrganization.id) {
+                            setNotifications(prev => [newNotif, ...prev]);
+                            setUnreadCount(prev => prev + 1);
+                        }
+                    } else if (payload.eventType === 'UPDATE') {
+                        const updatedNotif = payload.new as Notification;
+                        setNotifications(prev => prev.map(n => n.id === updatedNotif.id ? updatedNotif : n));
+                        // Re-calculate unread count based on the new full list or just the change
+                        setUnreadCount(prev => {
+                            const oldNotif = payload.old as Notification; // might be null if no full row tracking
+                            if (oldNotif && !oldNotif.is_read && updatedNotif.is_read) return Math.max(0, prev - 1);
+                            if (oldNotif && oldNotif.is_read && !updatedNotif.is_read) return prev + 1;
+                            // Fallback: re-count is safest
+                            return prev;
+                        });
+                        // Safer unread re-count
+                        fetchNotifications();
+                    } else if (payload.eventType === 'DELETE') {
+                        const oldId = (payload.old as any).id;
+                        setNotifications(prev => prev.filter(n => n.id !== oldId));
+                        fetchNotifications(); // Refresh to get counts right
                     }
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Successfully subscribed to signals');
+                }
+            });
 
         return () => {
             supabase.removeChannel(channel);
