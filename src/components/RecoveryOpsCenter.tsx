@@ -46,8 +46,13 @@ export default function RecoveryOpsCenter() {
       supabase.from('escalation_queue').select('*').eq('organization_id', currentOrganization.id).order('scheduled_at', { ascending: true }),
       supabase.from('invoices').select('*, client:clients(*)').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }),
       supabase.from('audit_logs').select('*').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }).limit(20),
-      supabase.from('abuse_flags').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
+      supabase.from('abuse_flags').select('*').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }).limit(20)
     ]);
+
+    if (queueData.error) console.error('Queue Fetch Error:', queueData.error);
+    if (invoiceData.error) console.error('Invoice Fetch Error:', invoiceData.error);
+    if (auditData.error) console.error('Audit Fetch Error:', auditData.error);
+    if (abuseData.error) console.error('Abuse Fetch Error:', abuseData.error);
 
     setQueue(queueData.data || []);
     setInvoices(invoiceData.data || []);
@@ -160,6 +165,14 @@ export default function RecoveryOpsCenter() {
                           </div>
                        </div>
                      ))}
+                     {invoices.filter(i => i.recovery_stage === stage).length === 0 && (
+                       <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-8">
+                          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-slate-200 mb-4 shadow-sm border border-slate-50">
+                             <Activity size={20} />
+                          </div>
+                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">No active cases</p>
+                       </div>
+                     )}
                   </div>
                </div>
              ))}

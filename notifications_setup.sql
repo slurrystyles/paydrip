@@ -15,10 +15,21 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
--- 2. Add notification_preferences to users
+-- 1. Add notification_preferences to users
 ALTER TABLE public.users 
   ADD COLUMN IF NOT EXISTS notification_preferences JSONB 
   DEFAULT '{"email_delivery": true, "payments": true, "invoice_viewed": true}'::jsonb;
+
+-- 2. Enable Realtime for notifications table
+BEGIN;
+  DROP PUBLICATION IF EXISTS supabase_realtime;
+  CREATE PUBLICATION supabase_realtime;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+
+-- ... rest of RLS and indexes ...
 
 -- 2. Enable RLS
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
@@ -136,25 +147,25 @@ BEGIN
         -- Fetch user preferences
         SELECT notification_preferences INTO v_prefs FROM public.users WHERE id = v_member.user_id;
         
-        -- CHECK PREFERENCES
-        -- Default to true if prefs are missing (should not happen due to default)
+        -- Default to true if prefs are missing
         IF v_prefs IS NULL THEN
             v_prefs := '{"email_delivery": true, "payments": true, "invoice_viewed": true}'::jsonb;
         END IF;
 
+        -- CHECK PREFERENCES
         -- 1. Email Delivery Alerts
         IF NEW.audit_type IN ('email_sent', 'email_failed', 'email_cap_reached') THEN
-            IF (v_prefs->>'email_delivery')::boolean IS FALSE THEN CONTINUE; END IF;
+            IF COALESCE((v_prefs->>'email_delivery')::boolean, true) IS FALSE THEN CONTINUE; END IF;
         END IF;
 
         -- 2. Payment Notifications
         IF NEW.audit_type IN ('payment_reported', 'payment_confirmed', 'payment_rejected', 'invoice_paid') THEN
-            IF (v_prefs->>'payments')::boolean IS FALSE THEN CONTINUE; END IF;
+            IF COALESCE((v_prefs->>'payments')::boolean, true) IS FALSE THEN CONTINUE; END IF;
         END IF;
 
         -- 3. Invoice Viewed Alerts
         IF NEW.audit_type = 'invoice_viewed' THEN
-            IF (v_prefs->>'invoice_viewed')::boolean IS FALSE THEN CONTINUE; END IF;
+            IF COALESCE((v_prefs->>'invoice_viewed')::boolean, true) IS FALSE THEN CONTINUE; END IF;
         END IF;
         
         PERFORM public.create_notification(

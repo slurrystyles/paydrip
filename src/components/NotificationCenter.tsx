@@ -11,6 +11,7 @@ export default function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [preferences, setPreferences] = useState<any>(null);
   const { currentOrganization } = useOrganization();
   const [loading, setLoading] = useState(true);
 
@@ -20,6 +21,10 @@ export default function NotificationCenter() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    // Fetch preferences first to filter
+    const { data: profile } = await supabase.from('users').select('notification_preferences').eq('id', user.id).single();
+    if (profile) setPreferences(profile.notification_preferences);
 
     const { data, error } = await supabase
       .from('notifications')
@@ -32,8 +37,15 @@ export default function NotificationCenter() {
     if (error) {
       console.error('Error fetching notifications:', error);
     } else {
-      setNotifications(data || []);
-      setUnreadCount((data || []).filter(n => !n.is_read).length);
+      const prefs = profile?.notification_preferences || {};
+      const filtered = (data || []).filter(n => {
+          if (n.type === 'email_delivery' && prefs.email_delivery === false) return false;
+          if (n.type === 'payments' && prefs.payments === false) return false;
+          if (n.type === 'invoice_viewed' && prefs.invoice_viewed === false) return false;
+          return true;
+      });
+      setNotifications(filtered);
+      setUnreadCount(filtered.filter(n => !n.is_read).length);
     }
     setLoading(false);
   }, [currentOrganization]);
@@ -59,6 +71,13 @@ export default function NotificationCenter() {
                 (payload) => {
                     if (payload.eventType === 'INSERT') {
                         const newNotif = payload.new as Notification;
+                        
+                        // Client-side preference check for immediate impact
+                        const currentPrefs = preferences || {};
+                        if (newNotif.type === 'email_delivery' && currentPrefs.email_delivery === false) return;
+                        if (newNotif.type === 'payments' && currentPrefs.payments === false) return;
+                        if (newNotif.type === 'invoice_viewed' && currentPrefs.invoice_viewed === false) return;
+
                         if (newNotif.organization_id === currentOrganization.id) {
                             setNotifications(prev => [newNotif, ...prev]);
                             setUnreadCount(prev => prev + 1);

@@ -30,11 +30,25 @@ export default function OperationsHealth() {
     const [dlq, use, audit] = await Promise.all([
       supabase.from('dead_letter_queue').select('*').eq('organization_id', currentOrganization.id).order('quarantined_at', { ascending: false }).limit(20),
       supabase.from('usage_counters').select('*').eq('organization_id', currentOrganization.id).limit(50),
-      supabase.from('audit_logs').select('severity, count()', { count: 'exact', head: false }).eq('organization_id', currentOrganization.id).neq('severity', null) // Simplified grouping
+      supabase.from('audit_logs').select('severity').eq('organization_id', currentOrganization.id).limit(100)
     ]);
+
+    if (dlq.error) console.error('DLQ Fetch Error:', dlq.error);
+    if (use.error) console.error('Usage Fetch Error:', use.error);
+    if (audit.error) console.error('Audit Fetch Error:', audit.error);
 
     setDlqJobs(dlq.data || []);
     setUsage(use.data || []);
+    
+    // Process audit stats client-side instead of using complex grouping
+    if (audit.data) {
+      const counts = audit.data.reduce((acc: any, curr: any) => {
+        acc[curr.severity] = (acc[curr.severity] || 0) + 1;
+        return acc;
+      }, {});
+      setAuditStats(Object.entries(counts).map(([severity, count]) => ({ severity, count })));
+    }
+    
     setLoading(false);
   };
 
