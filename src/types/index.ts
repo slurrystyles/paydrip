@@ -14,6 +14,11 @@ export interface UserProfile {
   plan?: 'free' | 'pro';
   logo_url?: string;
   whatsapp_templates?: WhatsAppTemplates;
+  notification_preferences?: {
+    email_delivery: boolean;
+    payments: boolean;
+    invoice_viewed: boolean;
+  };
   created_at: string;
 }
 

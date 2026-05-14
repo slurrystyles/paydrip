@@ -51,6 +51,12 @@ export default function SettingsView() {
     final: ''
   });
 
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    email_delivery: true,
+    payments: true,
+    invoice_viewed: true
+  });
+
   const fetchSecurityData = async () => {
     if (!currentOrganization) return;
     const { data: webData } = await supabase
@@ -72,6 +78,11 @@ export default function SettingsView() {
         polite: profile.whatsapp_templates?.polite || '',
         firm: profile.whatsapp_templates?.firm || '',
         final: profile.whatsapp_templates?.final || ''
+      });
+      setNotificationPreferences(profile.notification_preferences || {
+        email_delivery: true,
+        payments: true,
+        invoice_viewed: true
       });
       fetchSecurityData();
       setLoading(false);
@@ -139,6 +150,28 @@ export default function SettingsView() {
     }
   };
 
+  const updatePreference = async (key: string, value: boolean) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const newPrefs = { ...notificationPreferences, [key]: value };
+    setNotificationPreferences(newPrefs);
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ notification_preferences: newPrefs })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      setMessage({ type: 'success', text: 'Notification preferences synced.' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+      setNotificationPreferences(notificationPreferences); // Rollback
+    }
+  };
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -157,7 +190,8 @@ export default function SettingsView() {
           name,
           upi_id: upiId,
           bank_details: bankDetails,
-          whatsapp_templates: templates
+          whatsapp_templates: templates,
+          notification_preferences: notificationPreferences
         });
 
       if (userError) throw userError;
@@ -378,6 +412,88 @@ export default function SettingsView() {
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all text-[11px] font-medium leading-relaxed"
                   placeholder="IFSC Node / Account Number"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Notification Preferences Section */}
+          <div className="space-y-4 pt-2 border-t border-slate-50">
+            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono border-b border-slate-50 pb-1.5 italic">Signal Preferences</h3>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-blue-500 border border-slate-100 shadow-sm">
+                    <Mail size={14} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-slate-900 leading-none mb-1">Email Delivery Alerts</p>
+                    <p className="text-[9px] text-slate-400 font-medium">Notifications for sent, failed, or capped emails.</p>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => updatePreference('email_delivery', !notificationPreferences.email_delivery)}
+                  className={cn(
+                    "w-10 h-6 rounded-full transition-all relative",
+                    notificationPreferences.email_delivery ? "bg-indigo-600" : "bg-slate-200"
+                  )}
+                >
+                  <div className={cn(
+                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                    notificationPreferences.email_delivery ? "left-5" : "left-1"
+                  )} />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-amber-500 border border-slate-100 shadow-sm">
+                    <CreditCard size={14} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-slate-900 leading-none mb-1">Payment Notifications</p>
+                    <p className="text-[9px] text-slate-400 font-medium">Reported, confirmed, or rejected payment signals.</p>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => updatePreference('payments', !notificationPreferences.payments)}
+                  className={cn(
+                    "w-10 h-6 rounded-full transition-all relative",
+                    notificationPreferences.payments ? "bg-indigo-600" : "bg-slate-200"
+                  )}
+                >
+                  <div className={cn(
+                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                    notificationPreferences.payments ? "left-5" : "left-1"
+                  )} />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-indigo-500 border border-slate-100 shadow-sm">
+                    <Zap size={14} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-slate-900 leading-none mb-1">Invoice Viewed Alerts</p>
+                    <p className="text-[9px] text-slate-400 font-medium">Get notified immediately when a client views an invoice.</p>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => updatePreference('invoice_viewed', !notificationPreferences.invoice_viewed)}
+                  className={cn(
+                    "w-10 h-6 rounded-full transition-all relative",
+                    notificationPreferences.invoice_viewed ? "bg-indigo-600" : "bg-slate-200"
+                  )}
+                >
+                  <div className={cn(
+                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                    notificationPreferences.invoice_viewed ? "left-5" : "left-1"
+                  )} />
+                </button>
               </div>
             </div>
           </div>

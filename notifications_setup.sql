@@ -15,6 +15,11 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- 2. Add notification_preferences to users
+ALTER TABLE public.users 
+  ADD COLUMN IF NOT EXISTS notification_preferences JSONB 
+  DEFAULT '{"email_delivery": true, "payments": true, "invoice_viewed": true}'::jsonb;
+
 -- 2. Enable RLS
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
@@ -80,6 +85,7 @@ DECLARE
     v_body TEXT;
     v_invoice_num TEXT;
     v_member RECORD;
+    v_prefs JSONB;
 BEGIN
     -- Mapping titles and bodies based on audit_type
     CASE NEW.audit_type
@@ -121,17 +127,35 @@ BEGIN
     END CASE;
 
     -- Notify all active members of the organization
-    -- Skip the user who performed the action if it's a manual action by them? 
-    -- Usually, you want to know even if you did it, but often notifications are for *others* or automated events.
-    -- For now, let's notify everyone in the org.
     FOR v_member IN (
         SELECT user_id 
         FROM public.memberships 
         WHERE organization_id = NEW.organization_id 
         AND is_active = true
     ) LOOP
-        -- Optional: Don't notify the person who triggered it if they are logged in
-        -- IF v_member.user_id = NEW.user_id THEN CONTINUE; END IF;
+        -- Fetch user preferences
+        SELECT notification_preferences INTO v_prefs FROM public.users WHERE id = v_member.user_id;
+        
+        -- CHECK PREFERENCES
+        -- Default to true if prefs are missing (should not happen due to default)
+        IF v_prefs IS NULL THEN
+            v_prefs := '{"email_delivery": true, "payments": true, "invoice_viewed": true}'::jsonb;
+        END IF;
+
+        -- 1. Email Delivery Alerts
+        IF NEW.audit_type IN ('email_sent', 'email_failed', 'email_cap_reached') THEN
+            IF (v_prefs->>'email_delivery')::boolean IS FALSE THEN CONTINUE; END IF;
+        END IF;
+
+        -- 2. Payment Notifications
+        IF NEW.audit_type IN ('payment_reported', 'payment_confirmed', 'payment_rejected', 'invoice_paid') THEN
+            IF (v_prefs->>'payments')::boolean IS FALSE THEN CONTINUE; END IF;
+        END IF;
+
+        -- 3. Invoice Viewed Alerts
+        IF NEW.audit_type = 'invoice_viewed' THEN
+            IF (v_prefs->>'invoice_viewed')::boolean IS FALSE THEN CONTINUE; END IF;
+        END IF;
         
         PERFORM public.create_notification(
             NEW.organization_id,
