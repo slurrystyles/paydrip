@@ -96,13 +96,12 @@ export default function NotificationCenter() {
                         fetchNotifications(); // Refresh to get counts right
                     }
                 }
-            );
-
-        channel.subscribe((status: any) => {
-            if (status === 'SUBSCRIBED') {
-                console.log('Successfully subscribed to Signal Center');
-            }
-        });
+            )
+            .subscribe((status: any) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Successfully subscribed to Signal Center');
+                }
+            });
     };
 
     setupSubscription();
