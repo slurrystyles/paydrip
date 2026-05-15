@@ -54,11 +54,13 @@ export default function NotificationCenter() {
     fetchNotifications();
 
     // Set up real-time subscription
-    const subscribeToNotifications = async () => {
+    let channel: any = null;
+
+    const setupSubscription = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user || !currentOrganization) return;
 
-        const channel = supabase
+        channel = supabase
             .channel(`notifications-${user.id}-${currentOrganization.id}`)
             .on(
                 'postgres_changes',
@@ -85,15 +87,8 @@ export default function NotificationCenter() {
                     } else if (payload.eventType === 'UPDATE') {
                         const updatedNotif = payload.new as Notification;
                         setNotifications(prev => prev.map(n => n.id === updatedNotif.id ? updatedNotif : n));
-                        // Re-calculate unread count based on the new full list or just the change
-                        setUnreadCount(prev => {
-                            const oldNotif = payload.old as Notification; // might be null if no full row tracking
-                            if (oldNotif && !oldNotif.is_read && updatedNotif.is_read) return Math.max(0, prev - 1);
-                            if (oldNotif && oldNotif.is_read && !updatedNotif.is_read) return prev + 1;
-                            // Fallback: re-count is safest
-                            return prev;
-                        });
-                        // Safer unread re-count
+                        
+                        // Re-calculate unread count or refresh
                         fetchNotifications();
                     } else if (payload.eventType === 'DELETE') {
                         const oldId = (payload.old as any).id;
@@ -104,18 +99,17 @@ export default function NotificationCenter() {
             )
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
-                    console.log('Successfully subscribed to signals');
+                    console.log('Successfully subscribed to Signal Center');
                 }
             });
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
     };
 
-    const unsubscribe = subscribeToNotifications();
+    setupSubscription();
+
     return () => {
-        unsubscribe.then(cleanup => cleanup && cleanup());
+        if (channel) {
+            supabase.removeChannel(channel);
+        }
     };
   }, [currentOrganization, fetchNotifications]);
 
