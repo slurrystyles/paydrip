@@ -70,10 +70,22 @@ export default function RecoveryOpsCenter() {
       return;
     }
     fetchData();
-    const channel = supabase.channel(`ops_center_${currentOrganization.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'escalation_queue', filter: `organization_id=eq.${currentOrganization.id}` }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `organization_id=eq.${currentOrganization.id}` }, fetchData)
+    const channel = supabase
+      .channel(`ops_center_${currentOrganization.id}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'escalation_queue', 
+        filter: `organization_id=eq.${currentOrganization.id}` 
+      }, fetchData)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'invoices', 
+        filter: `organization_id=eq.${currentOrganization.id}` 
+      }, fetchData)
       .subscribe();
+
     return () => { supabase.removeChannel(channel); };
   }, [currentOrganization]);
 

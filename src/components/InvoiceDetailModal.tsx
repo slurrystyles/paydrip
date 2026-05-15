@@ -179,20 +179,54 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
     // Real-time Subscriptions
     const sub = supabase
       .channel(`invoice_${invoice.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments', filter: `invoice_id=eq.${invoice.id}` }, () => {
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'payments', 
+        filter: `invoice_id=eq.${invoice.id}` 
+      }, () => {
         refreshPayments();
         onUpdate();
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reminder_timeline', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_log', filter: `entity_id=eq.${invoice.id}` }, refreshLogs)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoice_events', filter: `invoice_id=eq.${invoice.id}` }, refreshLogs)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'follow_up_sequences', filter: `invoice_id=eq.${invoice.id}` }, refreshSequence)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'follow_up_steps' }, (payload: any) => {
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'reminder_timeline', 
+        filter: `invoice_id=eq.${invoice.id}` 
+      }, refreshLogs)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'audit_log', 
+        filter: `entity_id=eq.${invoice.id}` 
+      }, refreshLogs)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'invoice_events', 
+        filter: `invoice_id=eq.${invoice.id}` 
+      }, refreshLogs)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'follow_up_sequences', 
+        filter: `invoice_id=eq.${invoice.id}` 
+      }, refreshSequence)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'follow_up_steps' 
+      }, (payload: any) => {
         // Since we can't filter by sequence_id in the subscription payload easily without knowing sequence.id,
         // we just refresh if any step changes. A bit more broad but safe.
          refreshSequence();
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'invoices', filter: `id=eq.${invoice.id}` }, () => {
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'invoices', 
+        filter: `id=eq.${invoice.id}` 
+      }, () => {
         onUpdate();
         fetchData();
       })

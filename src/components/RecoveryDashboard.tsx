@@ -53,9 +53,24 @@ export const RecoveryDashboard: React.FC = () => {
     if (!currentOrganization) return;
     const sub = supabase
       .channel(`recovery_updates_${currentOrganization.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `organization_id=eq.${currentOrganization.id}` }, fetchStats)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments', filter: `organization_id=eq.${currentOrganization.id}` }, fetchStats)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoice_events', filter: `organization_id=eq.${currentOrganization.id}` }, fetchStats)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'invoices', 
+        filter: `organization_id=eq.${currentOrganization.id}` 
+      }, fetchStats)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'payments', 
+        filter: `organization_id=eq.${currentOrganization.id}` 
+      }, fetchStats)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'invoice_events', 
+        filter: `organization_id=eq.${currentOrganization.id}` 
+      }, fetchStats)
       .subscribe();
 
     return () => { supabase.removeChannel(sub); };
