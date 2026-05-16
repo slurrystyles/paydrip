@@ -130,6 +130,25 @@ export default function InvoicesView() {
 
   useEffect(() => {
     fetchData();
+
+    if (!currentOrganization) return;
+
+    // Supabase Realtime subscription for invoice status changes
+    const channel = supabase
+      .channel('invoice_status_changes')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'invoices',
+        filter: `organization_id=eq.${currentOrganization.id}`
+      }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [currentOrganization]);
 
   async function fetchData() {

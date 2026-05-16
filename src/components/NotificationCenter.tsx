@@ -201,9 +201,9 @@ export default function NotificationCenter() {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="fixed inset-x-0 bottom-0 top-[56px] sm:absolute sm:inset-auto sm:top-full sm:right-0 sm:mt-4 sm:w-96 bg-white sm:rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] border-t sm:border border-slate-100 overflow-hidden z-50 flex flex-col max-h-screen sm:max-h-[600px]"
+              className="fixed md:absolute inset-x-0 md:inset-x-auto top-[56px] md:top-full md:right-0 md:mt-4 md:w-96 bottom-0 md:bottom-auto bg-white md:rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] border-t md:border border-slate-100 overflow-hidden z-50 flex flex-col h-[calc(100vh-56px)] md:h-auto md:max-h-[600px]"
             >
-              <div className="p-4 sm:p-6 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-20">
+              <div className="p-4 md:p-6 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-20">
                 <div className="flex flex-col">
                     <h3 className="text-sm font-black text-slate-900 tracking-tight">Signal Center</h3>
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Real-time Operations Trail</p>
@@ -212,18 +212,18 @@ export default function NotificationCenter() {
                     {unreadCount > 0 && (
                         <button 
                             onClick={markAllAsRead}
-                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all sm:p-1.5 sm:text-slate-400 sm:hover:text-indigo-600"
+                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all md:p-1.5 md:text-slate-400 md:hover:text-indigo-600"
                             title="Mark all as read"
                         >
-                            <span className="hidden sm:inline"><Check size={14} /></span>
-                            <span className="sm:hidden text-[10px] font-black uppercase tracking-widest">Mark All Read</span>
+                            <span className="hidden md:inline"><Check size={14} /></span>
+                            <span className="md:hidden text-[10px] font-black uppercase tracking-widest">Mark All Read</span>
                         </button>
                     )}
                     <button 
                         onClick={() => setIsOpen(false)}
-                        className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-all sm:p-1.5"
+                        className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-all md:p-1.5"
                     >
-                        <X size={18} className="sm:w-[14px] sm:h-[14px]" />
+                        <X size={18} className="md:w-[14px] md:h-[14px]" />
                     </button>
                 </div>
               </div>
@@ -256,7 +256,7 @@ export default function NotificationCenter() {
                                 )}
                             >
                                 <div className={cn(
-                                    "w-10 h-10 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border",
+                                    "w-10 h-10 md:w-8 md:h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border",
                                     !notif.is_read ? "bg-white border-indigo-100" : "bg-white border-slate-100 opacity-60"
                                 )}>
                                     {getIcon(notif.type)}
@@ -265,7 +265,7 @@ export default function NotificationCenter() {
                                 <div className="flex-1 min-w-0 pr-8">
                                     <div className="flex items-center gap-2 mb-1">
                                         <h4 className={cn(
-                                            "text-[11px] sm:text-[10px] font-black tracking-tight truncate",
+                                            "text-[11px] md:text-[10px] font-black tracking-tight truncate",
                                             !notif.is_read ? "text-slate-900" : "text-slate-500"
                                         )}>
                                             {notif.title}
@@ -286,18 +286,18 @@ export default function NotificationCenter() {
                                     {!notif.is_read && (
                                         <button 
                                             onClick={() => markAsRead(notif.id)}
-                                            className="p-2 sm:p-1.5 bg-white border border-slate-100 rounded-lg text-slate-400 hover:text-green-600 hover:border-green-100 shadow-sm"
+                                            className="p-2 md:p-1.5 bg-white border border-slate-100 rounded-lg text-slate-400 hover:text-green-600 hover:border-green-100 shadow-sm"
                                             title="Mark as read"
                                         >
-                                            <Check size={14} className="sm:w-3 sm:h-3" />
+                                            <Check size={14} className="md:w-3 md:h-3" />
                                         </button>
                                     )}
                                     <button 
                                         onClick={() => deleteNotification(notif.id)}
-                                        className="p-2 sm:p-1.5 bg-white border border-slate-100 rounded-lg text-slate-400 hover:text-red-600 hover:border-red-100 shadow-sm"
+                                        className="p-2 md:p-1.5 bg-white border border-slate-100 rounded-lg text-slate-400 hover:text-red-600 hover:border-red-100 shadow-sm"
                                         title="Delete"
                                     >
-                                        <Trash2 size={14} className="sm:w-3 sm:h-3" />
+                                        <Trash2 size={14} className="md:w-3 md:h-3" />
                                     </button>
                                 </div>
 
@@ -311,10 +311,10 @@ export default function NotificationCenter() {
               </div>
 
               {notifications.length > 0 && (
-                <div className="p-4 sm:p-6 bg-slate-50/50 border-t border-slate-50 flex items-center justify-center sticky bottom-0 z-20">
+                <div className="p-4 md:p-6 bg-slate-50/50 border-t border-slate-50 flex items-center justify-center sticky bottom-0 z-20">
                     <button 
                         onClick={() => {/* Navigate to full log if exists */}}
-                        className="w-full sm:w-auto text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 bg-white sm:bg-transparent py-3 sm:py-0 border sm:border-0 border-slate-100 rounded-xl hover:text-indigo-600 transition-colors"
+                        className="w-full md:w-auto text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 bg-white md:bg-transparent py-3 md:py-0 border md:border-0 border-slate-100 rounded-xl hover:text-indigo-600 transition-colors"
                     >
                         View Full Operational Trail
                     </button>
