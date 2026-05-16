@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
 
-type Plan = 'free' | 'pro';
+type Plan = 'free' | 'pro' | 'enterprise';
 
 interface PlanContextType {
   plan: Plan;

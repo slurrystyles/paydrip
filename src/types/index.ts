@@ -11,7 +11,8 @@ export interface UserProfile {
   business_name: string;
   upi_id?: string;
   bank_details?: string;
-  plan?: 'free' | 'pro';
+  phone?: string;
+  plan?: 'free' | 'pro' | 'enterprise';
   logo_url?: string;
   whatsapp_templates?: WhatsAppTemplates;
   notification_preferences?: {
@@ -105,6 +106,7 @@ export interface ClientRiskScore {
     ignored_reminders: number;
     partial_payments: number;
     recovery_failures: number;
+    recovery_probability: number;
   };
   last_calculated_at: string;
 }

@@ -4,7 +4,11 @@ import { supabase } from '../lib/supabase';
 import { Invoice, UserProfile, Payment } from '../types';
 import { formatCurrency, cn } from '../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
-import { Download, Shield, Landmark, CheckCircle, ArrowDown } from 'lucide-react';
+import { 
+  Download, Shield, Landmark, CheckCircle, 
+  ArrowDown, Copy, Check, Clock, AlertCircle,
+  ExternalLink, CreditCard, Wallet, MapPin, Mail, Phone
+} from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { motion, AnimatePresence } from 'motion/react';
@@ -16,153 +20,88 @@ export default function PublicInvoiceView() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transactionRef, setTransactionRef] = useState('');
-  const [showRefInput, setShowRefInput] = useState(false);
+  const [reportedAmount, setReportedAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'bank' | 'cash'>('upi');
+  const [copied, setCopied] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   useEffect(() => {
     async function fetchInvoice() {
       if (!token) return;
 
-      const { data, error } = await supabase
-        .from('invoices')
-        .select(`*`)
-        .eq('public_token', token)
-        .single();
+      try {
+        const { data: invoiceData, error: invoiceError } = await supabase
+          .from('invoices')
+          .select(`*`)
+          .eq('public_token', token)
+          .single();
 
-      if (error) {
-        setError("Invoice not found or inaccessible.");
+        if (invoiceError || !invoiceData) {
+          setError("Invoice not found or inaccessible.");
+          setLoading(false);
+          return;
+        }
+
+        // Check expiry
+        const isExpired = invoiceData.public_token_expires_at && new Date(invoiceData.public_token_expires_at) < new Date();
+        
+        // Fetch profile even if expired for context
+        const { data: profile } = await supabase
+          .from('public_business_profiles')
+          .select('*')
+          .eq('id', invoiceData.user_id)
+          .single();
+        
+        setUserProfile(profile as UserProfile);
+
+        if (isExpired) {
+          setError("expired");
+          setLoading(false);
+          return;
+        }
+
+        setInvoice(invoiceData);
+        setReportedAmount(invoiceData.amount.toString());
+
+        // Audit Logging (once per session)
+        const sessionKey = `viewed_${invoiceData.id}`;
+        if (!sessionStorage.getItem(sessionKey)) {
+          await supabase.from('audit_log').insert([{
+            entity_id: invoiceData.id,
+            entity_type: 'invoice',
+            audit_type: 'invoice_viewed',
+            organization_id: invoiceData.organization_id,
+            meta: { public_token: token, timestamp: new Date().toISOString() }
+          }]);
+          sessionStorage.setItem(sessionKey, 'true');
+        }
+
+        // Fetch payments
+        const { data: payData } = await supabase
+          .from('payments')
+          .select('*')
+          .eq('invoice_id', invoiceData.id)
+          .order('paid_at', { ascending: false });
+        
+        if (payData) setPayments(payData as Payment[]);
+      } catch (err) {
+        console.error(err);
+        setError("An unexpected error occurred.");
+      } finally {
         setLoading(false);
-        return;
       }
-
-      if (data.public_token_expires_at && new Date(data.public_token_expires_at) < new Date()) {
-        setError("This secure link has expired. Please contact the business for a new one.");
-        setLoading(false);
-        return;
-      }
-
-      setInvoice(data);
-
-      // Audit: Log the public view
-      await supabase.from('audit_log').insert([{
-        entity_id: data.id,
-        entity_type: 'invoice',
-        audit_type: 'invoice_viewed',
-        organization_id: data.organization_id,
-        meta: { public_token: token, user_agent: navigator.userAgent }
-      }]);
-
-      // Fetch the business profile of the sender via secure view
-      const { data: profile } = await supabase
-        .from('public_business_profiles')
-        .select('*')
-        .eq('id', data.user_id)
-        .single();
-      
-      setUserProfile(profile as UserProfile);
-
-      // Fetch payments
-      const { data: payData } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('invoice_id', data.id)
-        .order('paid_at', { ascending: false });
-      if (payData) setPayments(payData);
-
-      setLoading(false);
     }
 
     fetchInvoice();
   }, [token]);
 
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const remainingBalance = invoice ? Math.max(0, invoice.amount - totalPaid) : 0;
-  const isFullyPaid = remainingBalance <= 0 || invoice?.status === 'paid';
-
-  const downloadPDF = () => {
-    if (!invoice || !userProfile) return;
-    const doc = new jsPDF() as any;
-    const margin = 20;
-
-    // Decide if it's an Invoice or Receipt
-    const isReceipt = totalPaid > 0;
-    const title = isReceipt ? (isFullyPaid ? 'PAYMENT RECEIPT' : 'PAYMENT LEDGER') : 'TAX INVOICE';
-    
-    doc.setFontSize(22);
-    doc.setTextColor(0);
-    doc.text(userProfile.business_name, margin, 30);
-    
-    doc.setFontSize(10);
-    doc.setTextColor(150);
-    doc.text(`${title} #${invoice.invoice_number}`, margin, 40);
-    doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, margin, 45);
-
-    doc.setTextColor(0);
-    doc.setFontSize(12);
-    doc.text('BILL TO', margin, 65);
-    doc.setFontSize(14);
-    doc.text(clientName, margin, 75);
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(clientEmail, margin, 80);
-
-    if (isFullyPaid) {
-      doc.setDrawColor(34, 197, 94);
-      doc.setTextColor(34, 197, 94);
-      doc.rect(150, 20, 40, 15);
-      doc.text('PAID', 160, 30);
-    }
-
-    if (isReceipt && payments.length > 0) {
-      // Payment Breakdown for Receipts
-      const tableBody = payments.map(p => [
-        new Date(p.paid_at).toLocaleDateString(),
-        p.method.toUpperCase(),
-        formatCurrency(p.amount)
-      ]);
-
-      (doc as any).autoTable({
-        startY: 95,
-        head: [['Payment Date', 'Method', 'Amount']],
-        body: tableBody,
-        theme: 'striped',
-        headStyles: { fillColor: [34, 197, 94] },
-      });
-    } else {
-      // Standard Invoice Table
-      (doc as any).autoTable({
-        startY: 95,
-        head: [['Description', 'Amount']],
-        body: [['Professional Services Rendered', formatCurrency(invoice.amount)]],
-        theme: 'striped',
-        headStyles: { fillColor: [79, 70, 229] },
-      });
-    }
-
-    const finalY = (doc as any).lastAutoTable.finalY || 110;
-    const footerText = userProfile.plan === 'free' 
-      ? 'Generated via Paydrip Secure Ledger.' 
-      : `${userProfile.business_name} Secure Settlement Record.`;
-
-    doc.setFontSize(16);
-    doc.setTextColor(0);
-    if (isReceipt) {
-      doc.text(`Total Invoice: ${formatCurrency(invoice.amount)}`, 130, finalY + 20);
-      doc.setTextColor(34, 197, 94);
-      doc.text(`Total Paid: ${formatCurrency(totalPaid)}`, 130, finalY + 30);
-      doc.setTextColor(0);
-      doc.text(`Balance Due: ${formatCurrency(remainingBalance)}`, 130, finalY + 40);
-    } else {
-      doc.text(`Total Due: ${formatCurrency(invoice.amount)}`, 130, finalY + 20);
-    }
-
-    doc.setFontSize(10);
-    doc.setTextColor(150);
-    doc.text(footerText, margin, finalY + 60);
-
-    doc.save(`${isReceipt ? 'Receipt' : 'Invoice'}_${invoice.invoice_number}.pdf`);
+  const handleCopyUpi = () => {
+    if (!userProfile?.upi_id) return;
+    navigator.clipboard.writeText(userProfile.upi_id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleReportPayment = async () => {
@@ -171,10 +110,9 @@ export default function PublicInvoiceView() {
       alert('Please enter a Transaction ID or payment reference.');
       return;
     }
-    setIsProcessing(true);
     
+    setIsProcessing(true);
     try {
-      // 1. Update invoice status to payment_reported
       const { error: updateError } = await supabase
         .from('invoices')
         .update({ 
@@ -186,55 +124,100 @@ export default function PublicInvoiceView() {
       
       if (updateError) throw updateError;
       
-      // 2. Clear any active sequences (optional, or just pause them)
-      // They will be resumed if rejected
-      await supabase.from('invoices').update({ automation_paused: true }).eq('id', invoice.id);
-
-      // 3. Audit Log: payment_reported
       await supabase.from('audit_log').insert({
         entity_id: invoice.id,
         entity_type: 'invoice',
         audit_type: 'payment_reported',
         organization_id: invoice.organization_id,
-        meta: { reference: transactionRef, source: 'public_page' }
+        meta: { 
+          reference: transactionRef, 
+          amount: parseFloat(reportedAmount),
+          method: paymentMethod,
+          source: 'public_portal' 
+        }
       });
 
-      // Refresh local state
       setInvoice({ ...invoice, status: 'payment_reported', payment_reference: transactionRef });
       setShowConfirmation(true);
-      setShowRefInput(false);
     } catch (e) {
       console.error(e);
-      alert('Failed to process payment report. Please try again.');
+      alert('Failed to report payment. Please check your connection.');
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const getDueDateInfo = (dueDate: string) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0);
+    const diffTime = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return { 
+        color: 'text-red-600 bg-red-50 border-red-100', 
+        text: `${Math.abs(diffDays)} days overdue`,
+        icon: AlertCircle,
+        intensity: 'high'
+      };
+    } else if (diffDays <= 3) {
+      return { 
+        color: 'text-amber-600 bg-amber-50 border-amber-100', 
+        text: diffDays === 0 ? 'Due Today' : `Due in ${diffDays} days`,
+        icon: Clock,
+        intensity: 'medium'
+      };
+    } else {
+      return { 
+        color: 'text-green-600 bg-green-50 border-green-100', 
+        text: `Due in ${diffDays} days`,
+        icon: CheckCircle,
+        intensity: 'low'
+      };
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FDFDFF] flex items-center justify-center p-6">
-        <motion.div 
-           initial={{ opacity: 0 }}
-           animate={{ opacity: 1 }}
-           className="flex flex-col items-center"
-        >
-          <div className="w-16 h-16 bg-indigo-600 rounded-2xl mb-6 shadow-2xl shadow-indigo-100 flex items-center justify-center text-white font-black text-3xl italic animate-pulse">P</div>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Synchronizing Ledger...</p>
-        </motion.div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin mb-4" />
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Loading Secure Invoice...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error === 'expired') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-6">
+            <Clock size={32} />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Link Expired</h1>
+          <p className="text-slate-500 text-sm mb-8">This secure payment link has expired for security reasons. Please contact the business for a new one.</p>
+          <div className="p-4 bg-slate-50 rounded-2xl text-left">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Contact Business</p>
+            <p className="font-bold text-slate-900">{userProfile?.business_name}</p>
+            {userProfile?.email && <p className="text-slate-500 text-sm">{userProfile.email}</p>}
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error || !invoice || !userProfile) {
     return (
-      <div className="min-h-screen bg-[#FDFDFF] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 bg-red-50 rounded-2xl mb-6 mx-auto flex items-center justify-center text-red-500">
-             <Shield size={32} />
+          <div className="w-16 h-16 bg-red-50 rounded-full mb-6 mx-auto flex items-center justify-center text-red-500">
+            <Shield size={32} />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 mb-2">Access Denied</h1>
-          <p className="text-slate-400 text-sm leading-relaxed">This invoice record does not exist or has been archived by the issuer.</p>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Invoice Not Found</h1>
+          <p className="text-slate-500 text-sm">We couldn't find the invoice you're looking for. It may have been removed or the link is incorrect.</p>
         </div>
       </div>
     );
@@ -242,258 +225,424 @@ export default function PublicInvoiceView() {
 
   const clientName = invoice.snapshot_json?.name || 'Client';
   const clientEmail = invoice.snapshot_json?.email || '';
-
+  const items = invoice.snapshot_json?.items || [];
+  const status = invoice.status;
+  const isPaid = status === 'paid';
+  const isReported = status === 'payment_reported';
+  const isDraft = status === 'draft';
+  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  const remainingBalance = Math.max(0, invoice.amount - totalPaid);
+  
+  const dueDateInfo = getDueDateInfo(invoice.due_date);
   const upiLink = userProfile.upi_id 
     ? `upi://pay?pa=${userProfile.upi_id}&pn=${encodeURIComponent(userProfile.business_name)}&am=${remainingBalance}&cu=INR`
     : null;
 
   return (
-    <div className="min-h-screen bg-[#FDFDFF] py-8 sm:py-20 px-4 sm:px-6 font-sans overflow-x-hidden">
-      <div className="max-w-4xl mx-auto">
-        <motion.div 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 sm:gap-8 mb-8 sm:mb-10"
-        >
-          <div className="flex items-center gap-4">
-             {userProfile.plan !== 'free' && userProfile.logo_url ? (
-               <img 
-                 src={userProfile.logo_url} 
-                 alt={userProfile.business_name} 
-                 className="w-12 h-12 rounded-2xl object-cover shadow-lg border border-slate-100"
-                 referrerPolicy="no-referrer"
-               />
-             ) : (
-               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black italic text-2xl shadow-xl shadow-indigo-100 shrink-0">P</div>
-             )}
-             <div className="min-w-0">
-               <h1 className="text-xl sm:text-2xl font-black tracking-tighter text-slate-900 truncate">{userProfile.business_name}</h1>
-               <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] leading-none mt-1">Verified Payment Request</p>
-             </div>
+    <div className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4">
+          <div className="flex items-center gap-3">
+            {userProfile.logo_url ? (
+              <img src={userProfile.logo_url} alt="" className="w-10 h-10 rounded-xl object-cover" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
+                {userProfile.business_name?.[0]}
+              </div>
+            )}
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 leading-tight">Invoice from {userProfile.business_name}</h1>
+              <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-widest mt-0.5">
+                <Shield size={10} className="text-indigo-500" />
+                <span>Verified Secure Portal</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-4 w-full sm:w-auto">
+          
+          <div className="flex items-center gap-3">
             <button 
-              onClick={downloadPDF}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3.5 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+              onClick={() => window.print()}
+              className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm"
             >
               <Download size={14} />
               Save PDF
             </button>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div 
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden"
-        >
-          <div className="p-6 sm:p-10 md:p-16">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 mb-12 sm:mb-20 items-start">
-              <div>
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className={cn(
-                    "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 sm:mb-8 inline-block",
-                    isFullyPaid ? "bg-green-50 text-green-600 border border-green-100" : "bg-indigo-50 text-indigo-600 border border-indigo-100"
-                  )}
-                >
-                  {isFullyPaid ? 'Settled Invoice' : 'Payment Awaiting'}
-                </motion.div>
-                
-                <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 font-mono">Invoice Ledger Due</h2>
-                <div className="text-5xl sm:text-7xl font-black tracking-[-0.04em] text-slate-900 mb-6 flex flex-col">
-                  {formatCurrency(remainingBalance)}
-                  {totalPaid > 0 && (
-                    <span className="text-base sm:text-lg text-slate-400 font-medium tracking-tight mt-2 line-through opacity-50">
-                      Original: {formatCurrency(invoice.amount)}
-                    </span>
-                  )}
-                </div>
-                <p className="text-slate-400 font-black font-mono text-xs uppercase tracking-widest">ID: {invoice.invoice_number}</p>
-              </div>
-
-              {!isFullyPaid && upiLink && (
-                <div className="bg-slate-50/50 p-6 sm:p-10 rounded-[2rem] border border-slate-100 flex flex-col items-center">
-                  <div className="bg-white p-3 rounded-2xl shadow-2xl shadow-indigo-100/50 mb-6 sm:mb-8 border border-slate-100">
-                    <QRCodeSVG value={upiLink} size={160} />
-                  </div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 text-center">Scan to Pay via UPI</p>
-                  
-                  {!showRefInput ? (
-                    <div className="w-full space-y-4">
-                      <a 
-                        href={upiLink} 
-                        className="block w-full py-5 bg-slate-900 text-white rounded-2xl text-center text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 active:scale-95 transition-all"
-                      >
-                        Open Wallet App
-                      </a>
-                      <button 
-                        onClick={() => setShowRefInput(true)}
-                        className="w-full py-5 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl text-center text-xs font-black uppercase tracking-widest hover:border-indigo-600 transition-all active:scale-95 flex items-center justify-center gap-2"
-                      >
-                        <CheckCircle size={16} className="text-green-500" />
-                        I've Made the Payment
-                      </button>
-                    </div>
-                  ) : (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="w-full space-y-4"
-                    >
-                      <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block px-1">Enter Transaction ID / Ref</label>
-                        <input 
-                          type="text"
-                          value={transactionRef}
-                          onChange={(e) => setTransactionRef(e.target.value)}
-                          placeholder="e.g. 412389471..."
-                          className="w-full p-5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all min-h-[56px]"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <button 
-                          onClick={() => setShowRefInput(false)}
-                          className="py-5 bg-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900"
-                        >
-                          Back
-                        </button>
-                        <button 
-                          onClick={handleReportPayment}
-                          disabled={isProcessing}
-                          className="py-5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
-                        >
-                          {isProcessing ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          ) : (
-                            'Submit Report'
-                          )}
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-              )}
-
-              {invoice.status === 'payment_reported' && (
-                <div className="bg-indigo-50/50 p-8 sm:p-10 rounded-[2rem] border border-indigo-100 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-6">
-                    <CheckCircle size={40} className="animate-pulse" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-black text-indigo-900 mb-2 font-mono uppercase tracking-tighter">Verification Pending</h3>
-                  <p className="text-indigo-700/60 text-sm font-medium">Your payment of {formatCurrency(remainingBalance)} is being verified by the issuer. Ref: {invoice.payment_reference}</p>
-                </div>
-              )}
-
-              {isFullyPaid && (
-                <div className="bg-green-50/50 p-8 sm:p-10 rounded-[2rem] border border-green-100 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6">
-                    <CheckCircle size={40} />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-black text-green-900 mb-2 font-mono uppercase tracking-tighter">Paid in Full</h3>
-                  <p className="text-green-700/60 text-sm font-medium">Thank you! Your payment has been successfully recorded in the ledger.</p>
-                </div>
-              )}
+        {/* Status Alert for Draft */}
+        {isDraft && (
+          <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-start gap-3">
+            <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+            <div>
+              <p className="text-amber-900 font-bold text-sm">Draft Invoice</p>
+              <p className="text-amber-700 text-xs">This invoice hasn't been finalized yet. No payment is required at this time.</p>
             </div>
+          </div>
+        )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 border-t border-slate-50 pt-10 sm:pt-16">
-              <div className="space-y-10 sm:space-y-12">
-                <div>
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 font-mono">Recipient</h3>
-                  <p className="font-black text-slate-900 text-lg sm:text-xl tracking-tight leading-tight">{clientName}</p>
-                  <p className="text-slate-500 font-medium italic mt-1">{clientEmail}</p>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left Column: Invoice Details */}
+          <div className="lg:col-span-2 space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden"
+            >
+              <div className="p-6 sm:p-8 space-y-8">
+                {/* Summary Row */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-8 border-b border-slate-50">
+                  <div>
+                    <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mb-2">
+                      {formatCurrency(invoice.amount)}
+                    </h2>
+                    <div className="flex items-center gap-2">
+                       <span className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">#{invoice.invoice_number}</span>
+                       <span className="text-slate-300">•</span>
+                       <span className="text-xs text-slate-500">{new Date(invoice.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <div className={cn(
+                      "px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                      isPaid ? "bg-green-50 text-green-600 border-green-100" :
+                      isReported ? "bg-indigo-50 text-indigo-600 border-indigo-100" :
+                      "bg-slate-50 text-slate-600 border-slate-100"
+                    )}>
+                      {isPaid ? 'Payment Confirmed ✓' : isReported ? 'Payment under review' : 'Payment Awaiting'}
+                    </div>
+                    <div className={cn(
+                      "px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5",
+                      dueDateInfo.color
+                    )}>
+                      <dueDateInfo.icon size={12} />
+                      {dueDateInfo.text}
+                    </div>
+                  </div>
                 </div>
 
-                {payments.length > 0 && (
+                {/* Billing Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                   <div>
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 font-mono">Payment Stream</h3>
-                    <div className="space-y-3">
-                      {payments.map((p) => (
-                        <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-white shadow-sm flex items-center justify-center text-green-500">
-                              <ArrowDown size={14} />
-                            </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{new Date(p.paid_at).toLocaleDateString()}</span>
-                          </div>
-                          <span className="text-sm font-black text-slate-900">+{formatCurrency(p.amount)}</span>
-                        </div>
-                      ))}
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Billed To</h3>
+                    <p className="font-bold text-slate-900 text-lg">{clientName}</p>
+                    {clientEmail && <p className="text-slate-500 text-sm mt-1">{clientEmail}</p>}
+                  </div>
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">From</h3>
+                    <p className="font-bold text-slate-900 text-lg">{userProfile.business_name}</p>
+                    {userProfile.upi_id && (
+                      <div className="flex items-center gap-2 mt-1 text-slate-500 text-sm">
+                        <Landmark size={14} className="text-slate-400" />
+                        <span>UPI: {userProfile.upi_id}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                {items.length > 0 ? (
+                  <div className="pt-8 border-t border-slate-50">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Invoice Items</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-50">
+                            <th className="text-left py-3">Description</th>
+                            <th className="text-center py-3">Qty</th>
+                            <th className="text-right py-3">Rate</th>
+                            <th className="text-right py-3">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {items.map((item: any, idx: number) => (
+                            <tr key={idx}>
+                              <td className="py-4 text-sm font-medium text-slate-700">{item.description}</td>
+                              <td className="py-4 text-sm text-center text-slate-500 font-mono">{item.quantity}</td>
+                              <td className="py-4 text-sm text-right text-slate-500 font-mono">{formatCurrency(item.rate)}</td>
+                              <td className="py-4 text-sm text-right font-bold text-slate-900 font-mono">{formatCurrency(item.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
+                    
+                    <div className="mt-8 flex flex-col items-end space-y-3">
+                      <div className="w-full max-w-[240px] space-y-2">
+                        {invoice.snapshot_json?.subtotal && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Subtotal</span>
+                            <span className="text-slate-900 font-medium font-mono">{formatCurrency(invoice.snapshot_json.subtotal)}</span>
+                          </div>
+                        )}
+                        {invoice.snapshot_json?.tax && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Tax</span>
+                            <span className="text-slate-900 font-medium font-mono">+{formatCurrency(invoice.snapshot_json.tax)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                          <span className="font-bold text-slate-900">Total Due</span>
+                          <span className="text-xl font-black text-indigo-600 font-mono">{formatCurrency(invoice.snapshot_json?.total || invoice.amount)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                   <div className="pt-8 border-t border-slate-50 flex justify-end">
+                      <div className="w-full max-w-[240px] flex justify-between items-center">
+                        <span className="font-bold text-slate-900">Total Due</span>
+                        <span className="text-2xl font-black text-indigo-600 font-mono">{formatCurrency(invoice.amount)}</span>
+                      </div>
+                   </div>
+                )}
+
+                {invoice.notes && (
+                  <div className="pt-8 border-t border-slate-50">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Notes</h3>
+                    <p className="text-slate-500 text-sm italic">{invoice.notes}</p>
                   </div>
                 )}
               </div>
-
-              <div>
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 font-mono">Timeline</h3>
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-                      <Landmark size={20} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1">Issue Date</p>
-                      <p className="text-lg font-black text-slate-700 tracking-tight">{new Date(invoice.created_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                      invoice.status === 'overdue' ? "bg-red-50 text-red-500" : "bg-indigo-50 text-indigo-600"
-                    )}>
-                      <Shield size={20} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1">Settlement Deadline</p>
-                      <p className={cn(
-                        "text-lg font-black tracking-tight",
-                        invoice.status === 'overdue' ? "text-red-600" : "text-slate-700"
-                      )}>
-                        {new Date(invoice.due_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {invoice.notes && (
-              <div className="mt-12 sm:mt-20 p-6 sm:p-8 bg-slate-50/50 rounded-3xl italic text-slate-500 text-sm leading-relaxed border border-slate-100 flex items-start gap-4">
-                <span className="text-3xl sm:text-4xl text-indigo-200 font-serif leading-none">“</span>
-                <p className="pt-2">"{invoice.notes}"</p>
-              </div>
-            )}
+            </motion.div>
           </div>
 
-          <div className="bg-slate-900 p-8 sm:p-12 text-center relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -z-0" />
-            <div className="relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Enterprise Settlement Protocol</p>
-              {userProfile.plan === 'free' ? (
-                <div className="flex items-center justify-center gap-3">
-                  <div className="w-6 h-6 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black italic text-[10px]">P</div>
-                  <span className="text-lg font-black text-white tracking-tighter">Paydrip</span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center gap-3">
-                  <span className="text-lg font-black text-white tracking-tighter italic">{userProfile.business_name} Internal Portal</span>
-                </div>
-              )}
+          {/* Right Column: Payment & Stats */}
+          <div className="space-y-6">
+            <AnimatePresence mode="wait">
+              {isPaid ? (
+                <motion.div 
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-green-50 border border-green-100 rounded-3xl p-8 text-center"
+                >
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mx-auto mb-6">
+                    <CheckCircle size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-green-900 mb-2">Payment Confirmed!</h3>
+                  <p className="text-green-700 text-sm mb-6">Thank you, {clientName}. Your payment has been received and verified by {userProfile.business_name}.</p>
+                  <div className="bg-white/50 rounded-2xl p-4 text-xs text-green-800 font-bold border border-green-200/50">
+                     Receipt Generated #${invoice.invoice_number}
+                  </div>
+                </motion.div>
+              ) : isReported ? (
+                <motion.div 
+                  key="reported"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-indigo-50 border border-indigo-100 rounded-3xl p-8"
+                >
+                  <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-6">
+                    <Clock size={24} className="animate-pulse" />
+                  </div>
+                  <h3 className="text-lg font-bold text-indigo-900 mb-2">Under Verification</h3>
+                  <p className="text-indigo-700 text-sm mb-6">Your payment report is under manual review. This usually takes 2-4 hours during business periods.</p>
+                  <div className="space-y-3">
+                    <div className="p-4 bg-white rounded-2xl border border-indigo-100 space-y-1">
+                       <p className="text-[10px] text-slate-400 font-bold uppercase">Transaction Reference</p>
+                       <p className="font-bold text-indigo-900 font-mono text-sm">{invoice.payment_reference}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : !isDraft ? (
+                <motion.div 
+                  key="payment"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-8"
+                >
+                  {/* UPI QR Section */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                       <Wallet size={12} className="text-indigo-500" />
+                       How to Pay
+                    </h3>
+                    
+                    {userProfile.upi_id ? (
+                      <div className="space-y-6">
+                        <div className="bg-slate-50 p-4 rounded-2xl flex flex-col items-center">
+                          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100 mb-4">
+                            <QRCodeSVG value={upiLink || ''} size={160} />
+                          </div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Scan to pay via UPI</p>
+                        </div>
+
+                        <div className="relative">
+                           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group">
+                              <div className="min-w-0">
+                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Business UPI ID</p>
+                                 <p className="font-bold text-slate-900 truncate">{userProfile.upi_id}</p>
+                              </div>
+                              <button 
+                                onClick={handleCopyUpi}
+                                className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-90"
+                              >
+                                 {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                              </button>
+                           </div>
+                           <AnimatePresence>
+                             {copied && (
+                               <motion.div 
+                                 initial={{ opacity: 0, y: 5 }}
+                                 animate={{ opacity: 1, y: 0 }}
+                                 exit={{ opacity: 0 }}
+                                 className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-full"
+                               >
+                                 Copied!
+                               </motion.div>
+                             )}
+                           </AnimatePresence>
+                        </div>
+
+                        <a 
+                          href={upiLink || '#'} 
+                          className="w-full flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+                        >
+                          Open UPI App
+                          <ExternalLink size={14} />
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 text-amber-700 text-xs">
+                        No UPI ID associated with this profile. Please contact the business for bank details.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bank Details */}
+                  {userProfile.bank_details && (
+                    <div className="pt-8 border-t border-slate-50">
+                       <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                          <Landmark size={12} className="text-indigo-500" />
+                          Bank Transfer
+                       </h3>
+                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 whitespace-pre-wrap text-sm text-slate-600 font-medium">
+                          {userProfile.bank_details}
+                       </div>
+                    </div>
+                  )}
+
+                  {/* Payment Reporting Form */}
+                  <div className="pt-8 border-t border-slate-50 space-y-4">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Report Payment</h3>
+                    
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block px-1">Amount Paid</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                        <input 
+                          type="number"
+                          value={reportedAmount}
+                          onChange={(e) => setReportedAmount(e.target.value)}
+                          className="w-full pl-8 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block px-1">Payment Method</label>
+                      <div className="grid grid-cols-3 gap-2">
+                         <button 
+                           onClick={() => setPaymentMethod('upi')}
+                           className={cn(
+                             "py-2 px-1 rounded-lg text-[9px] font-bold uppercase tracking-widest border transition-all",
+                             paymentMethod === 'upi' ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-400 border-slate-100"
+                           )}
+                         >
+                           UPI
+                         </button>
+                         <button 
+                           onClick={() => setPaymentMethod('bank')}
+                           className={cn(
+                             "py-2 px-1 rounded-lg text-[9px] font-bold uppercase tracking-widest border transition-all",
+                             paymentMethod === 'bank' ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-400 border-slate-100"
+                           )}
+                         >
+                           Bank
+                         </button>
+                         <button 
+                           onClick={() => setPaymentMethod('cash')}
+                           className={cn(
+                             "py-2 px-1 rounded-lg text-[9px] font-bold uppercase tracking-widest border transition-all",
+                             paymentMethod === 'cash' ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-400 border-slate-100"
+                           )}
+                         >
+                           Cash
+                         </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block px-1">Transaction ID / Ref</label>
+                      <input 
+                        type="text"
+                        value={transactionRef}
+                        onChange={(e) => setTransactionRef(e.target.value)}
+                        placeholder="e.g. 412389471..."
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
+                      />
+                    </div>
+
+                    <button 
+                      onClick={handleReportPayment}
+                      disabled={isProcessing}
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isProcessing ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        "I've Made the Payment"
+                      )}
+                    </button>
+                    <p className="text-[8px] text-slate-400 text-center font-bold uppercase">Payments are verified manually by {userProfile.business_name}</p>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+
+            {/* Support Info */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 space-y-4">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Need Help?</h3>
+              <div className="space-y-3">
+                 <div className="flex items-center gap-3 text-slate-600">
+                    <Mail size={16} className="text-slate-400" />
+                    <span className="text-xs font-medium">{userProfile.email}</span>
+                 </div>
+                 {userProfile.phone && (
+                   <div className="flex items-center gap-3 text-slate-600">
+                      <Phone size={16} className="text-slate-400" />
+                      <span className="text-xs font-medium">{userProfile.phone}</span>
+                   </div>
+                 )}
+              </div>
             </div>
           </div>
-        </motion.div>
-        
-        <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-center mt-8 sm:mt-12 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]"
-        >
-          Direct inquiries to <span className="text-slate-900">{userProfile.business_name}</span>.
-        </motion.p>
+        </div>
+
+        {/* Footer */}
+        <div className="pt-12 pb-8 border-t border-slate-200/60 flex flex-col items-center gap-6">
+           <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-200 shadow-sm">
+                 <Shield size={10} className="text-indigo-600" />
+                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Secured by Paydrip</span>
+              </div>
+              <p className="text-[9px] text-slate-400 text-center leading-relaxed">
+                 You are receiving this invoice because of your recent transaction with {userProfile.business_name}.<br/>
+                 Paydrip acts as a secure processing portal.
+              </p>
+           </div>
+           
+           <div className="flex gap-4">
+              <button className="text-[9px] font-bold text-slate-400 hover:text-slate-600">Privacy Policy</button>
+              <button className="text-[9px] font-bold text-slate-400 hover:text-slate-600">Terms of Service</button>
+              <button className="text-[9px] font-bold text-slate-400 hover:text-slate-600 underline">Unsubscribe from reminders</button>
+           </div>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -502,16 +651,17 @@ export default function PublicInvoiceView() {
              <motion.div 
                initial={{ scale: 0.9, opacity: 0 }}
                animate={{ scale: 1, opacity: 1 }}
+               exit={{ scale: 0.9, opacity: 0 }}
                className="bg-white rounded-[2.5rem] p-8 sm:p-12 max-w-sm w-full text-center shadow-2xl border border-slate-100"
              >
                 <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-50 rounded-full flex items-center justify-center text-green-500 mx-auto mb-6 sm:mb-8">
                    <CheckCircle size={40} />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 mb-4 italic uppercase">Payment Reported</h2>
-                <p className="text-slate-500 text-sm mb-8 sm:mb-10 leading-relaxed font-medium">Thank you! Your payment report has been sent to <span className="font-bold text-slate-900">{userProfile.business_name}</span> for verification.</p>
+                <p className="text-slate-500 text-sm mb-8 sm:mb-10 leading-relaxed font-medium">Thank you! Your payment report has been sent to <span className="font-bold text-slate-900">{userProfile?.business_name}</span> for verification.</p>
                 <button 
                   onClick={() => setShowConfirmation(false)}
-                  className="w-full py-4 sm:py-5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
+                   className="w-full py-4 sm:py-5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
                 >
                   Close Confirmation
                 </button>

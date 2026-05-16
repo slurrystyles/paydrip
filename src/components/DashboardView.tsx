@@ -542,7 +542,7 @@ function MetricCard({ label, value, subtext, color, icon }: {
           <h3 className="text-xl font-black text-slate-900 mt-1 tracking-tighter italic leading-none">{value}</h3>
         </div>
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-md transition-transform group-hover:scale-110 duration-300 border border-slate-100/10 ${iconColors[color]}`}>
-          {React.cloneElement(icon as React.ReactElement, { size: 16 })}
+          {React.cloneElement(icon as React.ReactElement, { size: 16 } as any)}
         </div>
       </div>
       <div className="flex items-center gap-2 relative z-10">
