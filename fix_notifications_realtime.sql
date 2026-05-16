@@ -2,12 +2,6 @@
 
 -- 1. Enable Realtime for notifications table
 -- This is critical for the frontend to receive updates via supabase.channel()
-BEGIN;
-  DROP PUBLICATION IF EXISTS supabase_realtime;
-  CREATE PUBLICATION supabase_realtime;
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-END;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 
 -- 2. Fix trigger to be more resilient and ensure preferences are read correctly
