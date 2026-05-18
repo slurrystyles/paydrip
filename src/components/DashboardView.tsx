@@ -26,7 +26,7 @@ import {
 // Components
 import InvoiceModal from './InvoiceModal';
 import InvoiceDetailModal from './InvoiceDetailModal';
-import UpgradeModal from './UpgradeModal';
+import { UpgradeModal } from './UpgradeModal';
 import { usePlan } from '../contexts/PlanContext';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { useUserRole } from '../hooks/useUserRole';

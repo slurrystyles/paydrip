@@ -16,6 +16,7 @@ import RecoveryOpsCenter from './components/RecoveryOpsCenter';
 import PrivacyPage from './components/PrivacyPage';
 import TermsPage from './components/TermsPage';
 import ContactPage from './components/ContactPage';
+import PricingPage from './pages/PricingPage';
 import { PlanProvider } from './contexts/PlanContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
 
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={user ? <AuthenticatedLayout><DashboardView /></AuthenticatedLayout> : <Navigate to="/" />} />

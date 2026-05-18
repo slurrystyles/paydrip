@@ -23,15 +23,18 @@ import {
 import { formatCurrency, cn } from '../lib/utils';
 import InvoiceModal from './InvoiceModal';
 import InvoiceDetailModal from './InvoiceDetailModal';
-import UpgradeModal from './UpgradeModal';
+import { UpgradeModal } from './UpgradeModal';
 import { RiskBadge } from './RiskBadge';
 import { usePlan } from '../contexts/PlanContext';
+import { useUsageLimits } from '../hooks/useUsageLimits';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { useUserRole } from '../hooks/useUserRole';
 import { recoveryService } from '../lib/recoveryService';
 
 export default function InvoicesView() {
-  const { isLimitReached, refreshPlanData } = usePlan();
+  const { refreshPlanData } = usePlan();
+  const { canCreateInvoice, refresh: refreshUsage } = useUsageLimits();
+  const isLimitReached = !canCreateInvoice;
   const { currentOrganization } = useOrganization();
   const { capabilities = { canManageInvoices: false } } = useUserRole() || {};
   const canWrite = capabilities.canManageInvoices;

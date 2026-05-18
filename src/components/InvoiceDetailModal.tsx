@@ -42,7 +42,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePlan } from '../contexts/PlanContext';
-import UpgradeModal from './UpgradeModal';
+import { UpgradeModal } from './UpgradeModal';
 import { recoveryService } from '../lib/recoveryService';
 import { RiskBadge } from './RiskBadge';
 import { useOrganization } from '../contexts/OrganizationContext';

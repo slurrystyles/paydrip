@@ -339,15 +339,33 @@ export const recoveryService = {
     `;
 
     const result = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-1.5-flash',
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         responseMimeType: "application/json"
       }
     });
 
-    const text = result.text?.replace(/```json|```/g, '').trim() || '{}';
-    return JSON.parse(text);
+    const text = result.response.text().replace(/```json|```/g, '').trim() || '{}';
+    const parsed = JSON.parse(text);
+
+    // Record usage in audit log
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('audit_log').insert({
+        organization_id: context.organizationId,
+        user_id: user.id,
+        entity_type: 'ai',
+        audit_type: 'ai_template_generated',
+        meta: { 
+          tone: context.tone, 
+          client: context.clientName,
+          strategy: parsed.strategy_node 
+        }
+      });
+    }
+
+    return parsed;
   },
 
   async testAIConnection() {

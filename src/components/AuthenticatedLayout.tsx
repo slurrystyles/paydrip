@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { User } from '@supabase/supabase-js';
 import { usePlan } from '../contexts/PlanContext';
 import { useOrganization } from '../contexts/OrganizationContext';
-import UpgradeModal from './UpgradeModal';
+import { UpgradeModal } from './UpgradeModal';
 import OrganizationSwitcher from './OrganizationSwitcher';
 import NotificationCenter from './NotificationCenter';
 

@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { usePlan } from '../contexts/PlanContext';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { recoveryService } from '../lib/recoveryService';
+import { useUsageLimits } from '../hooks/useUsageLimits';
+import { UpgradeModal } from './UpgradeModal';
 
 interface Props {
   isOpen: boolean;
@@ -15,8 +17,10 @@ interface Props {
 }
 
 export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Props) {
-  const { isLimitReached } = usePlan();
+  const { plan } = usePlan();
+  const { canCreateInvoice, refresh: refreshUsage } = useUsageLimits();
   const { currentOrganization } = useOrganization();
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [clientId, setClientId] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -29,8 +33,8 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
     e.preventDefault();
     if (!currentOrganization) return;
     
-    if (isLimitReached) {
-      setError("Free plan limit reached (3 invoices). Please upgrade to continue.");
+    if (!canCreateInvoice) {
+      setShowUpgrade(true);
       return;
     }
     setLoading(true);
@@ -107,6 +111,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
       }
 
       onSuccess();
+      refreshUsage(); // Update usage numbers
       onClose();
       // Reset form
       setClientId('');
@@ -120,8 +125,14 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
   }
 
   return (
-    <AnimatePresence>
-      {isOpen && (
+    <>
+      <UpgradeModal 
+        isOpen={showUpgrade} 
+        onClose={() => setShowUpgrade(false)} 
+        reason="invoices"
+      />
+      <AnimatePresence>
+        {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4">
           <motion.div 
             initial={{ opacity: 0 }}
@@ -250,5 +261,6 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
         </div>
       )}
     </AnimatePresence>
+    </>
   );
 }

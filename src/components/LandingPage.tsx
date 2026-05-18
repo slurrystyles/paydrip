@@ -15,7 +15,7 @@ import { cn } from '../lib/utils';
 import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'motion/react';
 import AuthView from './AuthView';
-import UpgradeModal from './UpgradeModal';
+import { UpgradeModal } from './UpgradeModal';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { usePlan } from '../contexts/PlanContext';

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { UserProfile, WebhookEndpoint } from '../types';
 import { 
@@ -32,11 +33,19 @@ import { usePlan } from '../contexts/PlanContext';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { useUserRole } from '../hooks/useUserRole';
 import { recoveryService } from '../lib/recoveryService';
-import UpgradeModal from './UpgradeModal';
+import { useUsageLimits } from '../hooks/useUsageLimits';
+import { UpgradeModal } from './UpgradeModal';
 import imageCompression from 'browser-image-compression';
 
 export default function SettingsView() {
   const { plan, profile, refreshPlanData } = usePlan();
+  const { 
+    plan: currentPlan, 
+    limits, 
+    isFreePlan, 
+    canAddMember, 
+    refresh: refreshUsage 
+  } = useUsageLimits();
   const { currentOrganization, memberships, isAdmin, isOwner } = useOrganization();
   const { 
     isOwner: rbacIsOwner, 
@@ -195,6 +204,11 @@ export default function SettingsView() {
   const handleInviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail || !currentOrganization) return;
+    
+    if (!canAddMember) {
+      setShowUpgradeModal(true);
+      return;
+    }
     
     setIsInviting(true);
     setMessage(null);
@@ -411,6 +425,93 @@ export default function SettingsView() {
 
       <form onSubmit={handleSave} className="space-y-4 pb-12">
         <div className="bento-card p-6 space-y-6">
+          {/* Plan & Usage Section */}
+          <div className="space-y-6 pt-2 border-t border-slate-50">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
+              Plan & Usage
+              <CreditCard size={10} className="text-indigo-500" />
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               {/* Current Plan Card */}
+               <div className="p-6 bg-slate-900 rounded-3xl text-white relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-16 bg-indigo-500/10 blur-[60px] rounded-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-all duration-500" />
+                  
+                  <div className="relative z-10">
+                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-1">Active Plan</p>
+                     <h4 className="text-2xl font-black italic uppercase tracking-tight mb-4">{currentPlan}</h4>
+                     
+                     <div className="space-y-3 mb-6">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-300">
+                           <Check size={12} className="text-indigo-400" />
+                           {isFreePlan ? 'Standard Collection Tools' : 'Advanced Operations Suite'}
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-300">
+                           <Check size={12} className="text-indigo-400" />
+                           {isFreePlan ? 'Email Reminders' : 'Multi-Channel Recovery (Email, SMS, WA)'}
+                        </div>
+                     </div>
+
+                     {isFreePlan && (
+                        <button 
+                           type="button"
+                           onClick={() => setShowUpgradeModal(true)}
+                           className="w-full py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all shadow-lg shadow-black/20"
+                        >
+                           Upgrade to Pro
+                        </button>
+                     )}
+                  </div>
+               </div>
+
+               {/* Usage Grid */}
+               <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-sm space-y-4">
+                  {[
+                     { label: 'Invoices this month', key: 'invoices_month' as const },
+                     { label: 'Team Seats', key: 'team_seats' as const },
+                     { label: 'Active Automations', key: 'automations_active' as const },
+                     { label: 'AI Operations', key: 'ai_generations' as const }
+                  ].map((item) => {
+                     const limitData = limits[item.key];
+                     return (
+                        <div key={item.key} className="space-y-1.5">
+                           <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{item.label}</span>
+                              <span className="text-[10px] font-black text-slate-900">
+                                 {limitData.current} / {limitData.limit === -1 ? '∞' : limitData.limit}
+                              </span>
+                           </div>
+                           <div className="h-1.5 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                              <motion.div 
+                                 initial={{ width: 0 }}
+                                 animate={{ width: `${limitData.percentage}%` }}
+                                 className={cn(
+                                    "h-full rounded-full transition-colors",
+                                    limitData.percentage > 90 ? "bg-red-500" : limitData.percentage > 70 ? "bg-amber-400" : "bg-indigo-500"
+                                 )}
+                              />
+                           </div>
+                        </div>
+                     );
+                  })}
+               </div>
+            </div>
+
+            {/* Plan Comparison CTA */}
+            <div className="p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 border-dashed flex flex-col sm:flex-row items-center justify-between gap-4">
+               <div>
+                  <h5 className="text-[11px] font-black uppercase text-indigo-900 mb-1">Need more capacity?</h5>
+                  <p className="text-[10px] font-medium text-indigo-600/80 italic">Pro plans start at $12/mo for unlimited invoices and multi-channel automation.</p>
+               </div>
+               <Link 
+                  to="/pricing"
+                  className="px-6 py-3 bg-white text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm hover:shadow-md transition-all shrink-0"
+               >
+                  Compare Plans
+               </Link>
+            </div>
+          </div>
+
           {/* Custom Branding (Gated) */}
           <div className="space-y-6">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
