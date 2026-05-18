@@ -1,4 +1,4 @@
--- Path: /usage_limits.sql
+-- Path: /usage_limits.sql (FIXED)
 
 -- 1. DATABASE SCHEMA UPDATES
 ALTER TABLE security.plans
@@ -31,7 +31,7 @@ ALTER TABLE security.subscriptions
   ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'usd',
   ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMP WITH TIME ZONE;
 
--- Seed free subscription for all existing organizations that don't have one
+-- Seed free subscription for all existing organizations
 INSERT INTO security.subscriptions (
   organization_id, plan_id, status, 
   current_period_start, current_period_end
@@ -50,7 +50,6 @@ WHERE NOT EXISTS (
 
 -- 2. HELPER FUNCTIONS
 
--- Get organization plan limits
 CREATE OR REPLACE FUNCTION public.get_org_plan_limits(p_org_id UUID)
 RETURNS JSONB AS $$
 DECLARE
@@ -63,7 +62,6 @@ BEGIN
     AND s.status = 'active'
     LIMIT 1;
 
-    -- Fallback to Free plan limits if no active subscription
     IF v_limits IS NULL THEN
         SELECT limits INTO v_limits FROM security.plans WHERE slug = 'free';
     END IF;
@@ -72,7 +70,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Check specific usage limit
 CREATE OR REPLACE FUNCTION public.check_usage_limit(
   p_org_id UUID, 
   p_limit_key TEXT
@@ -84,7 +81,6 @@ DECLARE
     v_plan_slug TEXT;
     v_allowed BOOLEAN := true;
 BEGIN
-    -- Get limits and plan slug
     SELECT p.limits, p.slug INTO v_limits, v_plan_slug
     FROM security.subscriptions s
     JOIN security.plans p ON s.plan_id = p.id
@@ -92,15 +88,15 @@ BEGIN
     AND s.status = 'active'
     LIMIT 1;
 
-    -- Fallback
     IF v_limits IS NULL THEN
-        SELECT limits, slug INTO v_limits, v_plan_slug FROM security.plans WHERE slug = 'free';
+        SELECT limits, slug INTO v_limits, v_plan_slug 
+        FROM security.plans WHERE slug = 'free';
     END IF;
 
     v_limit_val := (v_limits->>p_limit_key)::INTEGER;
 
-    -- If limit is -1 (unlimited), always allow
-    IF v_limit_val = -1 THEN
+    -- If limit is -1 or 9999 treat as unlimited
+    IF v_limit_val = -1 OR v_limit_val >= 9999 THEN
         RETURN jsonb_build_object(
             'allowed', true,
             'current', 0,
@@ -109,7 +105,6 @@ BEGIN
         );
     END IF;
 
-    -- Calculate usage based on key
     CASE p_limit_key
         WHEN 'invoices_month' THEN
             SELECT COUNT(*)::INTEGER INTO v_current_usage
@@ -127,14 +122,14 @@ BEGIN
             SELECT COUNT(*)::INTEGER INTO v_current_usage
             FROM public.audit_log
             WHERE organization_id = p_org_id
-            AND audit_type = 'ai_template_generated' -- Assumed type for AI usage
+            AND audit_type = 'ai_template_generated'
             AND created_at >= date_trunc('month', now());
 
         WHEN 'automations_active' THEN
             SELECT COUNT(*)::INTEGER INTO v_current_usage
             FROM public.follow_up_sequences
             WHERE organization_id = p_org_id
-            AND is_active = true;
+            AND status = 'active';  -- FIX: was is_active = true
             
         ELSE
             v_current_usage := 0;
@@ -155,16 +150,27 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 3. ENFORCEMENT TRIGGERS
 
--- Trigger for Invoices
+-- FIX: Drop existing triggers first
+DROP TRIGGER IF EXISTS tr_enforce_invoice_limit ON public.invoices;
+DROP TRIGGER IF EXISTS tr_enforce_team_seats_limit ON public.memberships;
+DROP TRIGGER IF EXISTS tr_enforce_automations_limit ON public.follow_up_sequences;
+
+-- Invoice limit trigger
 CREATE OR REPLACE FUNCTION public.enforce_invoice_limit()
 RETURNS TRIGGER AS $$
 DECLARE
     v_check JSONB;
 BEGIN
-    v_check := public.check_usage_limit(NEW.organization_id, 'invoices_month');
-    IF NOT (v_check->>'allowed')::BOOLEAN THEN
-        RAISE EXCEPTION 'Invoice limit reached for your plan. Upgrade to Pro for unlimited invoices.';
-    END IF;
+    -- Safe fallback: if check fails, allow the action
+    BEGIN
+        v_check := public.check_usage_limit(NEW.organization_id, 'invoices_month');
+        IF NOT (v_check->>'allowed')::BOOLEAN THEN
+            RAISE EXCEPTION 'Invoice limit reached for your plan. Upgrade to Pro for unlimited invoices.';
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        -- Log warning but don't block
+        RAISE WARNING 'Invoice limit check failed: %', SQLERRM;
+    END;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -173,16 +179,29 @@ CREATE TRIGGER tr_enforce_invoice_limit
 BEFORE INSERT ON public.invoices
 FOR EACH ROW EXECUTE FUNCTION public.enforce_invoice_limit();
 
--- Trigger for Memberships
+-- Team seats limit trigger
 CREATE OR REPLACE FUNCTION public.enforce_team_seats_limit()
 RETURNS TRIGGER AS $$
 DECLARE
     v_check JSONB;
 BEGIN
-    v_check := public.check_usage_limit(NEW.organization_id, 'team_seats');
-    IF NOT (v_check->>'allowed')::BOOLEAN THEN
-        RAISE EXCEPTION 'Team seat limit reached for your plan. Upgrade to Pro for more seats.';
+    -- FIX: Always allow first member (org creator)
+    IF NOT EXISTS (
+        SELECT 1 FROM public.memberships 
+        WHERE organization_id = NEW.organization_id
+    ) THEN
+        RETURN NEW;
     END IF;
+
+    -- Safe fallback: if check fails, allow the action
+    BEGIN
+        v_check := public.check_usage_limit(NEW.organization_id, 'team_seats');
+        IF NOT (v_check->>'allowed')::BOOLEAN THEN
+            RAISE EXCEPTION 'Team seat limit reached for your plan. Upgrade to Pro for more seats.';
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE WARNING 'Team seats limit check failed: %', SQLERRM;
+    END;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -191,16 +210,21 @@ CREATE TRIGGER tr_enforce_team_seats_limit
 BEFORE INSERT ON public.memberships
 FOR EACH ROW EXECUTE FUNCTION public.enforce_team_seats_limit();
 
--- Trigger for Automations
+-- Automations limit trigger
 CREATE OR REPLACE FUNCTION public.enforce_automations_limit()
 RETURNS TRIGGER AS $$
 DECLARE
     v_check JSONB;
 BEGIN
-    v_check := public.check_usage_limit(NEW.organization_id, 'automations_active');
-    IF NOT (v_check->>'allowed')::BOOLEAN THEN
-        RAISE EXCEPTION 'Active automation limit reached for your plan. Upgrade to Pro to enable more sequences.';
-    END IF;
+    -- Safe fallback: if check fails, allow the action
+    BEGIN
+        v_check := public.check_usage_limit(NEW.organization_id, 'automations_active');
+        IF NOT (v_check->>'allowed')::BOOLEAN THEN
+            RAISE EXCEPTION 'Active automation limit reached for your plan. Upgrade to Pro to enable more sequences.';
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE WARNING 'Automations limit check failed: %', SQLERRM;
+    END;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

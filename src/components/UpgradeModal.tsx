@@ -268,7 +268,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                               <CheckCircle size={32} className="text-indigo-600" />
                            </div>
                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Manual Payment via UPI</p>
-                           <h4 className="text-2xl font-black text-slate-900 tracking-tight italic mb-4">paydrip@upi</h4>
+                           <h4 className="text-2xl font-black text-slate-900 tracking-tight italic mb-4">suresh.roshanlal@okaxis</h4>
                            <p className="text-xs text-slate-500 max-w-[200px]">Send the plan amount ($12 / ₹999) to this ID for instant activation.</p>
                         </div>
 
@@ -277,7 +277,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                               <Mail size={32} className="text-slate-400" />
                            </div>
                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Send Confirmation</p>
-                           <h4 className="text-2xl font-black text-slate-900 tracking-tight mb-4">support@paydrip.io</h4>
+                           <h4 className="text-2xl font-black text-slate-900 tracking-tight mb-4">suresh.roshanlal@gmail.com/h4>
                            <p className="text-xs text-slate-500 max-w-[200px]">Email your transaction screenshot and organization name.</p>
                         </div>
                      </div>
