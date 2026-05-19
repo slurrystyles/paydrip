@@ -9,6 +9,7 @@ import { RecoveryDashboard } from './components/RecoveryDashboard';
 import ClientsView from './components/ClientsView';
 import InvoicesView from './components/InvoicesView';
 import SettingsView from './components/SettingsView';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 import LandingPage from './components/LandingPage';
 import PublicInvoiceView from './components/PublicInvoiceView';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
@@ -72,6 +73,7 @@ export default function App() {
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={user ? <AuthenticatedLayout><DashboardView /></AuthenticatedLayout> : <Navigate to="/" />} />
+          <Route path="/analytics" element={user ? <AuthenticatedLayout><AnalyticsDashboard /></AuthenticatedLayout> : <Navigate to="/" />} />
           <Route path="/recovery" element={user ? <AuthenticatedLayout><RecoveryDashboard /></AuthenticatedLayout> : <Navigate to="/" />} />
           <Route path="/operations" element={user ? <AuthenticatedLayout><RecoveryOpsCenter /></AuthenticatedLayout> : <Navigate to="/" />} />
           <Route path="/invoices" element={user ? <AuthenticatedLayout><InvoicesView /></AuthenticatedLayout> : <Navigate to="/" />} />
