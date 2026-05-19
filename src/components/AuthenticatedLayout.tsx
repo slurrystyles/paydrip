@@ -83,6 +83,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   const navItems = [
     { icon: <LayoutDashboard size={18} />, label: 'Dashboard', path: '/dashboard', required: 'read' },
     { icon: <BarChart2 size={18} />, label: 'Analytics', path: '/analytics', required: 'read' },
+    { icon: <FileText size={18} />, label: 'Templates', path: '/templates', required: 'read' },
     { icon: <Zap size={18} />, label: 'Intelligence', path: '/recovery', required: 'recover' },
     { icon: <SettingsIcon size={18} />, label: 'Operations', path: '/operations', required: 'recover' },
     { icon: <FileText size={18} />, label: 'Invoices', path: '/invoices', required: 'read' },

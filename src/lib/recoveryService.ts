@@ -374,6 +374,89 @@ export const recoveryService = {
     return parsed;
   },
 
+  /**
+   * Generate an email template with AI
+   */
+  async generateEmailTemplateWithAI(context: {
+    template_type: string;
+    tone: string;
+    industry: string;
+    language: string;
+    instructions?: string;
+    organizationId: string;
+    businessName: string;
+  }) {
+    // Plan Enforcement
+    const entitled = await this.checkEntitlement('ai_generations', context.organizationId);
+    if (!entitled) throw new Error('AI Generation quota reached for this organization.');
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (window as any).process?.env?.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('AI Service Unconfigured');
+
+    const ai = new GoogleGenAI({ 
+      apiKey,
+      httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+    });
+
+    const prompt = `
+      You are an expert at writing professional invoice recovery 
+      emails for freelancers and businesses. Generate a complete 
+      email template in ${context.language} with ${context.tone} tone for a 
+      ${context.industry} professional. The email should be for: ${context.template_type}.
+      
+      Use these exact variable placeholders (keep them as-is):
+      {{client_name}}, {{invoice_number}}, {{amount}}, {{due_date}}, 
+      {{days_overdue}}, {{payment_link}}, {{business_name}}
+      
+      Return ONLY a JSON object with these fields:
+      {
+        "subject": "email subject line with variables",
+        "body_html": "complete HTML email body with inline styles",
+        "body_text": "plain text version",
+        "name": "suggested template name",
+        "description": "brief description of this template"
+      }
+      
+      Additional instructions: ${context.instructions || 'None'}
+      
+      Rules:
+      - Keep email under 200 words
+      - Include {{payment_link}} prominently
+      - Professional email structure
+      - Include unsubscribe note at bottom
+      - Return ONLY valid JSON, no markdown
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const text = response.text?.replace(/```json|```/g, '').trim() || '{}';
+    const parsed = JSON.parse(text);
+
+    // Record usage in audit log
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('audit_log').insert({
+        organization_id: context.organizationId,
+        user_id: user.id,
+        entity_type: 'ai_template',
+        audit_type: 'ai_template_generated',
+        meta: { 
+          template_type: context.template_type,
+          tone: context.tone,
+          industry: context.industry
+        }
+      });
+    }
+
+    return parsed;
+  },
+
   async testAIConnection() {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (window as any).process?.env?.GEMINI_API_KEY;
     if (!apiKey) return { success: false, error: 'GEMINI_API_KEY / VITE_GEMINI_API_KEY is missing.' };

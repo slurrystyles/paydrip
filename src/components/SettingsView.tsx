@@ -8,6 +8,7 @@ import {
   User, 
   Building, 
   CreditCard, 
+  FileText,
   Shield, 
   Zap, 
   ExternalLink, 
@@ -512,6 +513,31 @@ export default function SettingsView() {
                >
                   Compare Plans
                </Link>
+            </div>
+          </div>
+
+          {/* Template Management Section */}
+          <div className="space-y-6 pt-2 border-t border-slate-50">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
+              Content Strategy
+              <FileText size={10} className="text-indigo-500" />
+            </h3>
+            
+            <div className="p-6 bg-slate-900 rounded-[2rem] text-white relative overflow-hidden group">
+               <div className="absolute top-0 right-0 p-16 bg-indigo-500/10 blur-[60px] rounded-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-all duration-500" />
+               
+               <div className="relative z-10">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-1">Communication Node</p>
+                  <h4 className="text-lg font-black italic uppercase tracking-tight mb-2">Email Templates</h4>
+                  <p className="text-[10px] font-medium text-slate-400 mb-6 leading-relaxed max-w-sm">Manage, customize, and AI-generate the emails sent during your recovery sequences. Ensure your brand voice is consistent across all client touchpoints.</p>
+                  
+                  <Link 
+                     to="/templates"
+                     className="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-lg shadow-black/20"
+                  >
+                     Configure Templates <ChevronDown size={14} className="-rotate-90" />
+                  </Link>
+               </div>
             </div>
           </div>
 
