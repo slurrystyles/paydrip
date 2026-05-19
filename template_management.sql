@@ -1,18 +1,5 @@
 -- Path: /template_management.sql (FIXED)
 
--- 0. Fix enum if needed
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'membership_role') THEN
-        IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = 'membership_role' AND e.enumlabel = 'member') THEN
-            ALTER TYPE membership_role ADD VALUE 'member';
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = 'membership_role' AND e.enumlabel = 'viewer') THEN
-            ALTER TYPE membership_role ADD VALUE 'viewer';
-        END IF;
-    END IF;
-END $$;
-
 -- 1. Create email_templates table
 CREATE TABLE IF NOT EXISTS public.email_templates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -72,10 +59,10 @@ ON public.email_templates FOR INSERT TO authenticated
 WITH CHECK (
   EXISTS (
     SELECT 1 FROM public.memberships
-    WHERE organization_id = email_templates.organization_id  -- FIX: was ambiguous
+    WHERE organization_id = email_templates.organization_id
     AND user_id = auth.uid()
     AND is_active = true
-    AND role IN ('owner', 'admin', 'member')
+    AND role::text IN ('owner', 'admin', 'manager', 'operator', 'finance', 'member')
   )
 );
 
@@ -88,7 +75,7 @@ USING (
     WHERE organization_id = email_templates.organization_id
     AND user_id = auth.uid()
     AND is_active = true
-    AND role IN ('owner', 'admin', 'member')
+    AND role::text IN ('owner', 'admin', 'manager', 'operator', 'finance', 'member')
   )
 );
 
@@ -103,7 +90,7 @@ USING (
     WHERE organization_id = email_templates.organization_id
     AND user_id = auth.uid()
     AND is_active = true
-    AND role IN ('owner', 'admin')  -- FIX: added owner
+    AND role::text IN ('owner', 'admin', 'manager')
   )
 );
 
