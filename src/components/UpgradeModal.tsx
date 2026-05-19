@@ -121,7 +121,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row"
+            className="relative bg-white rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col md:flex-row"
           >
             {/* Close Button */}
             <button 
@@ -134,44 +134,44 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
               <X size={20} />
             </button>
 
-            {/* Promo Sidebar (Mobile hidden top, Desktop left) */}
-            <div className="w-full md:w-[35%] bg-slate-900 p-8 md:p-12 text-white flex flex-col justify-between overflow-hidden relative">
+            {/* Promo Sidebar (Mobile top, Desktop left) */}
+            <div className="w-full md:w-[35%] bg-slate-900 p-8 md:p-12 text-white flex flex-col justify-between relative shrink-0">
                <div className="absolute top-0 right-0 p-24 bg-indigo-500/10 blur-[100px] rounded-full -mr-12 -mt-12" />
                
                <div className="relative z-10">
-                  <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/20">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-indigo-500 rounded-xl md:rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/20">
                      {view === 'plans' ? (
-                       <Zap size={24} className="text-white fill-current" />
+                       <Zap size={20} className="text-white fill-current md:size-6" />
                      ) : (
-                       <Check size={24} className="text-white" />
+                       <Check size={20} className="text-white md:size-6" />
                      )}
                   </div>
-                  <h2 className="text-3xl font-black tracking-tight mb-4 uppercase italic">
+                  <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-3 md:mb-4 uppercase italic">
                     {getReasonTitle()}
                   </h2>
-                  <p className="text-slate-400 text-sm leading-relaxed font-medium mb-8">
+                  <p className="text-slate-400 text-xs md:text-sm leading-relaxed font-medium mb-6 md:mb-8">
                     {getReasonDesc()}
                   </p>
 
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 md:gap-4 pb-4 md:pb-0">
                      {[
-                        { icon: <TrendingUp size={16} />, text: 'Unlimited Invoice Volume' },
-                        { icon: <Bot size={16} />, text: 'AI-Powered Recovery' },
+                        { icon: <TrendingUp size={16} />, text: 'Unlimited Invoices' },
+                        { icon: <Bot size={16} />, text: 'AI Recovery' },
                         { icon: <Globe size={16} />, text: 'Custom Branding' },
-                        { icon: <Smartphone size={16} />, text: 'WhatsApp Integration' }
+                        { icon: <Smartphone size={16} />, text: 'WhatsApp Prompts' }
                      ].map((item, i) => (
-                        <div key={i} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-slate-300">
-                           <div className="text-indigo-400">{item.icon}</div>
+                        <div key={i} className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-300">
+                           <div className="text-indigo-400 shrink-0">{item.icon}</div>
                            {item.text}
                         </div>
                      ))}
                   </div>
                </div>
 
-               <div className="mt-12 relative z-10">
+               <div className="mt-8 md:mt-12 relative z-10 hidden sm:block">
                   <div className="p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
                      <p className="text-[10px] font-black tracking-[0.2em] uppercase text-indigo-400 mb-2">Team Favorite</p>
-                     <p className="text-xs text-slate-400 italic">"Paydrip Pro paid for itself within the first 48 hours. Our collection speed increased by 300%."</p>
+                     <p className="text-[11px] md:text-xs text-slate-400 italic leading-relaxed">"Paydrip Pro paid for itself within the first 48 hours. Our collection speed increased by 300%."</p>
                   </div>
                </div>
             </div>
@@ -187,25 +187,25 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                      exit={{ opacity: 0, x: -20 }}
                      className="flex flex-col h-full"
                    >
-                     <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xs font-black tracking-[0.2em] uppercase text-slate-400">Choose your tier</h3>
-                        <div className="flex items-center gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-                           <button className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white rounded-lg">Monthly</button>
-                           <button className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900">Yearly (20% Off)</button>
+                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+                        <h3 className="text-[10px] md:text-xs font-black tracking-[0.2em] uppercase text-slate-400">Choose your tier</h3>
+                        <div className="flex items-center gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200 w-full sm:w-auto overflow-x-auto">
+                           <button className="px-3 md:px-4 py-1.5 md:py-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white rounded-lg whitespace-nowrap">Monthly</button>
+                           <button className="px-3 md:px-4 py-1.5 md:py-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 whitespace-nowrap">Yearly (20% Off)</button>
                         </div>
                      </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4 flex-1 pb-4 md:pb-0">
                         {PLANS.map((plan) => (
                            <div 
                               key={plan.slug}
                               className={cn(
-                                 "bg-white rounded-3xl p-6 border transition-all flex flex-col",
-                                 plan.highlight ? "border-indigo-200 shadow-xl shadow-indigo-100/50 scale-[1.02] relative" : "border-slate-100 shadow-sm"
+                                 "bg-white rounded-3xl p-6 border transition-all flex flex-col group",
+                                 plan.highlight ? "border-indigo-200 shadow-xl shadow-indigo-100/50 md:scale-[1.02] relative" : "border-slate-100 shadow-sm"
                               )}
                            >
                               {plan.highlight && (
-                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg">
+                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg z-20">
                                     Most Popular
                                  </div>
                               )}
@@ -262,23 +262,23 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                         </button>
                      </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bento-card p-8 bg-white border-2 border-indigo-100 shadow-xl shadow-indigo-100/30 flex flex-col items-center text-center">
-                           <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-                              <CheckCircle size={32} className="text-indigo-600" />
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                        <div className="bento-card p-6 md:p-8 bg-white border-2 border-indigo-100 shadow-xl shadow-indigo-100/30 flex flex-col items-center text-center">
+                           <div className="w-12 h-12 md:w-16 md:h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4 md:mb-6">
+                              <CheckCircle size={28} className="text-indigo-600 md:size-8" />
                            </div>
-                           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Manual Payment via UPI</p>
-                           <h4 className="text-2xl font-black text-slate-900 tracking-tight italic mb-4">suresh.roshanlal@okaxis</h4>
-                           <p className="text-xs text-slate-500 max-w-[200px]">Send the plan amount ($12 / ₹999) to this ID for instant activation.</p>
+                           <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Manual Payment via UPI</p>
+                           <h4 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic mb-3 md:mb-4">suresh.roshanlal@okaxis</h4>
+                           <p className="text-[10px] md:text-xs text-slate-500 max-w-[180px] md:max-w-[200px]">Send the plan amount ($12 / ₹999) for instant activation.</p>
                         </div>
 
-                        <div className="bento-card p-8 bg-white border border-slate-200 shadow-sm flex flex-col items-center text-center">
-                           <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                              <Mail size={32} className="text-slate-400" />
+                        <div className="bento-card p-6 md:p-8 bg-white border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                           <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 md:mb-6">
+                              <Mail size={28} className="text-slate-400 md:size-8" />
                            </div>
-                           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Send Confirmation</p>
-                           <h4 className="text-2xl font-black text-slate-900 tracking-tight mb-4">suresh.roshanlal@gmail.com/h4>
-                           <p className="text-xs text-slate-500 max-w-[200px]">Email your transaction screenshot and organization name.</p>
+                           <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Send Confirmation</p>
+                           <h4 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight mb-3 md:mb-4 break-all">suresh.roshanlal@gmail.com</h4>
+                           <p className="text-[10px] md:text-xs text-slate-500 max-w-[180px] md:max-w-[200px]">Email your transaction ID and organization name.</p>
                         </div>
                      </div>
 
