@@ -1,5 +1,18 @@
 -- Path: /template_management.sql (FIXED)
 
+-- 0. Fix enum if needed
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'membership_role') THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = 'membership_role' AND e.enumlabel = 'member') THEN
+            ALTER TYPE membership_role ADD VALUE 'member';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = 'membership_role' AND e.enumlabel = 'viewer') THEN
+            ALTER TYPE membership_role ADD VALUE 'viewer';
+        END IF;
+    END IF;
+END $$;
+
 -- 1. Create email_templates table
 CREATE TABLE IF NOT EXISTS public.email_templates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
