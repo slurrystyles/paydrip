@@ -26,7 +26,9 @@ import {
   ChevronDown,
   LogOut,
   ArrowRightLeft,
-  AlertTriangle
+  AlertTriangle,
+  Check,
+  CheckCircle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { usePlan } from '../contexts/PlanContext';

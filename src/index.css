@@ -35,3 +35,18 @@ body {
   @apply bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm;
 }
 
+@utility custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-300;
+  }
+}
+
