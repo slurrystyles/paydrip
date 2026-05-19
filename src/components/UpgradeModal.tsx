@@ -49,8 +49,8 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
     {
       name: 'Pro',
       slug: 'pro',
-      price: billingCycle === 'monthly' ? '$12' : '$10',
-      interval: 'per month',
+      price: billingCycle === 'monthly' ? '$12' : '$99',
+      interval: billingCycle === 'monthly' ? 'per month' : 'per year',
       features: [
         'Unlimited clients',
         'Unlimited invoices',
@@ -67,8 +67,8 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
     {
       name: 'Enterprise',
       slug: 'enterprise',
-      price: billingCycle === 'monthly' ? '$39' : '$32',
-      interval: 'per month',
+      price: billingCycle === 'monthly' ? '$39' : '$299',
+      interval: billingCycle === 'monthly' ? 'per month' : 'per year',
       features: [
         'Everything in Pro',
         'White-label',
@@ -274,7 +274,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                                     <h4 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic">
                                        {plan.price}
                                        <span className="text-xs font-medium text-slate-400 tracking-normal not-italic ml-1">
-                                         / {billingCycle === 'yearly' && plan.slug !== 'free' ? 'yr (billed annually)' : plan.interval}
+                                         / {plan.interval}
                                        </span>
                                     </h4>
                                  </div>
@@ -331,7 +331,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                            </div>
                            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Via UPI</p>
                            <h4 className="text-base md:text-xl font-black text-slate-900 tracking-tight italic mb-3 select-all">suresh.roshanlal@okaxis</h4>
-                           <p className="text-[10px] text-slate-500">Send ₹{billingCycle === 'monthly' ? '999' : '9,999'} for activation.</p>
+                           <p className="text-[10px] text-slate-500">Send ₹{billingCycle === 'monthly' ? '999' : '7,999'} for activation.</p>
                         </div>
 
                         <div className="bento-card p-6 md:p-8 bg-white border border-slate-200 shadow-sm flex flex-col items-center text-center">

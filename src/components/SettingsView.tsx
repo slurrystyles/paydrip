@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { UserProfile, WebhookEndpoint } from '../types';
+import { motion } from 'motion/react';
 import { 
   Save, 
   User, 

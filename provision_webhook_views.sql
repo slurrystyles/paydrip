@@ -16,10 +16,21 @@ ALTER VIEW public.webhook_endpoints OWNER TO postgres;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.webhook_endpoints TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.webhook_endpoints TO service_role;
 
--- 2. Webhook Logs
+-- 2. Webhook Logs (payload, response_body, ip_address excluded)
 DROP VIEW IF EXISTS public.webhook_logs;
 CREATE VIEW public.webhook_logs AS 
-SELECT * FROM security.webhook_logs;
+SELECT 
+  id,
+  endpoint_id,
+  organization_id,
+  event_type,
+  event_id,
+  response_status,
+  duration_ms,
+  attempt_count,
+  signature_verified,
+  created_at
+FROM security.webhook_logs;
 
 ALTER VIEW public.webhook_logs OWNER TO postgres;
 GRANT SELECT ON public.webhook_logs TO authenticated;

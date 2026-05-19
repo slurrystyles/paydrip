@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Check, 
   ArrowRight, 
@@ -10,9 +10,15 @@ import {
   Globe,
   Smartphone,
   Star,
-  Users
+  Users,
+  ArrowUpRight,
+  Menu,
+  X
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
+import { User } from '@supabase/supabase-js';
+import { useNavigate, Link } from 'react-router-dom';
 
 const PRICING_PLANS = [
   {
@@ -87,13 +93,120 @@ const FAQS = [
   }
 ];
 
-export default function PricingPage() {
+export default function PricingPage({ isNested = false }: { isNested?: boolean }) {
   const [isYearly, setIsYearly] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+    setIsProfileOpen(false);
+  };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <section className="relative pt-24 pb-16 overflow-hidden">
+    <div className={cn("min-h-screen selection:bg-indigo-100 selection:text-indigo-900", isNested ? "bg-transparent" : "bg-[#FDFDFF]")}>
+      {/* Navigation */}
+      {!isNested && (
+        <nav className="border-b border-slate-100 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div 
+              onClick={() => navigate('/')}
+              className="flex items-center gap-3 cursor-pointer"
+            >
+              <motion.div 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-indigo-100 italic"
+              >
+                P
+              </motion.div>
+              <span className="text-xl font-black tracking-tighter text-slate-900">Paydrip</span>
+            </div>
+            <div className="flex items-center gap-6">
+              {user ? (
+                 <div className="flex items-center gap-4">
+                   <button 
+                     onClick={() => navigate('/dashboard')}
+                     className="hidden sm:flex px-5 py-2.5 bg-slate-50 border border-slate-100 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 flex items-center gap-2"
+                   >
+                     Go to Dashboard
+                     <ArrowUpRight size={14} />
+                   </button>
+                   
+                   <div className="relative">
+                     <button 
+                       onClick={() => setIsProfileOpen(!isProfileOpen)}
+                       className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-xs font-black text-white italic shadow-lg shadow-slate-200 cursor-pointer hover:bg-indigo-600 transition-all active:scale-95"
+                     >
+                       {user?.email?.[0].toUpperCase() || 'U'}
+                     </button>
+                     
+                     <AnimatePresence>
+                       {isProfileOpen && (
+                         <>
+                           <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
+                           <motion.div 
+                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                             animate={{ opacity: 1, y: 0, scale: 1 }}
+                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                             className="absolute top-full right-0 mt-4 w-64 bg-white rounded-[1.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] border border-slate-100 p-6 z-50"
+                           >
+                             <div className="mb-6">
+                               <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1 italic">Active Node</p>
+                               <p className="text-sm font-black text-slate-900 truncate tracking-tight mb-0.5">{user?.email?.split('@')[0]}</p>
+                               <p className="text-[9px] text-slate-400 font-mono truncate">{user?.email}</p>
+                             </div>
+                             
+                             <div className="space-y-1.5 border-t border-slate-50 pt-4">
+                               <button 
+                                 onClick={() => { navigate('/dashboard'); setIsProfileOpen(false); }}
+                                 className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all"
+                               >
+                                 Open Dashboard
+                               </button>
+                               <button 
+                                 onClick={() => { navigate('/settings'); setIsProfileOpen(false); }}
+                                 className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all"
+                               >
+                                 Node Settings
+                               </button>
+                               <button 
+                                 onClick={handleSignOut}
+                                 className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                               >
+                                 Exit Session
+                               </button>
+                             </div>
+                           </motion.div>
+                         </>
+                       )}
+                     </AnimatePresence>
+                   </div>
+                 </div>
+              ) : (
+                 <Link 
+                    to="/" 
+                    className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-100"
+                 >
+                    Get Started
+                 </Link>
+              )}
+            </div>
+          </div>
+        </nav>
+      )}
+
+      <main className={cn(isNested && "pt-6")}>
+        {/* Header Section */}
+        <section className="relative pt-24 pb-16 overflow-hidden">
         <div className="absolute top-0 right-0 p-40 bg-indigo-50/50 blur-[120px] rounded-full -mr-20 -mt-20" />
         <div className="container mx-auto px-6 relative z-10 text-center">
             <motion.div
@@ -290,6 +403,24 @@ export default function PricingPage() {
             </div>
          </div>
       </section>
+      </main>
+
+      {/* Footer */}
+      {!isNested && (
+        <footer className="py-12 px-6 border-t border-slate-100 font-bold uppercase tracking-widest bg-white">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic">P</div>
+              <span className="text-lg font-black tracking-tight text-slate-900">Paydrip</span>
+            </div>
+            <div className="flex gap-8 text-[10px] text-slate-400">
+              <Link to="/privacy" className="hover:text-indigo-600 transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-indigo-600 transition-colors">Terms</Link>
+              <Link to="/contact" className="hover:text-indigo-600 transition-colors">Contact</Link>
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
