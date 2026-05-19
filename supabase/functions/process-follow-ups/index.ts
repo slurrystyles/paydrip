@@ -139,7 +139,7 @@ serve(async (req) => {
             Return only the email body as HTML, no subject line. 
             Include this link for payment: ${paymentLink}`;
             
-            const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
@@ -153,7 +153,7 @@ serve(async (req) => {
               audit_type: 'ai_template_generated',
               entity_id: invoice.id,
               entity_type: 'invoice',
-              meta: { step_type: step.template_type, model: 'gemini-1.5-flash' }
+              meta: { step_type: step.template_type, model: 'gemini-3-flash-preview' }
             });
           } catch (e) {
             console.error("Gemini failed, using fallback:", e);
