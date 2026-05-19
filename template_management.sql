@@ -28,13 +28,11 @@ CREATE TABLE IF NOT EXISTS public.email_templates (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
--- 2. Unique constraint for ON CONFLICT to work
-ALTER TABLE public.email_templates
-  DROP CONSTRAINT IF EXISTS unique_default_template;
-ALTER TABLE public.email_templates
-  ADD CONSTRAINT unique_default_template
-  UNIQUE (template_type, is_default)
-  DEFERRABLE INITIALLY DEFERRED;
+-- 2. Unique index for system defaults (non-deferrable for ON CONFLICT)
+DROP INDEX IF EXISTS system_default_template_idx;
+CREATE UNIQUE INDEX system_default_template_idx 
+ON public.email_templates (template_type) 
+WHERE (organization_id IS NULL);
 
 -- 3. Enable RLS
 ALTER TABLE public.email_templates ENABLE ROW LEVEL SECURITY;
@@ -151,7 +149,7 @@ VALUES
   'Thank you confirmation for payments received.',
   true, NULL
 )
-ON CONFLICT ON CONSTRAINT unique_default_template DO NOTHING;
+ON CONFLICT (template_type) WHERE (organization_id IS NULL) DO NOTHING;
 
 -- 8. Function: get_template_for_invoice
 CREATE OR REPLACE FUNCTION public.get_template_for_invoice(
