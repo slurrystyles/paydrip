@@ -373,7 +373,7 @@ export default function LandingPage({ user }: { user: User | null }) {
                 name="Free"
                 price="0"
                 features={[
-                  "5 Invoices / Month",
+                  "10 Invoices / Month",
                   "All 3 Reminder Tones",
                   "UPI QR Generation",
                   "Public Payment Page"

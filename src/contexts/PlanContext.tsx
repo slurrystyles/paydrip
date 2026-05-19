@@ -65,7 +65,7 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const isLimitReached = plan === 'free' && invoiceCount >= 5;
+  const isLimitReached = plan === 'free' && invoiceCount >= 10;
 
   return (
     <PlanContext.Provider value={{ plan, invoiceCount, loading, isLimitReached, refreshPlanData, profile }}>

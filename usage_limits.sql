@@ -7,9 +7,10 @@ ALTER TABLE security.plans
   ADD COLUMN IF NOT EXISTS features JSONB DEFAULT '[]'::jsonb;
 
 -- Update plans with USD pricing and features
-UPDATE security.plans SET 
+UPDATE security.plans SET
   price_monthly_usd = 0,
   price_yearly_usd = 0,
+  limits = limits || '{"invoices_month": 10}'::jsonb,
   features = '["5 clients","10 invoices/month","Manual reminders","Email delivery","Basic dashboard"]'::jsonb
 WHERE slug = 'free';
 

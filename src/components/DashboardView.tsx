@@ -28,11 +28,14 @@ import InvoiceModal from './InvoiceModal';
 import InvoiceDetailModal from './InvoiceDetailModal';
 import { UpgradeModal } from './UpgradeModal';
 import { usePlan } from '../contexts/PlanContext';
+import { useUsageLimits } from '../hooks/useUsageLimits';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { useUserRole } from '../hooks/useUserRole';
 
 export default function DashboardView() {
-  const { plan, isLimitReached, refreshPlanData } = usePlan();
+  const { plan, refreshPlanData } = usePlan();
+  const { limits, canCreateInvoice, isLoading: isUsageLoading } = useUsageLimits();
+  const isLimitReached = !canCreateInvoice;
   const { currentOrganization } = useOrganization();
   const { capabilities = { canManageInvoices: false } } = useUserRole() || {};
   const canUpdate = capabilities.canManageInvoices;
@@ -303,7 +306,9 @@ export default function DashboardView() {
                 <div className="px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between gap-2.5">
                   <div>
                     <p className="text-[8px] font-black uppercase tracking-widest text-indigo-600 leading-none">Free Tier</p>
-                    <p className="text-[8px] text-slate-400 font-mono mt-1 leading-none">{invoices.length}/5 Invoices</p>
+                    <p className="text-[8px] text-slate-400 font-mono mt-1 leading-none">
+                      {isUsageLoading ? '...' : `${limits.invoices_month.current}/${limits.invoices_month.limit}`} Invoices
+                    </p>
                   </div>
                   <button 
                     onClick={() => setShowUpgradeModal(true)}
