@@ -317,7 +317,13 @@ export const recoveryService = {
       throw new Error('AI Service Unconfigured: GEMINI_API_KEY (or VITE_GEMINI_API_KEY) is missing. On Vercel, ensure you use the VITE_ prefix.');
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ 
+      apiKey,
+      httpOptions: {
+        headers: { 'User-Agent': 'aistudio-build' }
+      }
+    });
+
     const prompt = `
       Act as an Adaptive AI Recovery Agent for "${context.businessName}".
       Generate a high-conversion payment nudge for client "${context.clientName}".
@@ -338,15 +344,15 @@ export const recoveryService = {
       - Output Structure: JSON ONLY { "subject": "Brief Meta", "message": "The body", "strategy_node": "Why this message works" }
     `;
 
-    const result = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         responseMimeType: "application/json"
       }
     });
 
-    const text = result.response.text().replace(/```json|```/g, '').trim() || '{}';
+    const text = response.text?.replace(/```json|```/g, '').trim() || '{}';
     const parsed = JSON.parse(text);
 
     // Record usage in audit log
@@ -373,12 +379,15 @@ export const recoveryService = {
     if (!apiKey) return { success: false, error: 'GEMINI_API_KEY / VITE_GEMINI_API_KEY is missing.' };
 
     try {
-      const ai = new GoogleGenAI({ apiKey });
-      const result = await ai.models.generateContent({
+      const ai = new GoogleGenAI({ 
+        apiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+      const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: 'Say "Connection Successful"'
       });
-      return { success: true, text: result.text };
+      return { success: true, text: response.text || '' };
     } catch (e) {
       return { success: false, error: e instanceof Error ? e.message : String(e) };
     }

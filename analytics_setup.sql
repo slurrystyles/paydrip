@@ -14,6 +14,20 @@ DECLARE
     v_avg_invoice_amount NUMERIC := 0;
     v_avg_days_to_pay NUMERIC := 0;
 BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.memberships 
+        WHERE user_id = auth.uid() 
+        AND organization_id = p_org_id 
+        AND is_active = true
+    ) THEN
+        RETURN jsonb_build_object(
+            'total_invoiced', 0, 'total_collected', 0, 'total_outstanding', 0,
+            'collection_rate', 0, 'avg_invoice_amount', 0, 'avg_days_to_pay', 0,
+            'invoices_created', 0, 'invoices_paid', 0, 'invoices_overdue', 0,
+            'invoices_draft', 0, 'invoices_sent', 0
+        );
+    END IF;
+
     -- Invoices created in period
     SELECT 
         COALESCE(SUM(amount), 0),
@@ -83,6 +97,15 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.get_revenue_trend(p_org_id UUID, p_days INTEGER DEFAULT 30)
 RETURNS TABLE(period_date DATE, invoiced NUMERIC, collected NUMERIC) AS $$
 BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.memberships 
+        WHERE user_id = auth.uid() 
+        AND organization_id = p_org_id 
+        AND is_active = true
+    ) THEN
+        RETURN;
+    END IF;
+
     RETURN QUERY
     WITH date_series AS (
         SELECT generate_series(
@@ -133,6 +156,20 @@ DECLARE
     v_best_template TEXT;
     v_total_reminders_sent INTEGER := 0;
 BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.memberships 
+        WHERE user_id = auth.uid() 
+        AND organization_id = p_org_id 
+        AND is_active = true
+    ) THEN
+        RETURN jsonb_build_object(
+            'sequences_created', 0, 'sequences_completed', 0, 'sequences_cancelled', 0, 
+            'sequences_active', 0, 'emails_sent', 0, 'emails_failed', 0,
+            'recovery_rate', 0, 'avg_steps_to_recovery', 0, 'best_performing_template', 'none',
+            'total_reminders_sent', 0
+        );
+    END IF;
+
     -- Sequence stats
     SELECT 
         COUNT(*),
@@ -236,6 +273,15 @@ RETURNS TABLE(
   payment_reliability TEXT
 ) AS $$
 BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.memberships 
+        WHERE user_id = auth.uid() 
+        AND organization_id = p_org_id 
+        AND is_active = true
+    ) THEN
+        RETURN;
+    END IF;
+
     RETURN QUERY
     WITH client_stats AS (
         SELECT 
@@ -277,6 +323,15 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.get_cashflow_forecast(p_org_id UUID)
 RETURNS TABLE(forecast_date DATE, expected_amount NUMERIC, invoice_count INTEGER) AS $$
 BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.memberships 
+        WHERE user_id = auth.uid() 
+        AND organization_id = p_org_id 
+        AND is_active = true
+    ) THEN
+        RETURN;
+    END IF;
+
     RETURN QUERY
     SELECT 
         due_date::date as forecast_date,
@@ -304,6 +359,18 @@ DECLARE
     v_clients_count INTEGER := 0;
     v_success_rate_30d NUMERIC := 0;
 BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.memberships 
+        WHERE user_id = auth.uid() 
+        AND organization_id = p_org_id 
+        AND is_active = true
+    ) THEN
+        RETURN jsonb_build_object(
+            'total_outstanding', 0, 'overdue_amount', 0, 'collected_this_month', 0,
+            'active_recoveries', 0, 'clients_count', 0, 'success_rate_30d', 0
+        );
+    END IF;
+
     -- Total Outstanding
     SELECT COALESCE(SUM(amount), 0)
     INTO v_total_outstanding

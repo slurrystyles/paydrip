@@ -108,7 +108,7 @@ const MetricCard = ({ title, value, subtitle, icon, color, loading }: MetricCard
 };
 
 export default function AnalyticsDashboard() {
-  const { organization } = useOrganization();
+  const { currentOrganization } = useOrganization();
   const [days, setDays] = useState(30);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +122,7 @@ export default function AnalyticsDashboard() {
   const [forecast, setForecast] = useState<any[]>([]);
 
   const fetchAnalytics = async () => {
-    if (!organization) return;
+    if (!currentOrganization) return;
     setLoading(true);
     setError(null);
     
@@ -135,12 +135,12 @@ export default function AnalyticsDashboard() {
         { data: clientsData },
         { data: forecastData }
       ] = await Promise.all([
-        supabase.rpc('get_overview_stats', { p_org_id: organization.id }),
-        supabase.rpc('get_revenue_analytics', { p_org_id: organization.id, p_days: days }),
-        supabase.rpc('get_revenue_trend', { p_org_id: organization.id, p_days: days }),
-        supabase.rpc('get_recovery_analytics', { p_org_id: organization.id, p_days: days }),
-        supabase.rpc('get_client_analytics', { p_org_id: organization.id, p_days: days }),
-        supabase.rpc('get_cashflow_forecast', { p_org_id: organization.id })
+        supabase.rpc('get_overview_stats', { p_org_id: currentOrganization.id }),
+        supabase.rpc('get_revenue_analytics', { p_org_id: currentOrganization.id, p_days: days }),
+        supabase.rpc('get_revenue_trend', { p_org_id: currentOrganization.id, p_days: days }),
+        supabase.rpc('get_recovery_analytics', { p_org_id: currentOrganization.id, p_days: days }),
+        supabase.rpc('get_client_analytics', { p_org_id: currentOrganization.id, p_days: days }),
+        supabase.rpc('get_cashflow_forecast', { p_org_id: currentOrganization.id })
       ]);
 
       setOverview(overviewData);
@@ -159,7 +159,7 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     fetchAnalytics();
-  }, [organization, days]);
+  }, [currentOrganization, days]);
 
   const recoveryRateColor = (rate: number) => {
     if (rate >= 70) return 'text-green-500';

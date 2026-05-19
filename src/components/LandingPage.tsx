@@ -470,7 +470,6 @@ export default function LandingPage({ user }: { user: User | null }) {
       <UpgradeModal 
         isOpen={showUpgrade} 
         onClose={() => setShowUpgrade(false)} 
-        targetPlan={targetPlan}
       />
     </div>
   );
