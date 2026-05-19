@@ -13,7 +13,8 @@ import {
   Mail,
   Smartphone,
   Globe,
-  Settings
+  Settings,
+  CheckCircle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -23,69 +24,80 @@ interface UpgradeModalProps {
   reason?: 'invoices' | 'members' | 'automations' | 'ai';
 }
 
-const PLANS = [
-  {
-    name: 'Free',
-    slug: 'free',
-    price: '$0',
-    interval: 'forever',
-    features: [
-      '5 clients',
-      '10 invoices / month',
-      'Manual reminders',
-      'Email delivery',
-      'Basic dashboard'
-    ],
-    cta: 'Current Plan',
-    current: true,
-    color: 'slate'
-  },
-  {
-    name: 'Pro',
-    slug: 'pro',
-    price: '$12',
-    interval: 'per month',
-    features: [
-      'Unlimited clients',
-      'Unlimited invoices',
-      'Automated sequences',
-      'AI messages',
-      'Custom branding',
-      'Analytics',
-      'WhatsApp prompts'
-    ],
-    cta: 'Upgrade to Pro',
-    highlight: true,
-    color: 'indigo'
-  },
-  {
-    name: 'Enterprise',
-    slug: 'enterprise',
-    price: '$39',
-    interval: 'per month',
-    features: [
-      'Everything in Pro',
-      'White-label',
-      'Webhooks',
-      'RBAC',
-      'SMS delivery',
-      'SSO support',
-      'Dedicated support'
-    ],
-    cta: 'Contact Sales',
-    color: 'slate'
-  }
-];
-
 export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
-  const [view, setView] = React.useState<'plans' | 'manual'>('plans');
+  const [view, setView] = React.useState<'plans' | 'manual' | 'success'>('plans');
   const [activeMobileTab, setActiveMobileTab] = React.useState(1); // Default to 'Pro' (index 1)
+  const [billingCycle, setBillingCycle] = React.useState<'monthly' | 'yearly'>('monthly');
 
-  const handleUpgrade = () => {
+  const plans = React.useMemo(() => [
+    {
+      name: 'Free',
+      slug: 'free',
+      price: '$0',
+      interval: 'forever',
+      features: [
+        '5 clients',
+        '10 invoices / month',
+        'Manual reminders',
+        'Email delivery',
+        'Basic dashboard'
+      ],
+      cta: 'Current Plan',
+      current: true,
+      color: 'slate'
+    },
+    {
+      name: 'Pro',
+      slug: 'pro',
+      price: billingCycle === 'monthly' ? '$12' : '$10',
+      interval: 'per month',
+      features: [
+        'Unlimited clients',
+        'Unlimited invoices',
+        'Automated sequences',
+        'AI messages',
+        'Custom branding',
+        'Analytics',
+        'WhatsApp prompts'
+      ],
+      cta: 'Upgrade to Pro',
+      highlight: true,
+      color: 'indigo'
+    },
+    {
+      name: 'Enterprise',
+      slug: 'enterprise',
+      price: billingCycle === 'monthly' ? '$39' : '$32',
+      interval: 'per month',
+      features: [
+        'Everything in Pro',
+        'White-label',
+        'Webhooks',
+        'RBAC',
+        'SMS delivery',
+        'SSO support',
+        'Dedicated support'
+      ],
+      cta: 'Contact Sales',
+      color: 'slate'
+    }
+  ], [billingCycle]);
+
+  const handleUpgrade = (slug: string) => {
+    if (slug === 'enterprise') {
+      window.location.href = `mailto:suresh.roshanlal@gmail.com?subject=Enterprise Inquiry: ${reason || 'General'}&body=I would like to discuss the Enterprise plan for my organization.`;
+      return;
+    }
     setView('manual');
   };
 
+  const handleManualPaymentComplete = () => {
+    setView('success');
+    // In a real app, this might trigger a server-side notification
+  };
+
   const getReasonTitle = () => {
+    if (view === 'success') return 'Request Received';
     if (view === 'manual') return 'Manual Activation';
     switch (reason) {
       case 'invoices': return 'Invoice limit reached';
@@ -97,6 +109,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
   };
 
   const getReasonDesc = () => {
+    if (view === 'success') return "Your payment claim has been submitted. Our team will verify the transaction and activate your Pro features within 2-4 hours.";
     if (view === 'manual') return "Automated billing is being configured. Please use the details below for instant manual activation.";
     switch (reason) {
       case 'invoices': return "You've sent 10 invoices this month. Upgrade to Pro for unlimited volume.";
@@ -128,7 +141,10 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
             <button 
               onClick={() => {
                 onClose();
-                setTimeout(() => setView('plans'), 300); // Reset after exit
+                setTimeout(() => {
+                  setView('plans');
+                  setBillingCycle('monthly');
+                }, 300); // Reset after exit
               }}
               className="absolute top-4 right-4 md:top-6 md:right-6 p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-400 z-50 md:text-white md:hover:bg-white/10"
             >
@@ -143,8 +159,10 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-indigo-500 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 shadow-xl shadow-indigo-500/20">
                      {view === 'plans' ? (
                        <Zap size={20} className="text-white fill-current md:size-6" />
-                     ) : (
+                     ) : view === 'success' ? (
                        <Check size={20} className="text-white md:size-6" />
+                     ) : (
+                       <TrendingUp size={20} className="text-white md:size-6" />
                      )}
                   </div>
                   <h2 className="text-xl md:text-3xl font-black tracking-tight mb-2 md:mb-4 uppercase italic">
@@ -191,7 +209,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                      {/* Tab Headers (Mobile Only) */}
                      <div className="md:hidden flex p-4 bg-white border-b border-slate-100 shrink-0">
                         <div className="flex w-full bg-slate-50 p-1 rounded-xl">
-                           {PLANS.map((plan, idx) => (
+                           {plans.map((plan, idx) => (
                               <button
                                  key={plan.slug}
                                  onClick={() => setActiveMobileTab(idx)}
@@ -213,14 +231,30 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
                            <h3 className="text-[10px] md:text-xs font-black tracking-[0.2em] uppercase text-slate-400">Choose your tier</h3>
                            <div className="flex items-center gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-                              <button className="px-3 md:px-4 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white rounded-lg">Monthly</button>
-                              <button className="px-4 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400">Yearly</button>
+                              <button 
+                                onClick={() => setBillingCycle('monthly')}
+                                className={cn(
+                                  "px-3 md:px-4 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
+                                  billingCycle === 'monthly' ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"
+                                )}
+                              >
+                                Monthly
+                              </button>
+                              <button 
+                                onClick={() => setBillingCycle('yearly')}
+                                className={cn(
+                                  "px-3 md:px-4 py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
+                                  billingCycle === 'yearly' ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"
+                                )}
+                              >
+                                Yearly <span className="text-[8px] text-green-500 ml-1">-20%</span>
+                              </button>
                            </div>
                         </div>
 
                         {/* Desktop: Grid, Mobile: Selected Tab */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4 h-full">
-                           {PLANS.map((plan, idx) => (
+                           {plans.map((plan, idx) => (
                               <div 
                                  key={plan.slug}
                                  className={cn(
@@ -239,7 +273,9 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{plan.name}</p>
                                     <h4 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic">
                                        {plan.price}
-                                       <span className="text-xs font-medium text-slate-400 tracking-normal not-italic ml-1">/ {plan.interval}</span>
+                                       <span className="text-xs font-medium text-slate-400 tracking-normal not-italic ml-1">
+                                         / {billingCycle === 'yearly' && plan.slug !== 'free' ? 'yr (billed annually)' : plan.interval}
+                                       </span>
                                     </h4>
                                  </div>
 
@@ -253,7 +289,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                                  </div>
 
                                  <button 
-                                    onClick={plan.current ? onClose : handleUpgrade}
+                                    onClick={plan.current ? onClose : () => handleUpgrade(plan.slug)}
                                     className={cn(
                                        "w-full py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all",
                                        plan.current 
@@ -270,7 +306,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                         </div>
                      </div>
                    </motion.div>
-                 ) : (
+                 ) : view === 'manual' ? (
                    <motion.div 
                      key="manual"
                      initial={{ opacity: 0, x: 20 }}
@@ -295,7 +331,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                            </div>
                            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Via UPI</p>
                            <h4 className="text-base md:text-xl font-black text-slate-900 tracking-tight italic mb-3 select-all">suresh.roshanlal@okaxis</h4>
-                           <p className="text-[10px] text-slate-500">Send ₹999 for instant activation.</p>
+                           <p className="text-[10px] text-slate-500">Send ₹{billingCycle === 'monthly' ? '999' : '9,999'} for activation.</p>
                         </div>
 
                         <div className="bento-card p-6 md:p-8 bg-white border border-slate-200 shadow-sm flex flex-col items-center text-center">
@@ -319,10 +355,31 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                      </div>
 
                      <button 
-                       onClick={onClose}
+                       onClick={handleManualPaymentComplete}
                        className="w-full py-5 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 mb-6"
                      >
                        I've made the payment
+                     </button>
+                   </motion.div>
+                 ) : (
+                   <motion.div 
+                     key="success"
+                     initial={{ opacity: 0, scale: 0.9 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     className="flex flex-col items-center justify-center h-full p-8 text-center"
+                   >
+                     <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                        <Check size={40} className="text-green-600" />
+                     </div>
+                     <h3 className="text-2xl font-black text-slate-900 mb-4 uppercase italic">Claim Submitted</h3>
+                     <p className="text-sm text-slate-500 max-w-xs mb-8 leading-relaxed">
+                       We've logged your activation request. You'll receive an email confirmation once our team verifies the transaction.
+                     </p>
+                     <button 
+                       onClick={onClose}
+                       className="px-8 py-4 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all"
+                     >
+                       Back to Dashboard
                      </button>
                    </motion.div>
                  )}
