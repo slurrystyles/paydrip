@@ -34,7 +34,8 @@ import {
   Pause,
   Ban,
   Clock,
-  Send
+  Send,
+  Mail
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
@@ -602,7 +603,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
   const [showReminderEditor, setShowReminderEditor] = useState(false);
   const [editingMessage, setEditingMessage] = useState('');
   const [editingType, setEditingType] = useState<'polite' | 'firm' | 'final' | 'receipt' | null>(null);
-  const [deliveryChannel, setDeliveryChannel] = useState<'whatsapp' | 'email'>('whatsapp');
+  const [deliveryChannel, setDeliveryChannel] = useState<'whatsapp' | 'email' | 'sms'>('whatsapp');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
 
