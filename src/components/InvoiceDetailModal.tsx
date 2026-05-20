@@ -44,6 +44,7 @@ import 'jspdf-autotable';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePlan } from '../contexts/PlanContext';
 import { UpgradeModal } from './UpgradeModal';
+import { useUsageLimits } from '../hooks/useUsageLimits';
 import { recoveryService } from '../lib/recoveryService';
 import { RiskBadge } from './RiskBadge';
 import { useOrganization } from '../contexts/OrganizationContext';
@@ -78,6 +79,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
   const [sequenceSteps, setSequenceSteps] = useState<FollowUpStep[]>([]);
 
   const { plan } = usePlan();
+  const { isFreePlan } = useUsageLimits();
   const [recommendation, setRecommendation] = useState<any>(null);
   const [eventLogs, setEventLogs] = useState<any[]>([]);
 
@@ -691,6 +693,10 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
 
   const startSMSFlow = (type: 'polite' | 'firm' | 'final' | 'receipt') => {
     if (type !== 'receipt' && isFullyPaid) return;
+    if (isFreePlan) {
+      setShowUpgradeModal(true);
+      return;
+    }
     
     setDeliveryChannel('sms' as any);
     const initialMessage = getWhatsAppMessage(type);
@@ -701,6 +707,10 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
 
   const confirmAndSendSMS = async () => {
     if (!editingType) return;
+    if (isFreePlan) {
+      setShowUpgradeModal(true);
+      return;
+    }
     
     const phone = (clientInfo.phone || '').replace(/\D/g, '');
     if (!phone) {
@@ -1552,7 +1562,14 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                         WhatsApp
                       </button>
                       <button 
-                        onClick={() => setDeliveryChannel('sms' as any)}
+                        onClick={() => {
+                          if (isFreePlan) {
+                            setShowUpgradeModal(true);
+                            setDeliveryChannel('email');
+                          } else {
+                            setDeliveryChannel('sms' as any);
+                          }
+                        }}
                         className={cn(
                           "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all",
                           deliveryChannel === 'sms' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400"

@@ -18,7 +18,7 @@ interface Props {
 
 export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Props) {
   const { plan } = usePlan();
-  const { canCreateInvoice, refresh: refreshUsage } = useUsageLimits();
+  const { canCreateInvoice, refresh: refreshUsage, isFreePlan } = useUsageLimits();
   const { currentOrganization } = useOrganization();
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [clientId, setClientId] = useState('');
@@ -79,7 +79,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
         due_date: dueDate,
         status: 'draft',
         notes,
-        delivery_channel: deliveryChannel,
+        delivery_channel: isFreePlan ? 'email' : deliveryChannel,
         snapshot_json: clientData // THE SNAPSHOT
       }])
       .select()
@@ -102,7 +102,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
             await recoveryService.sendInvoice({
               to: clientData.email,
               phone: clientData.phone,
-              delivery_channel: deliveryChannel,
+              delivery_channel: isFreePlan ? 'email' : deliveryChannel,
               invoice_id: newInvoice.id,
               invoice_number: invoiceNumber,
               business_name: profile.business_name,
@@ -181,7 +181,14 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
                         <button
                           key={channel}
                           type="button"
-                          onClick={() => setDeliveryChannel(channel)}
+                          onClick={() => {
+                            if ((channel === 'sms' || channel === 'both') && isFreePlan) {
+                              setShowUpgrade(true);
+                              setDeliveryChannel('email');
+                            } else {
+                              setDeliveryChannel(channel);
+                            }
+                          }}
                           className={`py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
                             deliveryChannel === channel 
                               ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' 
