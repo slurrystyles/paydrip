@@ -35,6 +35,8 @@ export const recoveryService = {
    */
   async sendInvoice(params: {
     to: string;
+    phone?: string;
+    delivery_channel?: 'email' | 'sms' | 'both';
     invoice_id: string;
     invoice_number: string;
     business_name: string;
@@ -51,25 +53,41 @@ export const recoveryService = {
 
     // Fetch token for link
     const { data: inv } = await supabase.from('invoices').select('public_token').eq('id', params.invoice_id).single();
+    const public_link = inv?.public_token ? `${window.location.origin}/pay/${inv.public_token}` : '';
+    const channel = params.delivery_channel || 'email';
 
-    // 2. Call Edge Function (send-email)
-    try {
-      const public_link = inv?.public_token ? `${window.location.origin}/pay/${inv.public_token}` : '';
-      const { error: dispatchError } = await supabase.functions.invoke('send-email', {
-        body: {
-          to: params.to,
-          subject: `Invoice #${params.invoice_number} from ${params.business_name}`,
-          invoice_id: params.invoice_id,
-          type: 'invoice_created',
-          organization_id: params.organization_id,
-          public_link
-        }
-      });
-      if (dispatchError) throw dispatchError;
-    } catch (e) {
-      console.error('Email notification failed but status is updated:', e);
-      // We don't rethrow here because the invoice status is updated and follow-ups will start
+    // 2. Dispatch across channels
+    const promises = [];
+
+    if ((channel === 'email' || channel === 'both') && params.to) {
+      promises.push(
+        supabase.functions.invoke('send-email', {
+          body: {
+            to: params.to,
+            subject: `Invoice #${params.invoice_number} from ${params.business_name}`,
+            invoice_id: params.invoice_id,
+            type: 'invoice_created',
+            organization_id: params.organization_id,
+            public_link
+          }
+        }).catch(err => console.error('Email Dispatch failed:', err))
+      );
     }
+
+    if ((channel === 'sms' || channel === 'both') && params.phone) {
+      promises.push(
+        supabase.functions.invoke('send-sms', {
+          body: {
+            to: params.phone,
+            body: `Invoicing from ${params.business_name}: Request #${params.invoice_number} for payment is ready. View: ${public_link}`,
+            invoice_id: params.invoice_id,
+            organization_id: params.organization_id
+          }
+        }).catch(err => console.error('SMS Dispatch failed:', err))
+      );
+    }
+
+    await Promise.all(promises);
 
     // 3. Log Audit
     const { data: { user } } = await supabase.auth.getUser();

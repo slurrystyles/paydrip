@@ -212,6 +212,7 @@ export interface Organization {
     company_name: string | null;
     support_email: string | null;
   };
+  sms_enabled: boolean;
   is_active: boolean;
   metadata: any;
   created_at: string;

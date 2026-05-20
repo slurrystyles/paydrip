@@ -72,48 +72,75 @@ serve(async (req) => {
             }
           }
 
-          // B. Email Delivery Step
-          if (client?.email) {
-            const templateType = tone === "polite" ? "reminder_polite" : tone === "firm" ? "reminder_firm" : "reminder_final";
-            const publicLink = `https://${PROJECT_REF}.supabase.co/v/${invoice.public_token}`;
-            
-            const template = getEmailTemplate(templateType, {
-              businessName: business?.name || "Paydrip Merchant",
-              invoiceNumber: invoice.invoice_number,
-              amount: invoice.amount.toString(),
-              dueDate: new Date(invoice.due_date).toLocaleDateString(),
-              publicLink,
-              clientName: client.name || "Client",
-              customMessage: aiMessage
-            });
+          // B. Delivery Step
+          const deliveryChannel = invoice.delivery_channel || 'email';
+          const channels = deliveryChannel === 'both' ? ['email', 'sms'] : [deliveryChannel];
 
-            // Call send-email function
-            await fetch(`https://${PROJECT_REF}.supabase.co/functions/v1/send-email`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${SERVICE_ROLE_KEY}`
-              },
-              body: JSON.stringify({
-                to: client.email,
-                subject: template.subject,
-                html: template.html,
-                invoice_id: invoice.id,
-                type: templateType,
-                organization_id: invoice.organization_id
-              })
-            }).catch(e => console.error("Email trigger failed:", e));
+          for (const channel of channels) {
+            if (channel === 'email' && client?.email) {
+              const templateType = tone === 'polite' ? 'reminder_polite' : tone === 'firm' ? 'reminder_firm' : 'reminder_final';
+              const publicLink = `https://${PROJECT_REF}.supabase.co/pay/${invoice.public_token}`;
+              
+              const template = getEmailTemplate(templateType, {
+                businessName: business?.name || "Paydrip Merchant",
+                invoiceNumber: invoice.invoice_number,
+                amount: invoice.amount.toString(),
+                dueDate: new Date(invoice.due_date).toLocaleDateString(),
+                publicLink,
+                clientName: client.name || "Client",
+                customMessage: aiMessage
+              });
+
+              await fetch(`https://${PROJECT_REF}.supabase.co/functions/v1/send-email`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${SERVICE_ROLE_KEY}`
+                },
+                body: JSON.stringify({
+                  to: client.email,
+                  subject: template.subject,
+                  html: template.html,
+                  invoice_id: invoice.id,
+                  type: templateType,
+                  organization_id: invoice.organization_id
+                })
+              }).catch(e => console.error("Email trigger failed:", e));
+            }
+
+            if (channel === 'sms' && invoice.snapshot_json?.phone) {
+              const publicLink = `https://${PROJECT_REF}.supabase.co/pay/${invoice.public_token}`;
+              let smsBody = `Reminder: Invoice #${invoice.invoice_number} for ₹${invoice.amount} is due. Link: ${publicLink}`;
+              
+              if (aiMessage) {
+                smsBody = `${aiMessage} Link: ${publicLink}`;
+              }
+
+              await fetch(`https://${PROJECT_REF}.supabase.co/functions/v1/send-sms`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${SERVICE_ROLE_KEY}`
+                },
+                body: JSON.stringify({
+                  to: invoice.snapshot_json.phone,
+                  body: smsBody,
+                  invoice_id: invoice.id,
+                  organization_id: invoice.organization_id
+                })
+              }).catch(e => console.error("SMS trigger failed:", e));
+            }
           }
 
           // C. Log to timeline
           await supabase.from("reminder_timeline").insert([{
             invoice_id: item.invoice_id,
             user_id: item.user_id,
-            channel: "email",
+            channel: deliveryChannel === 'both' ? 'sms' : (deliveryChannel as any), // Log primary channel or just one if both
             tone: tone,
             delivery_status: "sent",
             reminder_type: "automated",
-            message_content: aiMessage || "Automated email reminder sent."
+            message_content: aiMessage || "Automated reminder sent."
           }]);
 
           // Update Invoice

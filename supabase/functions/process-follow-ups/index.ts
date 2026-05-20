@@ -178,24 +178,66 @@ serve(async (req) => {
           subject = `${step.template_type.replace('_', ' ').toUpperCase()}: Invoice #${invoice.invoice_number}`;
         }
 
-        // d. Call send-email function
-        const sendRes = await fetch(`https://${PROJECT_REF}.supabase.co/functions/v1/send-email`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${SERVICE_ROLE_KEY}`
-          },
-          body: JSON.stringify({
-            to: clientEmail,
-            subject,
-            html: emailContent,
-            invoice_id: invoice.id,
-            type: step.template_type,
-            organization_id: organizationId
-          })
-        });
+        // d. Delivery logic based on channel
+        const channels = invoice.delivery_channel === 'both' ? ['email', 'sms'] : [invoice.delivery_channel || 'email'];
+        
+        for (const channel of channels) {
+          if (channel === 'email' && clientEmail) {
+            const sendRes = await fetch(`https://${PROJECT_REF}.supabase.co/functions/v1/send-email`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${SERVICE_ROLE_KEY}`
+              },
+              body: JSON.stringify({
+                to: clientEmail,
+                subject,
+                html: emailContent,
+                invoice_id: invoice.id,
+                type: step.template_type,
+                organization_id: organizationId
+              })
+            });
+            if (!sendRes.ok) console.error(`Email delivery failed for step ${step.id}: ${sendRes.statusText}`);
+          }
+          
+          if (channel === 'sms' && invoice.snapshot_json?.phone) {
+            // Generate simple SMS body
+            let smsBody = `Reminder from ${businessName}: Invoice #${invoice.invoice_number} for ₹${amount} is due. View & pay here: ${paymentLink}`;
+            
+            if (usedAi && emailContent) {
+               // If we used AI for email, try to generate a shorter SMS version
+               try {
+                 const smsPrompt = `Convert this email into a concise SMS (max 160 chars) for payment recovery: ${emailContent.replace(/<[^>]*>?/gm, '')}. Include link: ${paymentLink}`;
+                 const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: smsPrompt }] }] })
+                 });
+                 const aiData = await aiRes.json();
+                 const aiSms = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+                 if (aiSms) smsBody = aiSms;
+               } catch (e) {
+                 console.error("AI SMS generation failed, using fallback:", e);
+               }
+            }
 
-        if (!sendRes.ok) throw new Error(`SendEmail failed: ${sendRes.statusText}`);
+            const sendRes = await fetch(`https://${PROJECT_REF}.supabase.co/functions/v1/send-sms`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${SERVICE_ROLE_KEY}`
+              },
+              body: JSON.stringify({
+                to: invoice.snapshot_json.phone,
+                body: smsBody,
+                invoice_id: invoice.id,
+                organization_id: organizationId
+              })
+            });
+            if (!sendRes.ok) console.error(`SMS delivery failed for step ${step.id}: ${sendRes.statusText}`);
+          }
+        }
 
         // e. Update Step Status
         await supabase.from("follow_up_steps").update({ 

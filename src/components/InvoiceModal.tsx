@@ -25,6 +25,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [deliveryChannel, setDeliveryChannel] = useState<'email' | 'sms' | 'both'>('email');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitMode, setSubmitMode] = useState<'draft' | 'send'>('draft');
@@ -78,6 +79,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
         due_date: dueDate,
         status: 'draft',
         notes,
+        delivery_channel: deliveryChannel,
         snapshot_json: clientData // THE SNAPSHOT
       }])
       .select()
@@ -99,6 +101,8 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
           try {
             await recoveryService.sendInvoice({
               to: clientData.email,
+              phone: clientData.phone,
+              delivery_channel: deliveryChannel,
               invoice_id: newInvoice.id,
               invoice_number: invoiceNumber,
               business_name: profile.business_name,
@@ -168,6 +172,31 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
               )}
               
               <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono px-1">Delivery Protocol</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['email', 'sms', 'both'] as const).map(channel => (
+                      <button
+                        key={channel}
+                        type="button"
+                        onClick={() => setDeliveryChannel(channel)}
+                        className={`py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                          deliveryChannel === channel 
+                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' 
+                            : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'
+                        }`}
+                      >
+                        {channel}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[8px] text-slate-400 font-mono mt-2 px-1 uppercase tracking-wider">
+                    {deliveryChannel === 'email' && 'Sending via SMTP/Resend'}
+                    {deliveryChannel === 'sms' && 'Direct SMS notification via Twilio'}
+                    {deliveryChannel === 'both' && 'Redundant delivery for maximum conversion'}
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono px-1">Selected Counterparty</label>
                   <select

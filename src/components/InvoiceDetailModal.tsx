@@ -71,6 +71,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
 
   const [reminderLogs, setReminderLogs] = useState<ReminderTimeline[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [smsLogs, setSmsLogs] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'recovery' | 'payments' | 'history'>('recovery');
   const [sequence, setSequence] = useState<FollowUpSequence | null>(null);
   const [sequenceSteps, setSequenceSteps] = useState<FollowUpStep[]>([]);
@@ -101,6 +102,15 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
       .in('audit_type', ['email_sent', 'email_failed', 'email_cap_reached'])
       .order('created_at', { ascending: false });
     if (emails) setEmailLogs(emails);
+
+    const { data: sms } = await supabase
+      .from('audit_log')
+      .select('*')
+      .eq('entity_id', invoice.id)
+      .eq('entity_type', 'invoice')
+      .in('audit_type', ['sms_sent', 'sms_failed'])
+      .order('created_at', { ascending: false });
+    if (sms) setSmsLogs(sms || []);
 
     const { data: events } = await supabase
       .from('invoice_events')
@@ -678,6 +688,60 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
     setShowReminderEditor(true);
   };
 
+  const startSMSFlow = (type: 'polite' | 'firm' | 'final' | 'receipt') => {
+    if (type !== 'receipt' && isFullyPaid) return;
+    
+    setDeliveryChannel('sms' as any);
+    const initialMessage = getWhatsAppMessage(type);
+    setEditingMessage(initialMessage);
+    setEditingType(type);
+    setShowReminderEditor(true);
+  };
+
+  const confirmAndSendSMS = async () => {
+    if (!editingType) return;
+    
+    const phone = (clientInfo.phone || '').replace(/\D/g, '');
+    if (!phone) {
+      alert("Client phone number missing.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-sms', {
+        body: {
+          to: phone,
+          body: editingMessage,
+          invoice_id: invoice.id,
+          organization_id: invoice.organization_id
+        }
+      });
+
+      if (error) throw error;
+
+      await recoveryService.logReminder({
+        invoice_id: invoice.id,
+        user_id: invoice.user_id,
+        organization_id: invoice.organization_id,
+        sent_at: new Date().toISOString(),
+        channel: 'sms',
+        tone: editingType === 'receipt' ? 'polite' : editingType,
+        delivery_status: 'sent',
+        reminder_type: 'manual',
+        message_content: editingMessage
+      });
+
+      setShowReminderEditor(false);
+      setToast("SMS Dispatched.");
+      refreshLogs();
+    } catch (e: any) {
+      alert(`SMS Failed: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const confirmAndSendWhatsApp = async () => {
     if (!editingType) return;
     
@@ -1015,19 +1079,27 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
 
                 {/* Status Section */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Recovery Stage</label>
-                    {emailLogs.length > 0 && (
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Recovery Stage</label>
                       <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
-                          emailLogs[0].audit_type === 'email_sent' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                        )}>
-                          Email {emailLogs[0].audit_type === 'email_sent' ? 'Sent' : 'Failed'}
-                        </span>
+                        {emailLogs.length > 0 && (
+                          <span className={cn(
+                            "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
+                            emailLogs[0].audit_type === 'email_sent' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                          )}>
+                            Email {emailLogs[0].audit_type === 'email_sent' ? 'Sent' : 'Failed'}
+                          </span>
+                        )}
+                        {smsLogs.length > 0 && (
+                          <span className={cn(
+                            "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
+                            smsLogs[0].audit_type === 'sms_sent' ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"
+                          )}>
+                            SMS {smsLogs[0].audit_type === 'sms_sent' ? 'Sent' : 'Failed'}
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </div>
                   <div className={cn(
                     "p-4 rounded-2xl border-2 flex items-center justify-between transition-all duration-500",
                     isFullyPaid ? 'bg-green-50/50 border-green-200 text-green-700 shadow-lg shadow-green-100/50' :
@@ -1214,6 +1286,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                       description="Day 1 reminder"
                       onClick={() => startWhatsAppFlow('polite')}
                       onEmailClick={() => startEmailFlow('polite')}
+                      onSMSClick={() => startSMSFlow('polite')}
                       icon={<Shield size={16} className="text-indigo-500" />}
                     />
                     <WhatsAppTemplateButton 
@@ -1221,6 +1294,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                       description="Overdue escalation"
                       onClick={() => startWhatsAppFlow('firm')}
                       onEmailClick={() => startEmailFlow('firm')}
+                      onSMSClick={() => startSMSFlow('firm')}
                       icon={<AlertCircle size={16} className="text-orange-500" />}
                     />
                     <WhatsAppTemplateButton 
@@ -1228,6 +1302,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                       description="Last notice before fail"
                       onClick={() => startWhatsAppFlow('final')}
                       onEmailClick={() => startEmailFlow('final')}
+                      onSMSClick={() => startSMSFlow('final')}
                       icon={<Zap size={16} className="text-red-500" />}
                     />
                   </div>
@@ -1476,6 +1551,15 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                         WhatsApp
                       </button>
                       <button 
+                        onClick={() => setDeliveryChannel('sms' as any)}
+                        className={cn(
+                          "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all",
+                          deliveryChannel === 'sms' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400"
+                        )}
+                      >
+                        SMS
+                      </button>
+                      <button 
                         onClick={() => setDeliveryChannel('email')}
                         className={cn(
                           "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all",
@@ -1507,10 +1591,14 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                     Abort
                   </button>
                   <button 
-                    onClick={deliveryChannel === 'whatsapp' ? confirmAndSendWhatsApp : confirmAndSendEmail}
+                    onClick={() => {
+                      if (deliveryChannel === 'whatsapp') confirmAndSendWhatsApp();
+                      else if (deliveryChannel === 'sms') confirmAndSendSMS();
+                      else confirmAndSendEmail();
+                    }}
                     className="flex-2 py-4 px-6 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 group"
                   >
-                    {deliveryChannel === 'whatsapp' ? 'Open WhatsApp' : 'Dispatch Email'}
+                    {deliveryChannel === 'whatsapp' ? 'Open WhatsApp' : deliveryChannel === 'sms' ? 'Dispatch SMS' : 'Dispatch Email'}
                     <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
@@ -1531,11 +1619,12 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
   );
 }
 
-function WhatsAppTemplateButton({ label, description, onClick, onEmailClick, icon }: { 
+function WhatsAppTemplateButton({ label, description, onClick, onEmailClick, onSMSClick, icon }: { 
   label: string, 
   description: string, 
   onClick: () => void,
   onEmailClick: () => void,
+  onSMSClick: () => void,
   icon: React.ReactNode 
 }) {
   return (
@@ -1558,13 +1647,22 @@ function WhatsAppTemplateButton({ label, description, onClick, onEmailClick, ico
             <Smartphone size={14} className="text-indigo-600" />
           </div>
         </button>
-        <button 
-          onClick={onEmailClick}
-          className="w-14 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center hover:bg-white hover:border-indigo-300 transition-all group/email shadow-sm"
-          title="Send Email"
-        >
-          <FileText size={18} className="text-slate-400 group-hover/email:text-indigo-600" />
-        </button>
+        <div className="flex flex-col gap-2">
+          <button 
+            onClick={onSMSClick}
+            className="w-12 flex-1 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-white hover:border-blue-300 transition-all group/sms shadow-sm"
+            title="Send SMS"
+          >
+            <Smartphone size={16} className="text-slate-400 group-hover/sms:text-blue-600" />
+          </button>
+          <button 
+            onClick={onEmailClick}
+            className="w-12 flex-1 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-white hover:border-indigo-300 transition-all group/email shadow-sm"
+            title="Send Email"
+          >
+            <Mail size={16} className="text-slate-400 group-hover/email:text-indigo-600" />
+          </button>
+        </div>
       </div>
     </div>
   );

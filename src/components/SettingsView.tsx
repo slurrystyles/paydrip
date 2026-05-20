@@ -78,6 +78,7 @@ export default function SettingsView() {
   const [upiId, setUpiId] = useState('');
   const [bankDetails, setBankDetails] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [smsEnabled, setSmsEnabled] = useState(false);
   const [templates, setTemplates] = useState<{ polite: string; firm: string; final: string }>({
     polite: '',
     firm: '',
@@ -107,6 +108,7 @@ export default function SettingsView() {
       setUpiId(profile.upi_id || '');
       setBankDetails(profile.bank_details || '');
       setLogoUrl(currentOrganization.branding?.logo_url || '');
+      setSmsEnabled(currentOrganization.sms_enabled || false);
       setTemplates({
         polite: profile.whatsapp_templates?.polite || '',
         firm: profile.whatsapp_templates?.firm || '',
@@ -372,6 +374,7 @@ export default function SettingsView() {
           .from('organizations')
           .update({
             name: businessName,
+            sms_enabled: smsEnabled,
             branding: { ...currentOrganization.branding, logo_url: logoUrl }
           })
           .eq('id', currentOrganization.id);
@@ -777,6 +780,31 @@ export default function SettingsView() {
                   <div className={cn(
                     "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
                     notificationPreferences.invoice_viewed ? "left-5" : "left-1"
+                  )} />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-sm">
+                    <Shield size={14} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-indigo-900 leading-none mb-1">Enable SMS Delivery</p>
+                    <p className="text-[9px] text-indigo-400 font-medium italic">Required for Twilio SMS automated notifications.</p>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setSmsEnabled(!smsEnabled)}
+                  className={cn(
+                    "w-10 h-6 rounded-full transition-all relative",
+                    smsEnabled ? "bg-indigo-600" : "bg-slate-200"
+                  )}
+                >
+                  <div className={cn(
+                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                    smsEnabled ? "left-5" : "left-1"
                   )} />
                 </button>
               </div>
