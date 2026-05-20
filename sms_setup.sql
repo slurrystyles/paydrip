@@ -1,4 +1,4 @@
--- Path: /sms_setup.sql
+-- Path: /sms_setup.sql (FIXED)
 
 -- 1A. ADD SMS PREFERENCES TO INVOICES
 ALTER TABLE public.invoices
@@ -19,14 +19,24 @@ CREATE TABLE IF NOT EXISTS public.sms_logs (
   message_body TEXT NOT NULL,
   twilio_message_sid TEXT,
   status TEXT CHECK (status IN ('queued','sent','delivered','failed','undelivered')) DEFAULT 'queued',
+  sms_type TEXT CHECK (sms_type IN (
+    'invoice_created','reminder_polite','reminder_firm',
+    'reminder_final','invoice_paid','payment_reported'
+  )) NOT NULL,
   error_message TEXT,
+  cost NUMERIC,
+  sent_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+-- 1D. ADD SMS SID TO AUDIT LOG
+ALTER TABLE public.audit_log
+  ADD COLUMN IF NOT EXISTS sms_sid TEXT;
 
 -- Enable RLS
 ALTER TABLE public.sms_logs ENABLE ROW LEVEL SECURITY;
 
--- 4. RLS Policies
+-- RLS Policies
 DROP POLICY IF EXISTS "Users can view sms logs for their organization" ON public.sms_logs;
 CREATE POLICY "Users can view sms logs for their organization"
 ON public.sms_logs FOR SELECT TO authenticated
@@ -39,6 +49,12 @@ USING (
   )
 );
 
--- 5. Indexes
+-- FIX: INSERT policy for Edge Function
+CREATE POLICY "Service can insert sms logs" ON public.sms_logs
+  FOR INSERT WITH CHECK (true);
+
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_sms_org ON public.sms_logs(organization_id);
 CREATE INDEX IF NOT EXISTS idx_sms_invoice ON public.sms_logs(invoice_id);
+CREATE INDEX IF NOT EXISTS idx_sms_status ON public.sms_logs(status);
+CREATE INDEX IF NOT EXISTS idx_sms_created ON public.sms_logs(created_at DESC);
