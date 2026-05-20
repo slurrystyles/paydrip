@@ -45,96 +45,154 @@ const DEFAULT_USAGE: OrganizationUsage = {
   isLoading: true,
 };
 
+// Global shared cache and state to avoid multiple concurrent RPC calls
+let globalUsage: OrganizationUsage = DEFAULT_USAGE;
+let activeFetchPromise: Promise<OrganizationUsage> | null = null;
+let lastFetchedOrgId: string | null = null;
+let lastFetchedTime = 0;
+const CACHE_TTL = 30 * 1000; // Cache valid for 30 seconds
+
+const listeners = new Set<(usage: OrganizationUsage) => void>();
+
+function notifyListeners() {
+  listeners.forEach(listener => {
+    try {
+      listener(globalUsage);
+    } catch (e) {
+      console.error('Error propagating usage limit change to listener:', e);
+    }
+  });
+}
+
 export function useUsageLimits() {
   const { currentOrganization } = useOrganization();
-  const [usage, setUsage] = useState<OrganizationUsage>(DEFAULT_USAGE);
-  const [isLoading, setIsLoading] = useState(true);
+  const [usage, setUsage] = useState<OrganizationUsage>(globalUsage);
 
-  const fetchUsage = useCallback(async () => {
+  const fetchUsage = useCallback(async (force = false) => {
     if (!currentOrganization) {
-      setUsage({ ...DEFAULT_USAGE, isLoading: false });
-      setIsLoading(false);
+      globalUsage = { ...DEFAULT_USAGE, isLoading: false };
+      notifyListeners();
       return;
     }
 
-    try {
-      setIsLoading(true);
-      
-      const limitKeys = ['invoices_month', 'team_seats', 'ai_generations', 'automations_active'];
-      const results: Record<string, any> = {};
-
-      // Fetch each limit using the RPC function we created
-      const fetchPromises = limitKeys.map(async (key) => {
-        const { data, error } = await supabase.rpc('check_usage_limit', {
-          p_org_id: currentOrganization.id,
-          p_limit_key: key
-        });
-        
-        if (error) {
-          console.error(`Error checking limit ${key}:`, error);
-          return { key, data: { allowed: true, current: 0, limit: -1, plan: 'free' } };
-        }
-        
-        return { key, data };
-      });
-
-      const responses = await Promise.all(fetchPromises);
-      responses.forEach(res => {
-        results[res.key] = res.data;
-      });
-
-      const plan: OrganizationUsage['plan'] = results.invoices_month.plan || 'free';
-
-      const calculateLimit = (data: any): UsageLimit => {
-        const current = data.current || 0;
-        const limit = data.limit;
-        const percentage = limit === -1 ? 0 : Math.min(100, (current / limit) * 100);
-        return {
-          current,
-          limit,
-          allowed: data.allowed,
-          percentage
-        };
-      };
-
-      const newUsage: OrganizationUsage = {
-        plan,
-        limits: {
-          invoices_month: calculateLimit(results.invoices_month),
-          team_seats: calculateLimit(results.team_seats),
-          ai_generations: calculateLimit(results.ai_generations),
-          automations_active: calculateLimit(results.automations_active),
-        },
-        isFreePlan: plan === 'free',
-        isProPlan: plan === 'pro',
-        isEnterprise: plan === 'enterprise',
-        canCreateInvoice: results.invoices_month.allowed,
-        canAddMember: results.team_seats.allowed,
-        canCreateAutomation: results.automations_active.allowed,
-        isLoading: false,
-      };
-
-      setUsage(newUsage);
-    } catch (error) {
-      console.error('Error fetching usage limits:', error);
-      // Safe defaults if something fails
-      setUsage({ ...DEFAULT_USAGE, isLoading: false });
-    } finally {
-      setIsLoading(false);
+    const orgId = currentOrganization.id;
+    const now = Date.now();
+    
+    // Check if cache is still fresh and Org hasn't changed.
+    if (!force && 
+        lastFetchedOrgId === orgId && 
+        (now - lastFetchedTime < CACHE_TTL) &&
+        !globalUsage.isLoading) {
+      // Set local state to the current global state immediately and skip fetch
+      setUsage(globalUsage);
+      return;
     }
+
+    // Deduplicate concurrent active requests
+    if (activeFetchPromise && lastFetchedOrgId === orgId) {
+      await activeFetchPromise;
+      return;
+    }
+
+    activeFetchPromise = (async () => {
+      try {
+        const limitKeys = ['invoices_month', 'team_seats', 'ai_generations', 'automations_active'];
+        const results: Record<string, any> = {};
+
+        // Fetch each limit using the RPC function we created in parallel
+        const fetchPromises = limitKeys.map(async (key) => {
+          const { data, error } = await supabase.rpc('check_usage_limit', {
+            p_org_id: orgId,
+            p_limit_key: key
+          });
+          
+          if (error) {
+            console.error(`Error checking limit ${key}:`, error);
+            return { key, data: { allowed: true, current: 0, limit: -1, plan: 'free' } };
+          }
+          
+          return { key, data };
+        });
+
+        const responses = await Promise.all(fetchPromises);
+        responses.forEach(res => {
+          results[res.key] = res.data;
+        });
+
+        const plan: OrganizationUsage['plan'] = results.invoices_month.plan || 'free';
+
+        const calculateLimit = (data: any): UsageLimit => {
+          const current = data.current || 0;
+          const limit = data.limit;
+          const percentage = limit === -1 ? 0 : Math.min(100, (current / limit) * 100);
+          return {
+            current,
+            limit,
+            allowed: data.allowed,
+            percentage
+          };
+        };
+
+        const newUsage: OrganizationUsage = {
+          plan,
+          limits: {
+            invoices_month: calculateLimit(results.invoices_month),
+            team_seats: calculateLimit(results.team_seats),
+            ai_generations: calculateLimit(results.ai_generations),
+            automations_active: calculateLimit(results.automations_active),
+          },
+          isFreePlan: plan === 'free',
+          isProPlan: plan === 'pro',
+          isEnterprise: plan === 'enterprise',
+          canCreateInvoice: results.invoices_month.allowed,
+          canAddMember: results.team_seats.allowed,
+          canCreateAutomation: results.automations_active.allowed,
+          isLoading: false,
+        };
+
+        globalUsage = newUsage;
+        lastFetchedOrgId = orgId;
+        lastFetchedTime = Date.now();
+        notifyListeners();
+        return newUsage;
+      } catch (error) {
+        console.error('Error fetching usage limits:', error);
+        globalUsage = { ...DEFAULT_USAGE, isLoading: false };
+        notifyListeners();
+        return globalUsage;
+      } finally {
+        activeFetchPromise = null;
+      }
+    })();
+
+    await activeFetchPromise;
   }, [currentOrganization]);
 
   useEffect(() => {
-    fetchUsage();
+    // Sync current listener state immediately with the dynamic globalCache
+    setUsage(globalUsage);
     
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchUsage, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    listeners.add(setUsage);
+    
+    // Trigger pull
+    fetchUsage();
+
+    return () => {
+      listeners.delete(setUsage);
+    };
   }, [fetchUsage]);
+
+  // Periodic background refresh if any instance is alive
+  useEffect(() => {
+    if (!currentOrganization) return;
+    const interval = setInterval(() => {
+      fetchUsage(true);
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchUsage, currentOrganization]);
 
   return {
     ...usage,
-    refresh: fetchUsage,
-    isLoading
+    refresh: () => fetchUsage(true),
   };
 }
