@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Smartphone, 
   Zap, 
@@ -25,8 +25,23 @@ export default function LandingPage({ user }: { user: User | null }) {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [targetPlan, setTargetPlan] = useState<'pro'>('pro');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [loadVideo, setLoadVideo] = useState(false);
   const navigate = useNavigate();
   const { plan } = usePlan();
+
+  useEffect(() => {
+    // Only fetch/load heavy video streams after page is fully loaded to maximize load efficiency
+    if (document.readyState === 'complete') {
+      const timer = setTimeout(() => setLoadVideo(true), 150);
+      return () => clearTimeout(timer);
+    } else {
+      const handleLoad = () => {
+        setTimeout(() => setLoadVideo(true), 150);
+      };
+      window.addEventListener('load', handleLoad);
+      return () => window.removeEventListener('load', handleLoad);
+    }
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -268,16 +283,23 @@ export default function LandingPage({ user }: { user: User | null }) {
               {/* Product Demo (Mobile Mode) */}
               <div className="lg:col-span-6 flex justify-center">
                 <div className="relative w-full max-w-[280px] aspect-[9/16] bg-slate-900 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(79,70,229,0.3)] overflow-hidden group border-[6px] border-slate-800">
-                  <video 
-                    autoPlay 
-                    muted 
-                    loop 
-                    playsInline 
-                    className="w-full h-full object-cover"
-                  >
-                    <source src="/demo/paydrip_demo.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
+                  {loadVideo ? (
+                    <video 
+                      autoPlay 
+                      muted 
+                      loop 
+                      playsInline 
+                      className="w-full h-full object-cover"
+                    >
+                      <source src="/demo/paydrip_demo.mp4" type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 p-6 text-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-indigo-500 mb-3"></div>
+                      <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500">Initializing Node walk...</p>
+                    </div>
+                  )}
                   {/* Subtle overaly for depth */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent pointer-events-none"></div>
                 </div>
