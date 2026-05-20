@@ -25,13 +25,24 @@ DROP POLICY IF EXISTS "Payments Insert: Member+ or Public" ON public.payments;
 -- ═══════════════════════════════════════════
 
 ALTER TABLE public.memberships 
+  ALTER COLUMN role DROP DEFAULT;
+
+ALTER TABLE public.invitations 
+  ALTER COLUMN role DROP DEFAULT;
+
+ALTER TABLE public.memberships 
   ALTER COLUMN role TYPE TEXT;
 
-ALTER TABLE public.invitations
+ALTER TABLE public.invitations 
   ALTER COLUMN role TYPE TEXT;
+
+ALTER TABLE public.memberships 
+  ALTER COLUMN role SET DEFAULT 'member';
+
+ALTER TABLE public.invitations 
+  ALTER COLUMN role SET DEFAULT 'member';
 
 DROP TYPE IF EXISTS membership_role;
-
 -- ═══════════════════════════════════════════
 -- STEP 3: RECREATE ALL POLICIES
 -- ═══════════════════════════════════════════
