@@ -32,6 +32,11 @@ import { useUsageLimits } from '../hooks/useUsageLimits';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { useUserRole } from '../hooks/useUserRole';
 
+// Simple client-side cache for instantaneous transitions
+let globalCachedInvoices: any[] = [];
+let globalCachedClients: any[] = [];
+let globalCachedOrgId: string | null = null;
+
 export default function DashboardView() {
   const { plan, refreshPlanData } = usePlan();
   const { limits, canCreateInvoice, isLoading: isUsageLoading } = useUsageLimits();
@@ -39,9 +44,24 @@ export default function DashboardView() {
   const { currentOrganization } = useOrganization();
   const { capabilities = { canManageInvoices: false } } = useUserRole() || {};
   const canUpdate = capabilities.canManageInvoices;
-  const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [invoices, setInvoices] = useState<(Invoice & { totalPaid?: number; remainingBalance?: number })[]>(() => {
+    if (globalCachedOrgId && currentOrganization && globalCachedOrgId === currentOrganization.id) {
+      return globalCachedInvoices;
+    }
+    return [];
+  });
+  const [clients, setClients] = useState<Client[]>(() => {
+    if (globalCachedOrgId && currentOrganization && globalCachedOrgId === currentOrganization.id) {
+      return globalCachedClients;
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    if (globalCachedOrgId && currentOrganization && globalCachedOrgId === currentOrganization.id && globalCachedInvoices.length > 0) {
+      return false;
+    }
+    return true;
+  });
   
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -49,49 +69,56 @@ export default function DashboardView() {
 
   async function fetchData() {
     if (!currentOrganization) return;
-    setLoading(true);
+    const orgId = currentOrganization.id;
+    
+    // If not cached, trigger skeleton. Otherwise fetch in background silently.
+    if (globalCachedOrgId !== orgId || globalCachedInvoices.length === 0) {
+      setLoading(true);
+    }
+    
     await refreshPlanData();
     
-    // Scoped query for current organization
-    const { data: invData, error: invError } = await supabase
-      .from('invoices')
-      .select('*, client:clients(*)')
-      .eq('organization_id', currentOrganization.id)
-      .order('created_at', { ascending: false });
-    
-    if (!invError && invData) {
-      // Fetch payments for these invoices
-      const invoiceIds = invData.map(i => i.id);
-      if (invoiceIds.length > 0) {
-        const { data: paymentsData } = await supabase
-          .from('payments')
+    try {
+      // Scoped query for current organization, fetching invoices with client/payments, and clients in parallel
+      const [invRes, clientRes] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('*, client:clients(*), payments(*)')
+          .eq('organization_id', orgId)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('clients')
           .select('*')
-          .in('invoice_id', invoiceIds);
-
-        const computedInvoices = invData.map(inv => {
-          const invPayments = paymentsData?.filter(p => p.invoice_id === inv.id) || [];
-          const totalPaid = invPayments.reduce((sum, p) => sum + p.amount, 0);
+          .eq('organization_id', orgId)
+          .order('name')
+      ]);
+      
+      if (!invRes.error && invRes.data) {
+        const computedInvoices = invRes.data.map(inv => {
+          const invPayments = inv.payments || [];
+          const totalPaid = invPayments.reduce((sum: number, p: any) => sum + p.amount, 0);
           return {
             ...inv,
             totalPaid,
             remainingBalance: Math.max(0, inv.amount - totalPaid)
           };
         });
+        
         setInvoices(computedInvoices);
-      } else {
-        setInvoices([]);
+        globalCachedInvoices = computedInvoices;
       }
+      
+      if (!clientRes.error && clientRes.data) {
+        setClients(clientRes.data);
+        globalCachedClients = clientRes.data;
+      }
+      
+      globalCachedOrgId = orgId;
+    } catch (e) {
+      console.error('Error in DashboardView fetchData:', e);
+    } finally {
+      setLoading(false);
     }
-
-    const { data: clientData } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('organization_id', currentOrganization.id)
-      .order('name');
-    
-    if (clientData) setClients(clientData);
-
-    setLoading(false);
   }
 
   useEffect(() => {

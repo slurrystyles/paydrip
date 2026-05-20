@@ -157,31 +157,38 @@ export default function InvoicesView() {
   async function fetchData() {
     if (!currentOrganization) return;
     await refreshPlanData();
-    const [invRes, cliRes] = await Promise.all([
-      supabase.from('invoices').select('*, client:clients(*)').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }),
-      supabase.from('clients').select('*').eq('organization_id', currentOrganization.id).order('name')
-    ]);
-    
-    if (!invRes.error && invRes.data) {
-      const invoiceIds = invRes.data.map(i => i.id);
-      const { data: paymentsData } = await supabase
-        .from('payments')
-        .select('*')
-        .in('invoice_id', invoiceIds);
-
-      const computedInvoices = invRes.data.map(inv => {
-        const invPayments = paymentsData?.filter(p => p.invoice_id === inv.id) || [];
-        const totalPaid = invPayments.reduce((sum, p) => sum + p.amount, 0);
-        return {
-          ...inv,
-          totalPaid,
-          remainingBalance: Math.max(0, inv.amount - totalPaid)
-        };
-      });
-      setInvoices(computedInvoices);
+    try {
+      const [invRes, cliRes] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('*, client:clients(*), payments(*)')
+          .eq('organization_id', currentOrganization.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('clients')
+          .select('*')
+          .eq('organization_id', currentOrganization.id)
+          .order('name')
+      ]);
+      
+      if (!invRes.error && invRes.data) {
+        const computedInvoices = invRes.data.map(inv => {
+          const invPayments = inv.payments || [];
+          const totalPaid = invPayments.reduce((sum: number, p: any) => sum + p.amount, 0);
+          return {
+            ...inv,
+            totalPaid,
+            remainingBalance: Math.max(0, inv.amount - totalPaid)
+          };
+        });
+        setInvoices(computedInvoices);
+      }
+      if (!cliRes.error && cliRes.data) setClients(cliRes.data);
+    } catch (e) {
+      console.error('Error in InvoicesView fetchData:', e);
+    } finally {
+      setLoading(false);
     }
-    if (!cliRes.error && cliRes.data) setClients(cliRes.data);
-    setLoading(false);
   }
 
   const filteredInvoices = invoices.filter(inv => 
