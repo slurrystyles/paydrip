@@ -48,7 +48,11 @@ serve(async (req) => {
       }
     );
 
-    const data = await twilioRes.json();
+    console.log('Twilio response status:', twilioRes.status);
+    const responseText = await twilioRes.text();
+    console.log('Twilio response body:', responseText);
+
+    const data = JSON.parse(responseText);
 
     if (twilioRes.ok) {
       // Log Success in sms_logs
@@ -96,7 +100,6 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
   } catch (error) {
