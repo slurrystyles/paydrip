@@ -12,6 +12,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function normalizePhone(phone: string): string {
+  // Remove all spaces, dashes, brackets
+  let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  
+  // If already has +, return as is
+  if (cleaned.startsWith('+')) return cleaned;
+  
+  // If starts with 91 and is 12 digits (India)
+  if (cleaned.startsWith('91') && cleaned.length === 12) {
+    return '+' + cleaned;
+  }
+  
+  // If 10 digits assume India (+91)
+  if (cleaned.length === 10) {
+    return '+91' + cleaned;
+  }
+  
+  // Otherwise add + prefix
+  return '+' + cleaned;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -21,7 +42,8 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
     const { to, body, invoice_id, organization_id } = await req.json();
 
-    console.log(`Sending SMS to ${to}, org: ${organization_id}`);
+    const normalizedTo = normalizePhone(to);
+    console.log(`Sending SMS to ${normalizedTo} (original: ${to}), org: ${organization_id}`);
 
     if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
       console.error("Twilio credentials missing");
@@ -41,7 +63,7 @@ serve(async (req) => {
           Authorization: `Basic ${auth}`,
         },
         body: new URLSearchParams({
-          To: to,
+          To: normalizedTo,
           From: TWILIO_PHONE_NUMBER,
           Body: body,
         }).toString(),
@@ -59,7 +81,7 @@ serve(async (req) => {
       await supabase.from("sms_logs").insert({
         organization_id,
         invoice_id,
-        to_phone: to,
+        to_phone: normalizedTo,
         message_body: body,
         twilio_message_sid: data.sid,
         status: "sent"
@@ -71,7 +93,7 @@ serve(async (req) => {
         entity_type: "invoice",
         organization_id,
         audit_type: "sms_sent",
-        meta: { twilio_sid: data.sid, to }
+        meta: { twilio_sid: data.sid, to: normalizedTo }
       });
 
       return new Response(JSON.stringify({ success: true, sid: data.sid }), {
@@ -83,7 +105,7 @@ serve(async (req) => {
       await supabase.from("sms_logs").insert({
         organization_id,
         invoice_id,
-        to_phone: to,
+        to_phone: normalizedTo,
         message_body: body,
         status: "failed",
         error_message: data.message || "Unknown Twilio error"
@@ -94,7 +116,7 @@ serve(async (req) => {
         entity_type: "invoice",
         organization_id,
         audit_type: "sms_failed",
-        meta: { error: data, to }
+        meta: { error: data, to: normalizedTo }
       });
 
       return new Response(JSON.stringify({ error: data }), {
