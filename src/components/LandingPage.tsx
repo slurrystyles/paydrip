@@ -235,7 +235,7 @@ export default function LandingPage({ user }: { user: User | null }) {
         animate="visible"
       >
         {/* SECTION 1: HERO (ABOVE THE FOLD) */}
-        <section className="py-24 px-6 relative overflow-hidden">
+        <section className="pt-16 pb-24 px-6 relative">
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-7 text-left">
               <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-3 py-1 bg-[#F5A62320] border border-[#F5A62340] rounded-full text-[11px] font-semibold text-[#F5A623] uppercase tracking-[0.2em] mb-6">
@@ -244,7 +244,7 @@ export default function LandingPage({ user }: { user: User | null }) {
 
               <motion.h1 
                 variants={itemVariants} 
-                className="text-5xl md:text-7xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9] leading-[1.08] mb-6"
+                className="text-5xl md:text-6xl lg:text-7xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9] leading-[1.08] mb-6"
               >
                 Your invoices <br />
                 <span className="text-[#F5A623]">follow up themselves.</span>
@@ -363,7 +363,7 @@ export default function LandingPage({ user }: { user: User | null }) {
               <motion.div 
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -bottom-6 -left-6 bg-[#13131A] p-5 rounded-2xl shadow-2xl border border-[#2A2A38] flex items-center gap-4 z-20"
+                className="absolute -bottom-4 -left-4 bg-[#13131A] p-5 rounded-2xl shadow-2xl border border-[#2A2A38] flex items-center gap-4 z-20"
               >
                 <div className="w-10 h-10 bg-[#F5A62320] text-[#F5A623] rounded-xl flex items-center justify-center relative shrink-0">
                   <span className="w-3.5 h-3.5 bg-[#22C55E] rounded-full relative">
@@ -386,7 +386,7 @@ export default function LandingPage({ user }: { user: User | null }) {
           initial={{ opacity: 0, y: 24 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="py-24 px-6 bg-[#0A0A0F] border-t border-b border-[#2A2A38]"
+          className="py-20 px-6 bg-[#0A0A0F] border-t border-b border-[#2A2A38]"
         >
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
@@ -411,7 +411,7 @@ export default function LandingPage({ user }: { user: User | null }) {
                     <div className="text-xl font-['Syne'] font-extrabold text-[#F5A623]/30 group-hover:text-[#F5A623] transition-colors">{item.step}</div>
                     <div>
                       <h4 className="text-sm font-bold uppercase tracking-wider text-[#F0EFE9] mb-1 font-['DM_Sans']">{item.title}</h4>
-                      <p className="text-[12px] text-[#8A8A9A] font-medium leading-relaxed font-['DM_Sans']">{item.desc}</p>
+                      <p className="text-sm text-[#8A8A9A] font-medium leading-relaxed font-['DM_Sans']">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -485,7 +485,7 @@ export default function LandingPage({ user }: { user: User | null }) {
           initial={{ opacity: 0, y: 24 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="py-24 px-6 bg-[#13131A] relative"
+          className="py-20 px-6 bg-[#13131A] relative"
         >
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
@@ -494,7 +494,7 @@ export default function LandingPage({ user }: { user: User | null }) {
             </div>
 
             {/* Bento Grid layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 [&>*:nth-child(1)]:lg:col-span-2 [&>*:nth-child(4)]:lg:col-span-2">
               <FeatureCard 
                 icon={<Zap size={22} />}
                 title="AI Recovery Sequences"
@@ -544,11 +544,11 @@ export default function LandingPage({ user }: { user: User | null }) {
           initial={{ opacity: 0, y: 24 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="py-24 px-6 bg-[#0A0A0F]"
+          className="py-16 px-6 bg-[#0A0A0F]"
         >
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-[11px] font-semibold font-['DM_Sans'] uppercase tracking-[0.2em] text-[#F5A623] mb-4">Early access</p>
-            <h2 className="text-3xl md:text-5xl font-['Syne'] font-extrabold text-[#F0EFE9] mb-12">Built in public. Launching soon.</h2>
+            <h2 className="text-3xl md:text-5xl font-['Syne'] font-extrabold text-[#F0EFE9] mb-8">Built in public. Launching soon.</h2>
             
             <div className="max-w-2xl mx-auto bg-[#13131A] border border-[#2A2A38] rounded-2xl p-8 md:p-12 text-center">
               <div className="flex flex-col items-center">
@@ -579,7 +579,7 @@ export default function LandingPage({ user }: { user: User | null }) {
           initial={{ opacity: 0, y: 24 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="py-24 px-6 bg-[#13131A]"
+          className="py-20 px-6 bg-[#13131A]"
         >
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
@@ -608,7 +608,7 @@ export default function LandingPage({ user }: { user: User | null }) {
             </div>
 
             {/* Pricing columns */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mt-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mt-12 items-stretch">
               <PricingCard 
                 name="Free"
                 priceKey="free"
@@ -687,7 +687,7 @@ export default function LandingPage({ user }: { user: User | null }) {
           initial={{ opacity: 0, y: 24 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="py-32 px-6 text-center bg-[#0A0A0F]"
+          className="py-24 px-6 text-center bg-[#0A0A0F]"
         >
           <div className="max-w-3xl mx-auto">
             <h2 className="text-4xl md:text-5xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9]">Stop chasing payments.</h2>
@@ -770,10 +770,7 @@ export default function LandingPage({ user }: { user: User | null }) {
 
 function FeatureCard({ icon, title, description, isLarge, badge }: { icon: React.ReactNode, title: string, description: string, isLarge?: boolean, badge?: string }) {
   return (
-    <div className={cn(
-      "bg-[#0A0A0F] border border-[#2A2A38] rounded-2xl p-8 hover:border-[#F5A62360] transition-colors duration-300 flex flex-col justify-between text-left",
-      isLarge ? "lg:col-span-2 min-h-[240px]" : "lg:col-span-1 min-h-[180px]"
-    )}>
+    <div className="bg-[#0A0A0F] border border-[#2A2A38] rounded-2xl p-8 hover:border-[#F5A62360] transition-colors duration-300 flex flex-col justify-between text-left min-h-[200px]">
       <div>
         <div className="w-12 h-12 bg-[#F5A62320] text-[#F5A623] rounded-xl flex items-center justify-center mb-6">
           {icon}
@@ -814,9 +811,12 @@ function PricingCard({ name, priceKey, yearlyPriceKey, features, cta, onCta, isP
         )}>{name}</h3>
         
         <div className="mb-8">
-          <div className="text-5xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9]">
+          <div className="text-4xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9]">
             {priceVal}
           </div>
+          {priceKey === 'free' && (
+            <p className="text-[11px] text-[#8A8A9A] font-['DM_Sans'] mt-1">Free forever</p>
+          )}
           {yearlyVal && (
             <div className="text-[11px] font-medium text-[#8A8A9A] mt-2 font-['DM_Sans']">
               or {yearlyVal} billed yearly
