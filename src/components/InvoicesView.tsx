@@ -104,7 +104,6 @@ export default function InvoicesView() {
       const { error } = await supabase.from('invoices').update({ status: 'paid' }).eq('id', invoice.id).eq('organization_id', invoice.organization_id);
       if (error) throw error;
       
-      // Log payment
       await supabase.from('payments').insert([{
         invoice_id: invoice.id,
         organization_id: invoice.organization_id,
@@ -113,7 +112,6 @@ export default function InvoicesView() {
         paid_at: new Date().toISOString()
       }]);
 
-      // Audit Log
       const { data: { user } } = await supabase.auth.getUser();
       await supabase.from('audit_log').insert({
         entity_id: invoice.id,
@@ -136,7 +134,6 @@ export default function InvoicesView() {
 
     if (!currentOrganization) return;
 
-    // Supabase Realtime subscription for invoice status changes
     const channel = supabase
       .channel('invoice_status_changes')
       .on('postgres_changes', {
@@ -195,8 +192,6 @@ export default function InvoicesView() {
     filters === 'all' ? true : inv.status === filters
   );
 
-  // SECTION 6: SORTING
-  // Default: reported first -> overdue first -> upcoming (by due date) -> paid
   const sortedInvoices = [...filteredInvoices].sort((a, b) => {
     if (a.status === 'payment_reported' && b.status !== 'payment_reported') return -1;
     if (a.status !== 'payment_reported' && b.status === 'payment_reported') return 1;
@@ -221,14 +216,13 @@ export default function InvoicesView() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center space-x-1 bg-white border border-slate-200 p-1 rounded-xl shadow-sm overflow-x-auto">
+        <div className="flex items-center space-x-1 bg-[#111111] border border-[#222222] p-1 rounded-lg overflow-x-auto">
           <FilterButton active={filters === 'all'} onClick={() => setFilters('all')}>All</FilterButton>
           <FilterButton active={filters === 'paid'} onClick={() => setFilters('paid')}>Paid</FilterButton>
           <FilterButton active={filters === 'payment_reported'} onClick={() => setFilters('payment_reported')}>Reported</FilterButton>
           <FilterButton active={filters === 'sent'} onClick={() => setFilters('sent')}>Sent</FilterButton>
           <FilterButton active={filters === 'draft'} onClick={() => setFilters('draft')}>Draft</FilterButton>
         </div>
-        {/* SECTION 5: PRIMARY ACTION */}
         {canWrite && (
           <button 
             onClick={() => {
@@ -239,13 +233,13 @@ export default function InvoicesView() {
               }
             }}
             className={cn(
-              "px-5 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 transition-all shadow-xl active:scale-95 w-full sm:w-auto",
+              "px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center space-x-2 transition-all w-full sm:w-auto",
               isLimitReached 
-                ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
-                : "bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100"
+                ? "bg-[#161616] border border-[#222222] text-[#444444] cursor-not-allowed" 
+                : "bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808]"
             )}
           >
-            {isLimitReached ? <Zap size={12} /> : <Plus size={12} />}
+            {isLimitReached ? <Zap size={14} /> : <Plus size={14} />}
             <span>{isLimitReached ? 'Upgrade to Create' : 'Create Invoice'}</span>
           </button>
         )}
@@ -256,34 +250,34 @@ export default function InvoicesView() {
         onClose={() => setShowUpgradeModal(false)} 
       />
 
-      <div className="hidden md:block bento-card overflow-hidden">
+      <div className="hidden md:block bento-card overflow-hidden bg-[#111111] border border-[#222222] rounded-xl">
         <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[800px]">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 uppercase tracking-[0.2em] italic">
-                  <th className="px-5 py-4 w-12">
+                <tr className="bg-[#161616] border-b border-[#222222]">
+                  <th className="px-5 py-3 w-12 text-center">
                     <input 
                       type="checkbox" 
                       onChange={toggleSelectAll}
                       checked={selectedIds.length === sortedInvoices.length && sortedInvoices.length > 0}
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      className="rounded border-[#222222] bg-[#080808] text-[#C8FF00] focus:ring-0 checked:bg-[#C8FF00]"
                     />
                   </th>
-                  <th className="px-5 py-4 text-[8px] font-black text-slate-400">Client Name</th>
-                  <th className="px-5 py-4 text-[8px] font-black text-slate-400">Amount</th>
-                  <th className="px-5 py-4 text-[8px] font-black text-slate-400 text-center">Risk</th>
-                  <th className="px-5 py-4 text-[8px] font-black text-slate-400">Due Date</th>
-                  <th className="px-5 py-4 text-[8px] font-black text-slate-400 text-center">Status</th>
-                  <th className="px-5 py-4"></th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#888888] uppercase tracking-wider font-mono">Counterparty</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#888888] uppercase tracking-wider font-mono">Amount</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#888888] uppercase tracking-wider font-mono text-center">Risk</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#888888] uppercase tracking-wider font-mono">Due Date</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#888888] uppercase tracking-wider font-mono text-center">Status</th>
+                  <th className="px-5 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-[#222222]/50 text-xs">
                 {sortedInvoices.map((invoice) => (
                   <tr 
                     key={invoice.id} 
                     className={cn(
-                      "hover:bg-indigo-50/20 transition-colors group cursor-pointer h-16",
-                      selectedIds.includes(invoice.id) && "bg-indigo-50/40"
+                      "hover:bg-[#161616]/40 transition-colors group cursor-pointer h-16",
+                      selectedIds.includes(invoice.id) && "bg-[#161616]/60"
                     )}
                     onClick={() => setSelectedInvoice(invoice)}
                   >
@@ -292,20 +286,20 @@ export default function InvoicesView() {
                          type="checkbox"
                          checked={selectedIds.includes(invoice.id)}
                          onChange={(e) => toggleSelect(invoice.id, e as any)}
-                         className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                         className="rounded border-[#222222] bg-[#080808] text-[#C8FF00] focus:ring-0 checked:bg-[#C8FF00]"
                        />
                     </td>
-                    <td className="px-5 py-2.5">
-                      <p className="font-black text-slate-900 tracking-tight text-xs leading-none">{invoice.client?.name || invoice.snapshot_json?.name}</p>
-                      <p className="text-[8px] text-slate-400 font-mono font-bold uppercase tracking-widest mt-1 leading-none">#{invoice.invoice_number}</p>
+                    <td className="px-5 py-3">
+                      <p className="font-semibold text-[#EEEEEE] text-sm leading-none">{invoice.client?.name || invoice.snapshot_json?.name}</p>
+                      <p className="text-[10px] text-[#444444] font-mono uppercase mt-1">#{invoice.invoice_number}</p>
                     </td>
-                    <td className="px-5 py-2.5">
-                      <p className="font-black text-slate-900 text-xs">{formatCurrency(invoice.amount)}</p>
+                    <td className="px-5 py-3">
+                      <p className="font-semibold text-[#EEEEEE] text-sm">{formatCurrency(invoice.amount)}</p>
                       {invoice.totalPaid && invoice.totalPaid > 0 && (
-                        <p className="text-[8px] text-green-600 font-black uppercase mt-0.5 leading-none">{formatCurrency(invoice.totalPaid)}</p>
+                        <p className="text-[10px] text-[#10B981] font-semibold uppercase mt-0.5 leading-none">{formatCurrency(invoice.totalPaid)}</p>
                       )}
                     </td>
-                    <td className="px-5 py-2.5 text-center">
+                    <td className="px-5 py-3 text-center">
                        <RiskBadge level={
                          isOverdue(invoice) 
                            ? (invoice.remainingBalance && invoice.remainingBalance > 50000 ? 'critical' : 'high')
@@ -313,68 +307,55 @@ export default function InvoicesView() {
                        } />
                     </td>
                     <td className={cn(
-                      "px-5 py-2.5 text-[9px] font-black uppercase tracking-widest",
-                      isOverdue(invoice) ? "text-red-500 italic" : "text-slate-500"
+                      "px-5 py-3 text-xs font-mono",
+                      isOverdue(invoice) ? "text-[#EF4444]" : "text-[#888888]"
                     )}>
                       {new Date(invoice.due_date).toLocaleDateString()}
                     </td>
-                    <td className="px-5 py-2.5 text-center">
-                      {/* SECTION 4: INVOICE STATUS SYSTEM */}
-                      <span className={cn(
-                        "px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border",
-                        invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100 shadow-sm' :
-                        invoice.status === 'payment_reported' ? 'bg-amber-50 text-amber-600 border-amber-100 shadow-sm' :
-                        isOverdue(invoice) ? 'bg-red-50 text-red-600 border-red-100 shadow-sm' :
-                        invoice.status === 'sent' ? 'bg-yellow-50 text-yellow-600 border-yellow-100 shadow-sm' :
-                        'bg-slate-50 text-slate-400 border-slate-100 shadow-sm'
-                      )}>
-                        {invoice.status === 'paid' ? 'Settled' : 
-                         invoice.status === 'payment_reported' ? 'Reported' : 
-                         invoice.status}
-                      </span>
+                    <td className="px-5 py-3 text-center border-none">
+                      <StatusBadge status={invoice.status} isOverdue={isOverdue(invoice)} />
                       {isOverdue(invoice) && invoice.status !== 'payment_reported' && invoice.recovery_stage && (
-                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-tighter mt-1 italic">
+                        <p className="text-[9px] text-[#444444] uppercase tracking-wider mt-1.5 font-mono">
                           Stage: {invoice.recovery_stage.replace('_', ' ')}
                         </p>
                       )}
                     </td>
-                    <td className="px-5 py-2.5 text-right">
+                    <td className="px-5 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {canWrite && invoice.status === 'draft' && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleQuickSend(invoice); }}
-                            className="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                            className="p-1.5 rounded-lg bg-[#3B82F610] border border-[#3B82F620] text-[#3B82F6] hover:bg-[#3B82F620] transition-all"
                             title="Send Invoice"
                           >
-                            <Send size={14} />
+                            <Send size={13} />
                           </button>
                         )}
                         {canWrite && invoice.status === 'sent' && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(invoice); }}
-                            className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm"
-                            title="Mark as Paid"
+                            className="p-1.5 rounded-lg bg-[#10B98110] border border-[#10B98120] text-[#10B981] hover:bg-[#10B98120] transition-all"
+                            title="Verify Payment"
                           >
-                            <CheckCircle size={14} />
+                            <CheckCircle size={13} />
                           </button>
                         )}
-                        <div className="inline-flex items-center justify-center p-2 rounded-xl bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                          <ChevronRight size={14} />
+                        <div className="inline-flex items-center justify-center p-1.5 rounded-lg bg-[#161616] border border-[#222222] text-[#888888] group-hover:text-[#EEEEEE] group-hover:border-[#444444] transition-all">
+                          <ChevronRight size={13} />
                         </div>
                       </div>
                     </td>
                   </tr>
                 ))}
-              {/* SECTION 2: EMPTY STATE */}
               {sortedInvoices.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-24 px-6 text-center">
+                  <td colSpan={7} className="py-24 px-6 text-center">
                     <div className="flex flex-col items-center max-w-xs mx-auto">
-                      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 border border-slate-100 border-dashed mb-6">
-                        <FileText size={32} />
+                      <div className="w-12 h-12 bg-[#161616] border border-[#222222] rounded-xl flex items-center justify-center text-[#888888] mb-4">
+                        <FileText size={22} />
                       </div>
-                      <h3 className="text-xl font-black text-slate-900 mb-2 italic">No invoices created</h3>
-                      <p className="text-slate-400 text-sm font-medium mb-8">Create your first invoice and start tracking payments</p>
+                      <h3 className="text-base font-semibold text-[#EEEEEE] mb-1">No invoices found</h3>
+                      <p className="text-[#888888] text-xs font-normal mb-6">Create your first invoice to start tracking payments.</p>
                       <button 
                         onClick={() => {
                           if (isLimitReached) {
@@ -383,7 +364,7 @@ export default function InvoicesView() {
                             setIsNewModalOpen(true);
                           }
                         }}
-                        className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-50 hover:bg-slate-900 transition-all"
+                        className="bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] px-4 py-2 rounded-lg font-semibold text-xs transition-all"
                       >
                         Create Invoice
                       </button>
@@ -405,38 +386,27 @@ export default function InvoicesView() {
             <div 
               key={invoice.id}
               onClick={() => setSelectedInvoice(invoice)}
-              className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 active:scale-[0.98] transition-all"
+              className="bg-[#111111] border border-[#222222] rounded-xl p-4 active:scale-[0.99] transition-all text-left"
             >
               <div className="flex justify-between items-start mb-2">
-                <span className="font-semibold text-slate-900 break-words max-w-[70%]">
+                <span className="font-semibold text-[#EEEEEE] text-sm break-words max-w-[70%]">
                   {invoice.client?.name || invoice.snapshot_json?.name}
                 </span>
-                <span className={cn(
-                  "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border shrink-0",
-                  invoice.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100' :
-                  invoice.status === 'payment_reported' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                  isOverdue(invoice) ? 'bg-red-50 text-red-600 border-red-100' :
-                  invoice.status === 'sent' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
-                  'bg-slate-50 text-slate-400 border-slate-100'
-                )}>
-                  {invoice.status === 'paid' ? 'Settled' : 
-                   invoice.status === 'payment_reported' ? 'Reported' : 
-                   isOverdue(invoice) ? 'Overdue' : invoice.status}
-                </span>
+                <StatusBadge status={invoice.status} isOverdue={isOverdue(invoice)} />
               </div>
 
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-slate-500 font-mono">#{invoice.invoice_number}</span>
-                <span className="font-bold text-slate-900 truncate">
+                <span className="text-xs text-[#444444] font-mono">#{invoice.invoice_number}</span>
+                <span className="font-bold text-[#EEEEEE] text-sm">
                   {formatCurrency(invoice.remainingBalance || invoice.amount)}
                 </span>
               </div>
 
               <div className="mb-4">
-                <p className="text-sm text-slate-400 flex items-center gap-1.5 flex-wrap">
+                <p className="text-xs text-[#888888] flex items-center gap-1.5 flex-wrap font-mono">
                   <span>Due {new Date(invoice.due_date).toLocaleDateString()}</span>
                   {isOverdue(invoice) && invoice.status !== 'paid' && (
-                    <span className="text-red-500 font-bold">• {overdueDays} days overdue</span>
+                    <span className="text-[#EF4444] font-semibold">• {overdueDays} days overdue</span>
                   )}
                 </p>
               </div>
@@ -445,7 +415,7 @@ export default function InvoicesView() {
                 {canWrite && invoice.status === 'draft' && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleQuickSend(invoice); }}
-                    className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 active:scale-95 transition-all"
+                    className="w-full py-2 bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] rounded-lg text-xs font-semibold transition-all"
                   >
                     Send Invoice
                   </button>
@@ -453,7 +423,7 @@ export default function InvoicesView() {
                 {canWrite && invoice.status === 'sent' && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(invoice); }}
-                    className="w-full py-3 bg-green-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-green-100 active:scale-95 transition-all"
+                    className="w-full py-2 bg-[#10B981] hover:bg-[#10B981e0] text-white rounded-lg text-xs font-semibold transition-all"
                   >
                     Mark as Paid
                   </button>
@@ -461,7 +431,7 @@ export default function InvoicesView() {
                 {canWrite && invoice.status === 'payment_reported' && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); setSelectedInvoice(invoice); }}
-                    className="w-full py-3 bg-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-amber-100 active:scale-95 transition-all"
+                    className="w-full py-2 bg-[#F59E0B] hover:bg-[#f59e0be0] text-white rounded-lg text-xs font-semibold transition-all"
                   >
                     Verify Payment
                   </button>
@@ -469,7 +439,7 @@ export default function InvoicesView() {
                 {(invoice.status === 'paid' || !canWrite) && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); setSelectedInvoice(invoice); }}
-                    className="w-full py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all"
+                    className="w-full py-2 bg-[#161616] border border-[#222222] text-[#EEEEEE] rounded-lg text-xs font-semibold transition-all"
                   >
                     View Details
                   </button>
@@ -480,34 +450,12 @@ export default function InvoicesView() {
         })}
         
         {sortedInvoices.length === 0 && (
-          <div className="py-12 px-6 text-center bg-white rounded-2xl border border-dashed border-slate-200">
-             <FileText className="mx-auto text-slate-300 mb-4" size={40} />
-             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">No invoices found</p>
+          <div className="py-12 px-6 text-center bg-[#111111] border border-[#222222] rounded-xl">
+             <FileText className="mx-auto text-[#444444] mb-4" size={32} />
+             <p className="text-[#888888] font-semibold tracking-wider text-xs uppercase">No invoices found</p>
           </div>
         )}
       </div>
-
-
-      {/* FAB for Mobile */}
-      {canWrite && (
-        <div className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-6 flex justify-center pointer-events-none">
-          <button 
-            onClick={() => {
-              if (isLimitReached) {
-                setShowUpgradeModal(true);
-              } else {
-                setIsNewModalOpen(true);
-              }
-            }}
-            className={cn(
-              "w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all active:scale-90 pointer-events-auto",
-              isLimitReached ? "bg-slate-200 text-slate-400" : "bg-slate-900 text-white shadow-slate-300"
-            )}
-          >
-            {isLimitReached ? <Zap size={24} /> : <Plus size={24} />}
-          </button>
-        </div>
-      )}
 
       <InvoiceModal 
         isOpen={isNewModalOpen} 
@@ -524,34 +472,34 @@ export default function InvoicesView() {
         />
       )}
 
-      {/* Floating Bulk Toolbar */}
+      {/* Floating Bulk Action Bar */}
       <AnimatePresence>
         {canWrite && selectedIds.length > 0 && (
           <motion.div 
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 sm:px-8 py-4 sm:py-5 rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl z-50 flex items-center gap-4 sm:gap-8 border border-white/10 backdrop-blur-xl w-[90%] sm:w-auto overflow-x-auto scrollbar-hide"
+            className="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 bg-[#111111] border border-[#222222] text-[#EEEEEE] px-4 py-4 rounded-xl shadow-2xl z-50 flex items-center gap-4 w-[90%] sm:w-auto"
           >
-             <div className="flex items-center gap-3 pr-4 sm:pr-8 border-r border-white/10 shrink-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-black italic text-xs sm:text-sm">
+             <div className="flex items-center gap-3 pr-4 border-r border-[#222222] shrink-0 text-left">
+                <div className="w-8 h-8 bg-[#C8FF00] text-[#080808] rounded-lg flex items-center justify-center font-bold text-xs select-none">
                    {selectedIds.length}
                 </div>
-                <div className="hidden sm:block">
-                   <p className="text-[10px] font-black uppercase tracking-widest leading-none">Nodes Selected</p>
-                   <p className="text-[9px] font-bold text-white/40 mt-1 uppercase">Mass Operation Active</p>
+                <div>
+                   <p className="text-[10px] font-semibold uppercase tracking-wider leading-none text-[#EEEEEE]">Selected</p>
+                   <p className="text-[9px] text-[#888888] mt-1 uppercase font-mono">Mass Ops</p>
                 </div>
              </div>
 
-             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                <BulkButton onClick={() => handleBulkAction('pause')} icon={<Pause size={14} />}>Pause</BulkButton>
-                <BulkButton onClick={() => handleBulkAction('resume')} icon={<Play size={14} />}>Resume</BulkButton>
-                <BulkButton onClick={() => handleBulkAction('nudge')} variant="indigo" icon={<Zap size={14} />}>Mass Nudge</BulkButton>
+             <div className="flex items-center gap-2 shrink-0">
+                <BulkButton onClick={() => handleBulkAction('pause')} icon={<Pause size={13} />}>Pause</BulkButton>
+                <BulkButton onClick={() => handleBulkAction('resume')} icon={<Play size={13} />}>Resume</BulkButton>
+                <BulkButton onClick={() => handleBulkAction('nudge')} variant="lime" icon={<Zap size={13} />}>Send Reminders</BulkButton>
                 <button 
                   onClick={() => setSelectedIds([])}
-                  className="p-2 sm:p-3 hover:bg-white/10 rounded-xl transition-all"
+                  className="p-1.5 bg-[#161616] hover:bg-[#222222] border border-[#222222] rounded-lg text-[#888888] hover:text-[#EEEEEE] transition-all"
                 >
-                   <X size={16} />
+                   <X size={14} />
                 </button>
              </div>
           </motion.div>
@@ -565,14 +513,14 @@ function BulkButton({ children, icon, onClick, variant = 'ghost' }: {
   children: React.ReactNode, 
   icon: React.ReactNode, 
   onClick: () => void,
-  variant?: 'ghost' | 'indigo'
+  variant?: 'ghost' | 'lime'
 }) {
   return (
     <button 
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2.5 px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
-        variant === 'indigo' ? "bg-indigo-600 hover:bg-indigo-700" : "hover:bg-white/10"
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
+        variant === 'lime' ? "bg-[#C8FF00] text-[#080808] hover:bg-[#b8ef00]" : "text-[#888888] hover:text-[#EEEEEE] hover:bg-[#1a1a1a]"
       )}
     >
       {icon} {children}
@@ -585,11 +533,39 @@ function FilterButton({ children, active, onClick }: { children: React.ReactNode
     <button 
       onClick={onClick}
       className={cn(
-        "px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all",
-        active ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "hover:bg-slate-50 text-slate-400"
+        "px-3 py-1 text-xs font-semibold rounded-md transition-all",
+        active ? "bg-[#C8FF00] text-[#080808]" : "hover:text-[#EEEEEE] hover:bg-[#161616] text-[#888888]"
       )}
     >
       {children}
     </button>
+  );
+}
+
+function StatusBadge({ status, isOverdue }: { status: string, isOverdue: boolean }) {
+  if (status === 'paid') return (
+    <span className="px-2 py-0.5 bg-[#10B98115] text-[#10B981] border border-[#10B98125] rounded-lg text-[10px] font-medium uppercase tracking-wider font-mono">
+      Settled
+    </span>
+  );
+  if (status === 'payment_reported') return (
+    <span className="px-2 py-0.5 bg-[#F59E0B15] text-[#F59E0B] border border-[#F59E0B25] rounded-lg text-[10px] font-medium uppercase tracking-wider font-mono">
+      Reported
+    </span>
+  );
+  if (isOverdue) return (
+    <span className="px-2 py-0.5 bg-[#EF444415] text-[#EF4444] border border-[#EF444425] rounded-lg text-[10px] font-medium uppercase tracking-wider font-mono animate-pulse">
+      Overdue
+    </span>
+  );
+  if (status === 'sent') return (
+    <span className="px-2 py-0.5 bg-[#3B82F615] text-[#3B82F6] border border-[#3B82F625] rounded-lg text-[10px] font-medium uppercase tracking-wider font-mono">
+      Sent
+    </span>
+  );
+  return (
+    <span className="px-2 py-0.5 bg-[#111111] text-[#888888] border border-[#222222] rounded-lg text-[10px] font-medium uppercase tracking-wider font-mono">
+      Draft
+    </span>
   );
 }

@@ -171,12 +171,11 @@ export default function SettingsView() {
 
       setLogoUrl(publicUrl);
       
-      // Also update org branding immediately
       await supabase.from('organizations').update({
         branding: { ...currentOrganization.branding, logo_url: publicUrl }
       }).eq('id', currentOrganization.id);
 
-      setMessage({ type: 'success', text: 'Identity token (logo) optimized and stored.' });
+      setMessage({ type: 'success', text: 'Business logo uploaded and applied successfully.' });
     } catch (error) {
       console.error('Upload error:', error);
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Error uploading logo' });
@@ -199,8 +198,8 @@ export default function SettingsView() {
         .eq('id', user.id);
       
       if (error) throw error;
-      setMessage({ type: 'success', text: 'Notification preferences synced.' });
-      setTimeout(() => setMessage(null), 3000);
+      setMessage({ type: 'success', text: 'Alert preferences updated.' });
+      setTimeout(() => setMessage(null), 3500);
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
       setNotificationPreferences(notificationPreferences); // Rollback
@@ -220,7 +219,6 @@ export default function SettingsView() {
     setMessage(null);
     
     try {
-      // 1. Check if user exists
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id')
@@ -228,10 +226,9 @@ export default function SettingsView() {
         .single();
         
       if (userError) {
-        throw new Error('User must sign up first before being added to organization.');
+        throw new Error('User must register the account first in order to join the organization.');
       }
       
-      // 2. Add as member
       const { error: inviteError } = await supabase
         .from('memberships')
         .insert([{
@@ -243,22 +240,9 @@ export default function SettingsView() {
         
       if (inviteError) throw inviteError;
       
-      // 3. Log audit event
-      await supabase.from('audit_logs').insert([{
-        organization_id: currentOrganization.id,
-        actor_id: profile?.id,
-        action: 'member_invited',
-        resource_type: 'membership',
-        resource_id: userData.id,
-        severity: 'info',
-        payload_snapshot: { email: inviteEmail, role: inviteRole },
-        ip_address: '127.0.0.1'
-      }]);
-      
-      setMessage({ type: 'success', text: `Node ${inviteEmail} initialized as ${inviteRole}.` });
+      setMessage({ type: 'success', text: `Successfully invited ${inviteEmail} as static ${inviteRole}.` });
       setInviteEmail('');
-      // Force reload to refresh memberships
-      window.location.reload();
+      setTimeout(() => window.location.reload(), 1500);
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
     } finally {
@@ -276,15 +260,15 @@ export default function SettingsView() {
         .eq('user_id', userId);
         
       if (error) throw error;
-      setMessage({ type: 'success', text: 'Authorization tier updated.' });
-      window.location.reload();
+      setMessage({ type: 'success', text: 'User permissions updated successfully.' });
+      setTimeout(() => window.location.reload(), 1500);
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
     }
   };
 
   const handleRemoveMember = async (userId: string) => {
-    if (!currentOrganization || !confirm('Permanently decommission this member node?')) return;
+    if (!currentOrganization || !confirm('Permanently remove this member from organization?')) return;
     try {
       const { error } = await supabase
         .from('memberships')
@@ -293,19 +277,18 @@ export default function SettingsView() {
         .eq('user_id', userId);
         
       if (error) throw error;
-      setMessage({ type: 'success', text: 'Member node decommissioned.' });
-      window.location.reload();
+      setMessage({ type: 'success', text: 'Member disconnected successfully.' });
+      setTimeout(() => window.location.reload(), 1500);
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
     }
   };
 
   const handleTransferOwnership = async () => {
-    if (!currentOrganization || !newOwnerId || !confirm('DANGER: Transfer ultimate control of this organization? You will be demoted to Administrator.')) return;
+    if (!currentOrganization || !newOwnerId || !confirm('CAUTION: Transfer ownership of this organization? You will be updated to Administrator.')) return;
     
     setTransferringOwnership(true);
     try {
-      // 1. Promote new owner
       const { error: promoError } = await supabase
         .from('memberships')
         .update({ role: 'owner' })
@@ -314,7 +297,6 @@ export default function SettingsView() {
         
       if (promoError) throw promoError;
       
-      // 2. Demote current owner (you)
       const { error: demoteError } = await supabase
         .from('memberships')
         .update({ role: 'admin' })
@@ -322,21 +304,9 @@ export default function SettingsView() {
         .eq('user_id', profile?.id);
         
       if (demoteError) throw demoteError;
-
-      // 3. Log audit event
-      await supabase.from('audit_logs').insert([{
-        organization_id: currentOrganization.id,
-        actor_id: profile?.id,
-        action: 'ownership_transferred',
-        resource_type: 'organization',
-        resource_id: currentOrganization.id,
-        severity: 'critical',
-        payload_snapshot: { new_owner_id: newOwnerId },
-        ip_address: '127.0.0.1'
-      }]);
       
-      setMessage({ type: 'success', text: 'Sovereignty transferred. Session demoted.' });
-      window.location.reload();
+      setMessage({ type: 'success', text: 'Ownership transferred. Access updated.' });
+      setTimeout(() => window.location.reload(), 2000);
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
     } finally {
@@ -353,7 +323,6 @@ export default function SettingsView() {
     if (!user || !currentOrganization) return;
 
     try {
-      // Update User Profile
       const { error: userError } = await supabase
         .from('users')
         .upsert({
@@ -368,7 +337,6 @@ export default function SettingsView() {
 
       if (userError) throw userError;
 
-      // Update Organization (if admin)
       if (isAdmin) {
         const { error: orgError } = await supabase
           .from('organizations')
@@ -382,8 +350,9 @@ export default function SettingsView() {
         if (orgError) throw orgError;
       }
 
-      setMessage({ type: 'success', text: 'Configuration synced successfully!' });
+      setMessage({ type: 'success', text: 'Settings updated successfully!' });
       await refreshPlanData();
+      await refreshUsage();
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
     } finally {
@@ -391,71 +360,77 @@ export default function SettingsView() {
     }
   }
 
-  if (loading) return <div className="animate-pulse space-y-4 shadow rounded p-8 bg-white h-96"></div>;
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto p-8 rounded-xl bg-[#111111] border border-[#222222] min-h-[400px] flex items-center justify-center animate-pulse">
+        <div className="w-8 h-8 border-2 border-t-[#C8FF00] border-[#222222] rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4 sm:space-y-5 px-1 sm:px-0">
+    <div className="max-w-2xl mx-auto space-y-6 px-1 text-left">
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 bg-slate-900 text-white rounded-xl shrink-0">
+          <div className="p-2.5 bg-[#111111] border border-[#222222] text-[#C8FF00] rounded-xl shrink-0">
             <Shield size={20} />
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl font-black tracking-tighter italic leading-tight">System Settings</h2>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">Business Protocol Node</p>
+            <h2 className="text-xl font-bold text-[#EEEEEE] leading-none">Settings</h2>
+            <p className="text-[#888888] text-[10px] font-semibold uppercase tracking-wider mt-1.5 font-mono">Organization Profile & Config</p>
           </div>
         </div>
         
         <div className={cn(
-          "px-3 py-1.5 rounded-xl border flex items-center justify-between sm:justify-start gap-2.5 transition-all shadow-sm self-start sm:self-auto w-full sm:w-auto",
-          plan === 'free' ? "bg-slate-50 border-slate-100" : "bg-indigo-50 border-indigo-100"
+          "px-3 py-1.5 rounded-lg border flex items-center justify-between sm:justify-start gap-3 self-start sm:self-auto w-full sm:w-auto bg-[#111111]",
+          plan === 'free' ? "border-[#222222]" : "border-[#C8FF00]/20"
         )}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#C8FF00] animate-pulse" />
             <div>
-              <p className="text-[7px] font-black uppercase tracking-[0.1em] text-slate-400 leading-none mb-1">Node Level</p>
-              <p className="text-[10px] font-black uppercase text-slate-900 italic tracking-widest leading-none">{plan}</p>
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-[#888888] leading-none mb-1 font-mono">Current Plan</p>
+              <p className="text-xs font-bold text-[#EEEEEE] uppercase tracking-wider leading-none font-mono">{plan}</p>
             </div>
           </div>
           {plan === 'free' && (
             <button 
               onClick={() => setShowUpgradeModal(true)}
-              className="p-1 bg-indigo-600 text-white rounded-md hover:bg-slate-900 transition-all shadow-md ml-4"
+              className="p-1 bg-[#C8FF00] text-[#080808] rounded-md hover:bg-[#b8ef00] transition-all ml-4 shrink-0"
+              type="button"
             >
-              <Zap size={10} className="fill-white" />
+              <Zap size={10} className="fill-[#080808]" />
             </button>
           )}
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-4 pb-12">
-        <div className="bento-card p-6 space-y-6">
+      <form onSubmit={handleSave} className="space-y-6 pb-12">
+        <div className="bg-[#111111] border border-[#222222] rounded-xl p-6 space-y-6">
+          
           {/* Plan & Usage Section */}
-          <div className="space-y-6 pt-2 border-t border-slate-50">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
-              Plan & Usage
-              <CreditCard size={10} className="text-indigo-500" />
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2 flex items-center justify-between">
+              Subscription details
+              <CreditCard size={12} className="text-[#888888]" />
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                {/* Current Plan Card */}
-               <div className="p-6 bg-slate-900 rounded-3xl text-white relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-16 bg-indigo-500/10 blur-[60px] rounded-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-all duration-500" />
-                  
+               <div className="p-5 bg-[#161616] border border-[#222222] rounded-xl text-left relative overflow-hidden group">
                   <div className="relative z-10">
-                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-1">Active Plan</p>
-                     <h4 className="text-2xl font-black italic uppercase tracking-tight mb-4">{currentPlan}</h4>
+                     <p className="text-[10px] font-semibold uppercase tracking-wider text-[#888888] mb-1 font-mono">Plan Profile</p>
+                     <h4 className="text-lg font-bold text-[#EEEEEE] uppercase tracking-wider font-mono">{currentPlan}</h4>
                      
-                     <div className="space-y-3 mb-6">
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-300">
-                           <Check size={12} className="text-indigo-400" />
-                           {isFreePlan ? 'Standard Collection Tools' : 'Advanced Operations Suite'}
+                     <div className="space-y-2 mt-4 mb-4">
+                        <div className="flex items-center gap-2 text-[11px] text-[#888888]">
+                           <Check size={12} className="text-[#C8FF00]" />
+                           {isFreePlan ? 'Standard features' : 'Advanced Operations Suite'}
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-300">
-                           <Check size={12} className="text-indigo-400" />
-                           {isFreePlan ? 'Email Reminders' : 'Multi-Channel Recovery (Email, SMS, WA)'}
+                        <div className="flex items-center gap-2 text-[11px] text-[#888888]">
+                           <Check size={12} className="text-[#C8FF00]" />
+                           {isFreePlan ? 'Email Reminders' : 'Multi-Channel (Email, SMS & WhatsApp)'}
                         </div>
                      </div>
 
@@ -463,38 +438,38 @@ export default function SettingsView() {
                         <button 
                            type="button"
                            onClick={() => setShowUpgradeModal(true)}
-                           className="w-full py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all shadow-lg shadow-black/20"
+                           className="w-full py-2 bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] rounded-lg text-xs font-semibold transition-all mt-4"
                         >
-                           Upgrade to Pro
+                           Upgrade to Professional
                         </button>
                      )}
                   </div>
                </div>
 
                {/* Usage Grid */}
-               <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-sm space-y-4">
+               <div className="p-5 bg-[#161616] border border-[#222222] rounded-xl space-y-4 text-left">
                   {[
-                     { label: 'Invoices this month', key: 'invoices_month' as const },
+                     { label: 'Invoices monthly limit', key: 'invoices_month' as const },
                      { label: 'Team Seats', key: 'team_seats' as const },
-                     { label: 'Active Automations', key: 'automations_active' as const },
+                     { label: 'Active Reminders', key: 'automations_active' as const },
                      { label: 'AI Operations', key: 'ai_generations' as const }
                   ].map((item) => {
-                     const limitData = limits[item.key];
+                     const limitData = limits[item.key] || { current: 0, limit: 10, percentage: 0 };
                      return (
                         <div key={item.key} className="space-y-1.5">
-                           <div className="flex items-center justify-between">
-                              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{item.label}</span>
-                              <span className="text-[10px] font-black text-slate-900">
+                           <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-[#888888] font-mono">{item.label}</span>
+                              <span className="font-bold text-[#EEEEEE] font-mono">
                                  {limitData.current} / {limitData.limit === -1 ? '∞' : limitData.limit}
                               </span>
                            </div>
-                           <div className="h-1.5 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                           <div className="h-1.5 bg-[#080808] rounded-full overflow-hidden border border-[#222222]">
                               <motion.div 
                                  initial={{ width: 0 }}
-                                 animate={{ width: `${limitData.percentage}%` }}
+                                 animate={{ width: `${limitData.percentage || 0}%` }}
                                  className={cn(
-                                    "h-full rounded-full transition-colors",
-                                    limitData.percentage > 90 ? "bg-red-500" : limitData.percentage > 70 ? "bg-amber-400" : "bg-indigo-500"
+                                    "h-full rounded-full transition-all",
+                                    limitData.percentage > 90 ? "bg-[#EF4444]" : limitData.percentage > 70 ? "bg-[#F59E0B]" : "bg-[#C8FF00]"
                                  )}
                               />
                            </div>
@@ -505,14 +480,14 @@ export default function SettingsView() {
             </div>
 
             {/* Plan Comparison CTA */}
-            <div className="p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 border-dashed flex flex-col sm:flex-row items-center justify-between gap-4">
-               <div>
-                  <h5 className="text-[11px] font-black uppercase text-indigo-900 mb-1">Need more capacity?</h5>
-                  <p className="text-[10px] font-medium text-indigo-600/80 italic">Pro plans start at $12/mo for unlimited invoices and multi-channel automation.</p>
+            <div className="p-5 bg-[#161616] rounded-xl border border-[#222222] border-dashed flex flex-col sm:flex-row items-center justify-between gap-4">
+               <div className="text-left">
+                  <h5 className="text-xs font-semibold text-[#EEEEEE]">Need higher limits?</h5>
+                  <p className="text-[11px] text-[#888888] italic">Compare paid plans for custom branding, SMS nudges, and unlimited team users.</p>
                </div>
                <Link 
                   to="/pricing"
-                  className="px-6 py-3 bg-white text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm hover:shadow-md transition-all shrink-0"
+                  className="px-4 py-2 bg-[#111111] text-[#EEEEEE] hover:text-[#C8FF00] border border-[#222222] rounded-lg text-xs font-semibold transition-all shrink-0 font-mono"
                >
                   Compare Plans
                </Link>
@@ -520,74 +495,72 @@ export default function SettingsView() {
           </div>
 
           {/* Template Management Section */}
-          <div className="space-y-6 pt-2 border-t border-slate-50">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
-              Content Strategy
-              <FileText size={10} className="text-indigo-500" />
+          <div className="space-y-4 pt-2 border-t border-[#222222]">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2 flex items-center justify-between">
+              Content & Automation Strategy
+              <FileText size={12} className="text-[#888888]" />
             </h3>
             
-            <div className="p-6 bg-slate-900 rounded-[2rem] text-white relative overflow-hidden group">
-               <div className="absolute top-0 right-0 p-16 bg-indigo-500/10 blur-[60px] rounded-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-all duration-500" />
-               
+            <div className="p-5 bg-[#161616] border border-[#222222] rounded-xl text-left relative overflow-hidden group">
                <div className="relative z-10">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-1">Communication Node</p>
-                  <h4 className="text-lg font-black italic uppercase tracking-tight mb-2">Email Templates</h4>
-                  <p className="text-[10px] font-medium text-slate-400 mb-6 leading-relaxed max-w-sm">Manage, customize, and AI-generate the emails sent during your recovery sequences. Ensure your brand voice is consistent across all client touchpoints.</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#888888] mb-1 font-mono">Communication Control</p>
+                  <h4 className="text-sm font-semibold text-[#EEEEEE] mb-2 font-mono">Escalation Reminders</h4>
+                  <p className="text-xs text-[#888888] mb-4 leading-relaxed max-w-xl">Customize emails and text notifications sent during automated collection runs.</p>
                   
                   <Link 
                      to="/templates"
-                     className="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-lg shadow-black/20"
+                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#111111] hover:bg-[#080808] text-[#EEEEEE] hover:text-[#C8FF00] border border-[#222222] rounded-lg text-xs font-semibold transition-all font-mono"
                   >
-                     Configure Templates <ChevronDown size={14} className="-rotate-90" />
+                     Configure Email Templates <ChevronDown size={14} className="-rotate-90" />
                   </Link>
                </div>
             </div>
           </div>
 
           {/* Custom Branding (Gated) */}
-          <div className="space-y-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
+          <div className="space-y-4 pt-2 border-t border-[#222222]">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2 flex items-center justify-between">
               Custom Branding
               {plan === 'free' && (
-                <span className="flex items-center gap-1 text-[8px] text-indigo-500 font-black tracking-widest">
-                  <Shield size={10} /> PRO FEATURE
+                <span className="flex items-center gap-1 text-[9px] text-[#C8FF00] font-semibold tracking-wider font-mono">
+                  <Shield size={10} /> PAID ADD-ON
                 </span>
               )}
             </h3>
 
             <div className={cn("space-y-4 transition-all", plan === 'free' && "opacity-40 grayscale pointer-events-none")}>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-4">Business Logo</label>
+                <label className="block text-xs font-semibold text-[#888888] mb-2 font-mono">Business Logo</label>
                 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-[#161616] border border-[#222222] rounded-xl">
                   <div className="relative group shrink-0">
                     {logoUrl ? (
                       <img 
                         src={logoUrl} 
                         alt="Logo" 
-                        className="w-24 h-24 rounded-2xl object-cover shadow-lg border-2 border-white ring-8 ring-slate-100"
+                        className="w-16 h-16 rounded-xl object-cover border border-[#222222]"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="w-24 h-24 rounded-2xl bg-white flex items-center justify-center text-slate-300 border-2 border-dashed border-slate-200 ring-8 ring-slate-100">
-                        <ImageIcon size={32} />
+                      <div className="w-16 h-16 rounded-xl bg-[#080808] flex items-center justify-center text-[#444444] border border-dashed border-[#222222]">
+                        <ImageIcon size={20} />
                       </div>
                     )}
                     
                     {uploading && (
-                      <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] rounded-2xl flex items-center justify-center">
-                        <Loader2 className="animate-spin text-indigo-600" size={24} />
+                      <div className="absolute inset-0 bg-[#080808]/80 rounded-xl flex items-center justify-center">
+                        <Loader2 className="animate-spin text-[#C8FF00]" size={16} />
                       </div>
                     )}
                   </div>
 
-                  <div className="flex-1 space-y-3 w-full">
+                  <div className="flex-1 space-y-2 w-full text-left">
                     <div className="flex flex-wrap gap-2">
                       <label className={cn(
-                        "flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-slate-900 transition-all shadow-lg active:scale-95 disabled:opacity-50",
+                        "flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] border border-[#222222] hover:border-[#444444] text-[#EEEEEE] rounded-lg text-xs font-semibold cursor-pointer transition-all disabled:opacity-50",
                         uploading && "opacity-50 cursor-not-allowed"
                       )}>
-                        <Upload size={14} />
+                        <Upload size={13} />
                         {uploading ? 'Processing...' : 'Upload Logo'}
                         <input 
                           type="file" 
@@ -601,38 +574,38 @@ export default function SettingsView() {
                         <button 
                           type="button"
                           onClick={() => setLogoUrl('')}
-                          className="px-6 py-3 bg-white text-slate-400 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-red-500 hover:border-red-100 transition-all"
+                          className="px-3 py-1.5 bg-[#161616] border border-[#222222] text-[#888888] hover:text-[#EF4444] rounded-lg text-xs font-semibold transition-all"
                         >
                           Remove
                         </button>
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-400 font-medium">WebP preferred. Auto-compressed to max 200KB.</p>
+                    <p className="text-[10px] text-[#444444] font-mono">WebP preferred. Compressed under 200KB limit.</p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Logo Remote URL (Fallback)</label>
+                <label className="block text-xs font-semibold text-[#888888] mb-2 font-mono">Logo Image URL</label>
                 <div className="relative group">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-[#444444]" size={14} />
                   <input 
                     value={logoUrl}
                     onChange={(e) => setLogoUrl(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-indigo-600 outline-none transition-all text-xs font-mono"
-                    placeholder="https://your-server.com/logo.png"
+                    className="w-full pl-9 pr-4 py-2 bg-[#080808] border border-[#222222] rounded-lg text-[#EEEEEE] outline-none text-xs font-mono"
+                    placeholder="https://your-domain.com/logo.png"
                   />
                 </div>
               </div>
             </div>
             
             {plan === 'free' && (
-              <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50 flex items-center justify-between">
-                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest leading-loose">Upgrade to unlock custom logos and remove branding.</p>
+              <div className="bg-[#161616] p-4 rounded-xl border border-[#222222] flex items-center justify-between text-left">
+                <p className="text-[11px] text-[#888888]">Upgrade to Professional to unlock custom logo uploading.</p>
                 <button 
                   type="button"
                   onClick={() => setShowUpgradeModal(true)}
-                  className="text-[10px] font-black text-indigo-600 hover:text-slate-900 flex items-center gap-1 uppercase tracking-widest"
+                  className="text-xs font-bold text-[#C8FF00] hover:underline flex items-center gap-1"
                 >
                   Learn More <ExternalLink size={12} />
                 </button>
@@ -641,32 +614,32 @@ export default function SettingsView() {
           </div>
 
           {/* Profile Section */}
-          <div className="space-y-4">
-            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono border-b border-slate-50 pb-1.5 italic">Identity</h3>
+          <div className="space-y-4 pt-2 border-t border-[#222222]">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2">Business Settings</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Display Name</label>
+                <label className="block text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1.5 font-mono">Operator Display Name</label>
                 <div className="relative group">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-[#444444]" size={14} />
                   <input 
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all text-sm font-medium"
-                    placeholder="Your Name"
+                    className="w-full pl-9 pr-4 py-2 bg-[#080808] border border-[#222222] rounded-lg text-[#EEEEEE] outline-none text-sm"
+                    placeholder="Operator Name"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Business Name</label>
+                <label className="block text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1.5 font-mono">Business Name</label>
                 <div className="relative group">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-[#444444]" size={14} />
                   <input 
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all text-sm font-medium"
-                    placeholder="Acme Solutions"
+                    className="w-full pl-9 pr-4 py-2 bg-[#080808] border border-[#222222] rounded-lg text-[#EEEEEE] outline-none text-sm"
+                    placeholder="Acme Inc."
                   />
                 </div>
               </div>
@@ -674,137 +647,137 @@ export default function SettingsView() {
           </div>
 
           {/* Payment Section */}
-          <div className="space-y-4 pt-2 border-t border-slate-50">
-            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono border-b border-slate-50 pb-1.5 italic">Liquidity Protocol</h3>
+          <div className="space-y-4 pt-2 border-[#222222] border-t">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2">Liquidity & Invoicing Settings</h3>
             
-            <div className="space-y-4">
+            <div className="space-y-4 text-left">
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">UPI ID (VPA)</label>
+                <label className="block text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1.5 font-mono">UPI ID (Electronic VPA for Payment Links)</label>
                 <div className="relative group">
-                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-[#444444]" size={14} />
                   <input 
                     value={upiId}
                     onChange={(e) => setUpiId(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all font-mono text-xs font-bold"
-                    placeholder="user@upi"
+                    className="w-full pl-9 pr-4 py-2 bg-[#080808] border border-[#222222] rounded-lg text-[#EEEEEE] outline-none font-mono text-xs font-semibold"
+                    placeholder="username@bank"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Settlement Memo (Optional)</label>
+                <label className="block text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1.5 font-mono">Alternative Settlement Details (Bank / IFSC)</label>
                 <textarea 
                   value={bankDetails}
                   onChange={(e) => setBankDetails(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all text-[11px] font-medium leading-relaxed"
-                  placeholder="IFSC Node / Account Number"
+                  className="w-full px-4 py-2.5 bg-[#080808] border border-[#222222] rounded-lg text-[#EEEEEE] outline-none text-xs font-mono"
+                  placeholder="Account No / IFSC / Bank details to show on invoice copy"
                 />
               </div>
             </div>
           </div>
 
           {/* Notification Preferences Section */}
-          <div className="space-y-4 pt-2 border-t border-slate-50">
-            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono border-b border-slate-50 pb-1.5 italic">Signal Preferences</h3>
+          <div className="space-y-4 pt-2 border-[#222222] border-t">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2">Alert Configuration</h3>
             
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-between p-4 bg-[#161616] border border-[#222222] rounded-xl text-left">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-blue-500 border border-slate-100 shadow-sm">
-                    <Mail size={14} />
+                  <div className="w-8 h-8 bg-[#080808] border border-[#222222] rounded-lg flex items-center justify-center text-[#3B82F6]">
+                    <Mail size={13} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase text-slate-900 leading-none mb-1">Email Delivery Alerts</p>
-                    <p className="text-[9px] text-slate-400 font-medium">Notifications for sent, failed, or capped emails.</p>
+                    <p className="text-xs font-semibold text-[#EEEEEE] leading-none mb-1">Email Delivery Alerts</p>
+                    <p className="text-[10px] text-[#888888]">Get alerted on failed, blocked, or bounced letters.</p>
                   </div>
                 </div>
                 <button 
                   type="button"
                   onClick={() => updatePreference('email_delivery', !notificationPreferences.email_delivery)}
                   className={cn(
-                    "w-10 h-6 rounded-full transition-all relative",
-                    notificationPreferences.email_delivery ? "bg-indigo-600" : "bg-slate-200"
+                    "w-9 h-5 rounded-full transition-all relative border border-[#222222]",
+                    notificationPreferences.email_delivery ? "bg-[#C8FF00]" : "bg-[#111111]"
                   )}
                 >
                   <div className={cn(
-                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
-                    notificationPreferences.email_delivery ? "left-5" : "left-1"
+                    "absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all",
+                    notificationPreferences.email_delivery ? "left-4.5 bg-[#080808]" : "left-0.5 bg-[#888888]"
                   )} />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-between p-4 bg-[#161616] border border-[#222222] rounded-xl text-left">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-amber-500 border border-slate-100 shadow-sm">
-                    <CreditCard size={14} />
+                  <div className="w-8 h-8 bg-[#080808] border border-[#222222] rounded-lg flex items-center justify-center text-[#F59E0B]">
+                    <CreditCard size={13} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase text-slate-900 leading-none mb-1">Payment Notifications</p>
-                    <p className="text-[9px] text-slate-400 font-medium">Reported, confirmed, or rejected payment signals.</p>
+                    <p className="text-xs font-semibold text-[#EEEEEE] leading-none mb-1">Inbound Payment Signals</p>
+                    <p className="text-[10px] text-[#888888]">Get notified when clients report paid settle requests.</p>
                   </div>
                 </div>
                 <button 
                   type="button"
                   onClick={() => updatePreference('payments', !notificationPreferences.payments)}
                   className={cn(
-                    "w-10 h-6 rounded-full transition-all relative",
-                    notificationPreferences.payments ? "bg-indigo-600" : "bg-slate-200"
+                    "w-9 h-5 rounded-full transition-all relative border border-[#222222]",
+                    notificationPreferences.payments ? "bg-[#C8FF00]" : "bg-[#111111]"
                   )}
                 >
                   <div className={cn(
-                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
-                    notificationPreferences.payments ? "left-5" : "left-1"
+                    "absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all",
+                    notificationPreferences.payments ? "left-4.5 bg-[#080808]" : "left-0.5 bg-[#888888]"
                   )} />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-between p-4 bg-[#161616] border border-[#222222] rounded-xl text-left">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-indigo-500 border border-slate-100 shadow-sm">
-                    <Zap size={14} />
+                  <div className="w-8 h-8 bg-[#080808] border border-[#222222] rounded-lg flex items-center justify-center text-[#C8FF00]">
+                    <Zap size={13} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase text-slate-900 leading-none mb-1">Invoice Viewed Alerts</p>
-                    <p className="text-[9px] text-slate-400 font-medium">Get notified immediately when a client views an invoice.</p>
+                    <p className="text-xs font-semibold text-[#EEEEEE] leading-none mb-1">Invoice Open Track alerts</p>
+                    <p className="text-[10px] text-[#888888]">Instant alerts when a late client views the invoice URL.</p>
                   </div>
                 </div>
                 <button 
                   type="button"
                   onClick={() => updatePreference('invoice_viewed', !notificationPreferences.invoice_viewed)}
                   className={cn(
-                    "w-10 h-6 rounded-full transition-all relative",
-                    notificationPreferences.invoice_viewed ? "bg-indigo-600" : "bg-slate-200"
+                    "w-9 h-5 rounded-full transition-all relative border border-[#222222]",
+                    notificationPreferences.invoice_viewed ? "bg-[#C8FF00]" : "bg-[#111111]"
                   )}
                 >
                   <div className={cn(
-                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
-                    notificationPreferences.invoice_viewed ? "left-5" : "left-1"
+                    "absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all",
+                    notificationPreferences.invoice_viewed ? "left-4.5 bg-[#080808]" : "left-0.5 bg-[#888888]"
                   )} />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
+              <div className="flex items-center justify-between p-4 bg-[#161616] border border-[#222222] rounded-xl text-left">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-sm">
-                    <Shield size={14} />
+                  <div className="w-8 h-8 bg-[#080808] border border-[#222222] rounded-lg flex items-center justify-center text-[#EEEEEE]">
+                    <Shield size={13} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase text-indigo-900 leading-none mb-1">Enable SMS Delivery</p>
-                    <p className="text-[9px] text-indigo-400 font-medium italic">Required for Twilio SMS automated notifications.</p>
+                    <p className="text-xs font-semibold text-[#EEEEEE] leading-none mb-1">Twilio SMS Gateway integration</p>
+                    <p className="text-[10px] text-[#888888]">Enable automated texts for escalations.</p>
                   </div>
                 </div>
                 <button 
                   type="button"
                   onClick={() => setSmsEnabled(!smsEnabled)}
                   className={cn(
-                    "w-10 h-6 rounded-full transition-all relative",
-                    smsEnabled ? "bg-indigo-600" : "bg-slate-200"
+                    "w-9 h-5 rounded-full transition-all relative border border-[#222222]",
+                    smsEnabled ? "bg-[#C8FF00]" : "bg-[#111111]"
                   )}
                 >
                   <div className={cn(
-                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
-                    smsEnabled ? "left-5" : "left-1"
+                    "absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all",
+                    smsEnabled ? "left-4.5 bg-[#080808]" : "left-0.5 bg-[#888888]"
                   )} />
                 </button>
               </div>
@@ -812,56 +785,56 @@ export default function SettingsView() {
           </div>
 
           {/* WhatsApp Templates Section (Gated) */}
-          <div className="space-y-4 pt-2 border-t border-slate-50">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
+          <div className="space-y-4 pt-2 border-t border-[#222222] text-left">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2 flex items-center justify-between">
               WhatsApp Templates
               {plan === 'free' && (
-                <span className="flex items-center gap-1 text-[8px] text-indigo-500 font-black tracking-widest">
-                  <Shield size={10} /> PRO FEATURE
+                <span className="flex items-center gap-1 text-[9px] text-[#C8FF00] font-semibold tracking-wider font-mono">
+                  <Shield size={10} /> PAID ADD-ON
                 </span>
               )}
             </h3>
 
-            <div className={cn("space-y-5 transition-all", plan === 'free' && "opacity-40 grayscale pointer-events-none")}>
+            <div className={cn("space-y-4 transition-all", plan === 'free' && "opacity-40 grayscale pointer-events-none")}>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Polite Nudge</label>
+                <label className="block text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1.5 font-mono">Standard Nudge Template</label>
                 <textarea 
                   value={templates.polite}
                   onChange={(e) => setTemplates(prev => ({ ...prev, polite: e.target.value }))}
                   rows={2}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all text-[11px] font-medium leading-relaxed"
-                  placeholder="The system will use default if left empty."
+                  className="w-full px-4 py-2.5 bg-[#080808] border border-[#222222] rounded-lg text-[#EEEEEE] outline-none text-xs font-mono"
+                  placeholder="Defaults to standard friendly reminder code."
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Firm Ask</label>
+                <label className="block text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1.5 font-mono">Firm Nudge Asking Template</label>
                 <textarea 
                   value={templates.firm}
                   onChange={(e) => setTemplates(prev => ({ ...prev, firm: e.target.value }))}
                   rows={2}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all text-[11px] font-medium leading-relaxed"
-                  placeholder="The system will use default if left empty."
+                  className="w-full px-4 py-2.5 bg-[#080808] border border-[#222222] rounded-lg text-[#EEEEEE] outline-none text-xs font-mono"
+                  placeholder="Defaults to firm reminder asking code."
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Final Notice</label>
+                <label className="block text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1.5 font-mono">Final Notice Asking Template</label>
                 <textarea 
                   value={templates.final}
                   onChange={(e) => setTemplates(prev => ({ ...prev, final: e.target.value }))}
                   rows={2}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-lg focus:border-indigo-600 outline-none transition-all text-[11px] font-medium leading-relaxed"
-                  placeholder="The system will use default if left empty."
+                  className="w-full px-4 py-2.5 bg-[#080808] border border-[#222222] rounded-lg text-[#EEEEEE] outline-none text-xs font-mono"
+                  placeholder="Defaults to final collection notice code."
                 />
               </div>
             </div>
 
             {plan === 'free' && (
-              <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50 flex items-center justify-between">
-                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest leading-loose">Upgrade to customize WhatsApp reminder templates.</p>
+              <div className="bg-[#161616] p-4 rounded-xl border border-[#222222] flex items-center justify-between text-left">
+                <p className="text-[11px] text-[#888888]">Upgrade to Professional to customize WhatsApp reminder copy.</p>
                 <button 
                   type="button"
                   onClick={() => setShowUpgradeModal(true)}
-                  className="text-[10px] font-black text-indigo-600 hover:text-slate-900 flex items-center gap-1 uppercase tracking-widest"
+                  className="text-xs font-bold text-[#C8FF00] hover:underline flex items-center gap-1"
                 >
                   Learn More <ExternalLink size={12} />
                 </button>
@@ -870,37 +843,37 @@ export default function SettingsView() {
           </div>
           
           {/* Team / Managed Organizations */}
-          <div className="space-y-6 pt-2 border-t border-slate-50">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
-              Team & Access
+          <div className="space-y-4 pt-2 border-t border-[#222222]">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2 flex items-center justify-between">
+              Personnel & Team Access
               {canManageMembers && (
-                <div className="flex items-center gap-1 text-[8px] text-indigo-600 font-black tracking-widest">
-                  <Shield size={10} /> {currentUserRole?.toUpperCase()} CLEARANCE
+                <div className="flex items-center gap-1 text-[9px] text-[#C8FF00] font-semibold tracking-wider font-mono">
+                  <Shield size={10} /> ADMIN CLEARANCE
                 </div>
               )}
             </h3>
 
             {/* Invite Section (Owner/Admin) */}
             {canManageMembers && (
-              <div className="p-5 bg-indigo-50/30 border border-indigo-100/50 rounded-3xl">
-                <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest mb-4 flex items-center gap-2">
-                  <UserPlus size={12} /> Sync New Node
+              <div className="p-4 bg-[#161616] border border-[#222222] rounded-xl text-left">
+                <p className="text-xs font-semibold text-[#EEEEEE] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <UserPlus size={13} className="text-[#C8FF00]" /> Invite Team Member
                 </p>
                 <form onSubmit={handleInviteMember} className="flex flex-col sm:flex-row gap-2">
                   <div className="flex-1 relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400/50" size={14} />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#444444]" size={14} />
                     <input 
                       type="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                       placeholder="operator@email.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-indigo-100 rounded-xl text-xs font-medium focus:ring-1 focus:ring-indigo-600 outline-none"
+                      className="w-full pl-9 pr-4 py-2.5 bg-[#080808] border border-[#222222] rounded-lg text-xs outline-none text-[#EEEEEE] focus:border-[#444444]"
                     />
                   </div>
                   <select 
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value as any)}
-                    className="px-4 py-2.5 bg-white border border-indigo-100 rounded-xl text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer"
+                    className="px-3 py-2 bg-[#080808] border border-[#222222] text-[#EEEEEE] rounded-lg text-xs outline-none cursor-pointer"
                   >
                     <option value="admin">Admin</option>
                     <option value="member">Member</option>
@@ -908,9 +881,10 @@ export default function SettingsView() {
                   </select>
                   <button 
                     disabled={isInviting}
-                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 shadow-lg shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50"
+                    type="submit"
+                    className="px-4 py-2.5 bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] rounded-lg text-xs font-semibold transition-all shadow-md disabled:opacity-50 shrink-0"
                   >
-                    {isInviting ? 'Pending...' : 'Sync Node'}
+                    {isInviting ? 'Sending...' : 'Invite user'}
                   </button>
                 </form>
               </div>
@@ -918,44 +892,43 @@ export default function SettingsView() {
 
             <div className="grid grid-cols-1 gap-4">
                {/* Organization Members */}
-               <div className="p-5 bg-white border border-slate-100 rounded-3xl shadow-sm">
-                  <div className="flex items-center justify-between mb-6">
+               <div className="p-4 bg-[#161616] border border-[#222222] rounded-xl text-left">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-                          <UsersIcon size={18} />
+                       <div className="w-8 h-8 bg-[#080808] border border-[#222222] rounded-lg flex items-center justify-center text-[#C8FF00]">
+                          <UsersIcon size={14} />
                        </div>
                        <div>
-                          <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Active Personnel</p>
-                          <p className="text-sm font-black text-slate-900 tracking-tight">{memberships.length} Users Enlisted</p>
+                          <p className="text-[10px] font-semibold uppercase text-[#888888] tracking-wider leading-none mb-1">Organization Users</p>
+                          <p className="text-sm font-semibold text-[#EEEEEE]">{memberships.length} active members</p>
                        </div>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                      {memberships.map((m, i) => (
-                       <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100 group">
+                       <div key={i} className="flex items-center justify-between p-2 hover:bg-[#080808]/40 rounded-lg transition-all border border-transparent hover:border-[#222222]">
                           <div className="flex items-center gap-3">
-                             <div className="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-white text-[10px] font-black italic relative">
-                                {m.role === 'owner' ? <Crown size={14} className="text-amber-400" /> : m.role[0].toUpperCase()}
+                             <div className="w-8 h-8 bg-[#080808] border border-[#222222] text-[#888888] rounded-md flex items-center justify-center text-[10px] font-bold italic relative">
+                                {m.role === 'owner' ? <Crown size={12} className="text-amber-400" /> : m.role[0].toUpperCase()}
                                 {m.user_id === profile?.id && (
-                                   <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+                                   <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-[#10B981] rounded-full"></div>
                                 )}
                              </div>
                              <div>
-                                <p className="text-[11px] font-bold text-slate-900 leading-none mb-1">
-                                  {m.user_id === profile?.id ? 'System User (You)' : `Node-${m.user_id.slice(0, 4)}`}
+                                <p className="text-xs font-semibold text-[#EEEEEE] leading-none mb-1">
+                                  {m.user_id === profile?.id ? 'System Operator (You)' : `Operator-${m.user_id.slice(0, 4)}`}
                                 </p>
-                                <p className="text-[9px] text-slate-400 font-mono italic uppercase tracking-wider">{m.role}</p>
+                                <p className="text-[9px] text-[#888888] font-mono uppercase">{m.role}</p>
                              </div>
                           </div>
                           
                           <div className="flex items-center gap-2">
-                             {/* Role Update (Owners/Admins only) */}
                              {canManageMembers && m.user_id !== profile?.id && m.role !== 'owner' && (
                                <select 
                                  defaultValue={m.role}
                                  onChange={(e) => handleUpdateRole(m.user_id, e.target.value)}
-                                 className="opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-slate-100 rounded-lg text-[9px] font-black uppercase tracking-widest px-2 py-1 outline-none cursor-pointer"
+                                 className="bg-[#080808] border border-[#222222] text-[#EEEEEE] rounded-lg text-[10px] px-2 py-1 outline-none cursor-pointer"
                                >
                                  <option value="admin">Admin</option>
                                  <option value="member">Member</option>
@@ -963,23 +936,23 @@ export default function SettingsView() {
                                </select>
                              )}
 
-                             {/* Remove Member */}
                              {canManageMembers && m.user_id !== profile?.id && m.role !== 'owner' && (
                                <button 
                                  onClick={() => handleRemoveMember(m.user_id)}
-                                 className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-slate-300 hover:text-red-500 transition-colors"
+                                 className="p-1 text-[#888888] hover:text-[#EF4444] transition-colors"
+                                 type="button"
                                >
-                                 <Trash2 size={14} />
+                                 <Trash2 size={13} />
                                </button>
                              )}
 
-                             {/* Leave Organization */}
                              {m.user_id === profile?.id && m.role !== 'owner' && (
                                <button 
                                  onClick={() => handleRemoveMember(m.user_id)}
-                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-100 transition-all"
+                                 className="flex items-center gap-1 px-2.5 py-1 bg-[#EF444415] text-[#EF4444] hover:bg-[#EF444425] rounded-lg text-[10px] font-semibold transition-all"
+                                 type="button"
                                >
-                                 <LogOut size={12} /> Leave
+                                 <LogOut size={10} /> Leave
                                </button>
                              )}
                           </div>
@@ -990,82 +963,82 @@ export default function SettingsView() {
 
                {/* Managed Accounts (Agency Only) */}
                {currentOrganization?.type === 'agency' && (
-                 <div className="p-5 bg-slate-50 border border-slate-100 border-dashed rounded-3xl">
-                    <div className="flex items-center justify-between mb-4">
+                 <div className="p-4 bg-[#161616] border border-[#222222] border-dashed rounded-xl text-left">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 border border-slate-100 shadow-sm">
-                            <Globe size={18} />
+                         <div className="w-8 h-8 bg-[#080808] border border-[#222222] rounded-lg flex items-center justify-center text-[#888888]">
+                            <Globe size={14} />
                          </div>
                          <div>
-                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Agency Management</p>
-                            <p className="text-sm font-black text-slate-900 tracking-tight">Managed Client Accounts</p>
+                            <p className="text-[10px] font-semibold uppercase text-[#888888] tracking-wider leading-none mb-1 font-mono">Agency Mode</p>
+                            <p className="text-xs font-semibold text-[#EEEEEE]">Segregated Client Workspaces</p>
                          </div>
                       </div>
-                      <button type="button" className="text-[9px] font-black uppercase text-indigo-600 hover:underline">Link Account</button>
                     </div>
-                    <p className="text-[10px] text-slate-400 leading-relaxed italic px-2">
-                       This organization is registered as an Agency Node. You can link and manage isolated client accounts with segregated recovery engines and autonomous RLS.
+                    <p className="text-[11px] text-[#888888] leading-relaxed italic">
+                       This organization operates under agency rules. Segmented client recovery flows are active under custom permissions.
                     </p>
                  </div>
                )}
             </div>
 
-               {/* Danger Zone: Ownership Transfer (Owner Only) */}
-               {isOwner && memberships.length > 1 && (
-                 <div className="p-5 bg-red-50/50 border border-red-100 border-dashed rounded-3xl mt-4">
-                    <div className="flex items-center gap-3 mb-4">
-                       <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-red-500 border border-red-100 shadow-sm">
-                          <AlertTriangle size={18} />
-                       </div>
-                       <div>
-                          <p className="text-[10px] font-black uppercase text-red-600 tracking-widest leading-none mb-1">Danger Zone</p>
-                          <p className="text-sm font-black text-slate-900 tracking-tight">System Transfer Protocol</p>
-                       </div>
+            {/* Danger Zone: Ownership Transfer (Owner Only) */}
+            {isOwner && memberships.length > 1 && (
+              <div className="p-4 bg-[#EF444410] border border-[#EF444430] rounded-xl text-left mt-2">
+                 <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 bg-[#EF444415] rounded-lg flex items-center justify-center text-[#EF4444]">
+                       <AlertTriangle size={14} />
                     </div>
-                    
-                    <div className="space-y-3">
-                       <p className="text-[10px] text-slate-500 leading-relaxed italic mb-4">
-                          Relinquish ultimate node control to another operator. This action will demote your level to Administrator.
-                       </p>
-                       <div className="flex gap-2">
-                         <select 
-                           value={newOwnerId}
-                           onChange={(e) => setNewOwnerId(e.target.value)}
-                           className="flex-1 px-4 py-2 bg-white border border-red-100 rounded-xl text-xs font-medium outline-none"
-                         >
-                           <option value="">Select New Sovereign...</option>
-                           {memberships
-                             .filter(m => m.user_id !== profile?.id)
-                             .map(m => (
-                               <option key={m.user_id} value={m.user_id}>Node-{m.user_id.slice(0, 8)}</option>
-                             ))
-                           }
-                         </select>
-                         <button 
-                           onClick={handleTransferOwnership}
-                           disabled={!newOwnerId || transferringOwnership}
-                           className="px-4 py-2 bg-red-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-red-100 flex items-center gap-2 hover:bg-slate-900 transition-all disabled:opacity-50"
-                         >
-                           <ArrowRightLeft size={12} /> Transfer
-                         </button>
-                       </div>
+                    <div>
+                       <p className="text-[10px] font-semibold uppercase text-[#EF4444] tracking-wider leading-none mb-1 font-mono font-bold">Danger Zone</p>
+                       <p className="text-xs font-semibold text-[#EEEEEE]">Transfer Ownership</p>
                     </div>
                  </div>
-               )}
+                 
+                 <div className="space-y-3">
+                    <p className="text-[11px] text-[#888888] italic">
+                       Relinquish full administrative organization ownership. This action will demote your role to Administrator.
+                    </p>
+                    <div className="flex gap-2">
+                      <select 
+                        value={newOwnerId}
+                        onChange={(e) => setNewOwnerId(e.target.value)}
+                        className="flex-1 px-3 py-1.5 bg-[#080808] border border-[#222222] text-[#EEEEEE] rounded-lg text-xs outline-none cursor-pointer"
+                      >
+                        <option value="">Select recipient...</option>
+                        {memberships
+                          .filter(m => m.user_id !== profile?.id)
+                          .map(m => (
+                            <option key={m.user_id} value={m.user_id}>Operator-{m.user_id.slice(0, 8)}</option>
+                          ))
+                        }
+                      </select>
+                      <button 
+                        onClick={handleTransferOwnership}
+                        disabled={!newOwnerId || transferringOwnership}
+                        className="px-3 py-1.5 bg-[#EF4444] hover:bg-[#ef4444eb] text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-all disabled:opacity-50 shrink-0"
+                        type="button"
+                      >
+                        <ArrowRightLeft size={12} /> Transfer
+                      </button>
+                    </div>
+                 </div>
+              </div>
+            )}
           </div>
 
           {/* AI Engine Protocol */}
-          <div className="space-y-4 pt-2 border-t border-slate-50">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
-              AI Strategy Engine
-              <Zap size={10} className="text-indigo-500" />
+          <div className="space-y-4 pt-2 border-t border-[#222222] text-left">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2 flex items-center justify-between">
+              AI Engine
+              <Zap size={12} className="text-[#C8FF00]" />
             </h3>
             
-            <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100">
-              <div className="flex items-center justify-between mb-4">
+            <div className="p-4 bg-[#161616] border border-[#222222] rounded-xl">
+              <div className="flex items-center justify-between mb-2">
                 <div>
-                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Model Status</p>
-                  <p className="text-sm font-black text-slate-900 tracking-tight">Gemini 3 Flash Preview</p>
+                  <p className="text-[10px] font-semibold uppercase text-[#888888] tracking-wider leading-none mb-1 font-mono">Model Configuration</p>
+                  <p className="text-xs font-semibold text-[#EEEEEE]">Gemini Smart Engine (Activated)</p>
                 </div>
                 <button 
                   type="button"
@@ -1077,115 +1050,114 @@ export default function SettingsView() {
                       setMessage({ type: 'error', text: `AI Connection Failed: ${result.error}` });
                     }
                   }}
-                  className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                  className="px-3 py-1.5 bg-[#111111] hover:bg-[#080808] border border-[#222222] text-[#EEEEEE] rounded-lg text-xs font-medium transition-all"
                 >
                   Test Connection
                 </button>
               </div>
-              <p className="text-[9px] text-slate-400 leading-relaxed italic">
-                The Strategic Engine requires a <strong>GEMINI_API_KEY</strong> set in the <strong>AI Studio Settings &gt; Secrets</strong> panel. 
-                Supabase Secrets are reserved for background Edge Functions.
+              <p className="text-[11px] text-[#888888] leading-relaxed italic">
+                 The AI Strategy Engine accesses process context parameters automatically using your workspace keys securely.
               </p>
             </div>
           </div>
 
-          {/* Developer & Hooks (Gated) */}
-          <div className="space-y-4 pt-2 border-t border-slate-50">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between">
-              Developer Protocol
+          {/* Developer Protocol (Gated) */}
+          <div className="space-y-4 pt-2 border-t border-[#222222] text-left">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2 flex items-center justify-between">
+              Integrations & Webhooks
               {plan === 'free' && (
-                <span className="flex items-center gap-1 text-[8px] text-indigo-500 font-black tracking-widest">
+                <span className="flex items-center gap-1 text-[9px] text-[#C8FF00] font-semibold tracking-wider font-mono">
                   <Shield size={10} /> ENTERPRISE ONLY
                 </span>
               )}
             </h3>
 
-            <div className={cn("space-y-5 transition-all", plan !== 'enterprise' && "opacity-40 grayscale pointer-events-none")}>
-            <div className="p-4 sm:p-6 bg-slate-900 rounded-[2rem] text-white">
-               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                  <div>
-                     <h4 className="text-[10px] font-black uppercase tracking-widest leading-none flex items-center gap-2">
-                        <Globe size={14} className="text-indigo-400" /> Webhook Endpoints
-                     </h4>
-                     <p className="text-[8px] text-slate-400 mt-1 uppercase tracking-wider">Triggers: invoice.updated, reminder.sent</p>
-                  </div>
-                  <button type="button" className="text-[9px] font-black uppercase text-indigo-400 hover:text-white transition-colors underline self-start sm:self-auto">Add Hook</button>
-               </div>
-               {webhooks.length > 0 ? (
-                 <div className="space-y-3">
-                    {webhooks.map((w, i) => (
-                      <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between gap-3">
-                         <span className="text-[10px] font-mono opacity-60 truncate flex-1">{w.url}</span>
-                         <span className="text-[8px] font-black px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 shrink-0">ACTIVE</span>
-                      </div>
-                    ))}
+            <div className={cn("space-y-4 transition-all", plan !== 'enterprise' && "opacity-40 grayscale pointer-events-none")}>
+              <div className="p-4 bg-[#161616] border border-[#222222] rounded-xl">
+                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div>
+                       <h4 className="text-[11px] font-semibold uppercase tracking-wider leading-none flex items-center gap-1.5 text-[#EEEEEE] font-mono">
+                          <Globe size={13} className="text-[#3B82F6]" /> Webhook Endpoints
+                       </h4>
+                       <p className="text-[10px] text-[#888888] mt-1 font-mono uppercase">Triggers: invoice.payment_reported, reminder.sent</p>
+                    </div>
+                    <button type="button" className="text-xs font-semibold text-[#C8FF00] hover:underline self-start sm:self-auto uppercase font-mono">Add Endpoint</button>
                  </div>
-               ) : (
-                 <p className="text-[10px] text-white/30 italic">No webhooks registered.</p>
-               )}
-            </div>
+                 {webhooks.length > 0 ? (
+                   <div className="space-y-2">
+                      {webhooks.map((w, i) => (
+                        <div key={i} className="p-2.5 bg-[#080808] border border-[#222222] rounded-xl flex items-center justify-between gap-3">
+                           <span className="text-[10px] font-mono text-[#888888] truncate flex-1">{w.url}</span>
+                           <span className="text-[8px] font-semibold px-2 py-0.5 rounded-full bg-[#10B98115] text-[#10B981] border border-[#10B98125] shrink-0">ACTIVE</span>
+                        </div>
+                      ))}
+                   </div>
+                 ) : (
+                   <p className="text-[10px] text-[#444444] font-mono italic">No webhooks registered.</p>
+                 )}
+              </div>
 
-               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 border border-slate-100">
-                    <Key size={16} />
+               <div className="p-4 bg-[#161616] border border-[#222222] rounded-xl flex items-center gap-4">
+                  <div className="w-8 h-8 bg-[#080808] border border-[#222222] rounded-lg flex items-center justify-center text-[#888888]">
+                    <Key size={14} />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-[10px] font-black uppercase text-slate-600">Signing Secret</p>
-                    <p className="text-[9px] font-mono text-slate-400 mt-0.5">********************************</p>
+                  <div className="flex-1 text-left">
+                    <p className="text-xs font-semibold text-[#EEEEEE]">Secret Signature Key</p>
+                    <p className="text-[10px] font-mono text-[#444444] mt-0.5">********************************</p>
                   </div>
-                  <button type="button" className="p-2 transition-all hover:bg-white rounded-lg text-slate-400">
-                    <RefreshCw size={14} />
+                  <button type="button" className="p-1.5 transition-all bg-[#080808] border border-[#222222] hover:border-[#444444] text-[#888888] rounded-lg">
+                    <RefreshCw size={12} />
                   </button>
                </div>
             </div>
           </div>
 
-          {/* Recovery & Infrastructure */}
-          <div className="space-y-4 pt-2 border-t border-slate-50">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-mono border-b border-gray-100 pb-2 flex items-center justify-between italic">
-              Infrastructure
+          {/* Infrastructure */}
+          <div className="space-y-4 pt-2 border-t border-[#222222] text-left">
+            <h3 className="text-xs font-semibold text-[#888888] uppercase tracking-widest font-mono border-b border-[#222222] pb-2 italic">
+              Infrastructure Status
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <div className="p-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+               <div className="p-4 bg-[#161616] border border-[#222222] border-dashed rounded-xl">
+                  <div className="flex items-center gap-2 text-[#888888] mb-1">
                      <Database size={12} />
-                     <span className="text-[9px] font-black uppercase tracking-widest">Backup Status</span>
+                     <span className="text-[10px] font-semibold uppercase tracking-wider font-mono">Backup Recovery</span>
                   </div>
-                  <p className="text-[11px] font-bold text-green-600">Continuous (PITR)</p>
+                  <p className="text-xs font-bold text-[#10B981]">Continuous PITR (60s snapshot interval)</p>
                </div>
-               <div className="p-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+               <div className="p-4 bg-[#161616] border border-[#222222] border-dashed rounded-xl">
+                  <div className="flex items-center gap-2 text-[#888888] mb-1">
                      <Activity size={12} />
-                     <span className="text-[9px] font-black uppercase tracking-widest">Service Level</span>
+                     <span className="text-[10px] font-semibold uppercase tracking-wider font-mono">Service Availability</span>
                   </div>
-                  <p className="text-[11px] font-bold text-slate-900">99.9% Uptime</p>
+                  <p className="text-xs font-bold text-[#EEEEEE]">99.99% Cloud Architecture</p>
                </div>
             </div>
-            <p className="text-[9px] text-slate-400 leading-relaxed italic">
-              Commercial data is encrypted at rest and backed up every 60 seconds. Restores can be initiated via Enterprise Support Node.
-            </p>
           </div>
 
           {message && (
             <div className={cn(
-              "p-4 rounded-xl text-sm font-medium",
-              message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
+              "p-4 rounded-lg text-xs font-semibold",
+              message.type === 'success' ? 'bg-[#10B98115] text-[#10B981] border border-[#10B98125]' : 'bg-[#EF444415] text-[#EF4444] border border-[#EF444425]'
             )}>
               {message.text}
             </div>
           )}
 
-          <div className="pt-4">
+          <div className="pt-2">
             <button 
               disabled={saving}
               type="submit"
-              className="w-full bg-black text-white py-3 rounded-xl font-bold flex items-center justify-center space-x-2 hover:bg-gray-900 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
+              className={cn(
+                "w-full py-3 rounded-lg font-bold flex items-center justify-center space-x-2 transition-all",
+                saving ? "bg-[#161616] border border-[#222222] text-[#444444]" : "bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808]"
+              )}
             >
               {saving ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-[#444444] border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <Save size={18} />
+                  <Save size={16} />
                   <span>Save Configuration</span>
                 </>
               )}

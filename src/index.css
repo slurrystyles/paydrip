@@ -20,19 +20,19 @@
 }
 
 body {
-  @apply bg-[#F8FAFC] text-slate-900 font-sans antialiased overflow-x-hidden;
+  @apply bg-[#080808] text-[#EEEEEE] font-sans antialiased overflow-x-hidden;
 }
 
 .bento-card {
-  @apply bg-white border border-slate-200 rounded-xl shadow-[0_1px_3px_0_rgba(0,0,0,0.01),0_1px_2px_0_rgba(0,0,0,0.06)] transition-all duration-200 hover:border-slate-300;
+  @apply bg-[#111111] border border-[#222222] rounded-xl transition-all duration-200 hover:border-[#333333];
 }
 
 .status-chip {
-  @apply text-[11px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider;
+  @apply text-[11px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider bg-transparent border border-[#222222] text-[#888888];
 }
 
 .btn-primary {
-  @apply bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm;
+  @apply bg-[#C8FF00] text-[#080808] px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#b8ef00] transition-colors shadow-sm;
 }
 
 @utility custom-scrollbar {

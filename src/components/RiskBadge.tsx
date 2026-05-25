@@ -11,27 +11,27 @@ interface RiskBadgeProps {
 export const RiskBadge: React.FC<RiskBadgeProps> = ({ level, className, showIcon = true }) => {
   const configs = {
     minimal: {
-      color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+      color: 'bg-[#10B9810B] text-[#10B981] border-[#10B98125]',
       label: 'SAFE',
       icon: <CheckCircle2 size={10} />
     },
     low: {
-      color: 'bg-blue-50 text-blue-600 border-blue-100',
+      color: 'bg-[#3B82F60B] text-[#3B82F6] border-[#3B82F625]',
       label: 'LOW',
       icon: <ShieldAlert size={10} />
     },
     medium: {
-      color: 'bg-amber-50 text-amber-600 border-amber-100',
+      color: 'bg-[#F59E0B0B] text-[#F59E0B] border-[#F59E0B25]',
       label: 'MID',
       icon: <AlertCircle size={10} />
     },
     high: {
-      color: 'bg-orange-50 text-orange-600 border-orange-100',
+      color: 'bg-[#F973160B] text-[#F97316] border-[#F9731625]',
       label: 'HIGH',
       icon: <AlertTriangle size={10} />
     },
     critical: {
-      color: 'bg-red-50 text-red-600 border-red-100 animate-pulse',
+      color: 'bg-[#EF44440B] text-[#EF4444] border-[#EF444425] animate-pulse',
       label: 'CRITICAL',
       icon: <ShieldAlert size={10} />
     }
@@ -41,7 +41,7 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ level, className, showIcon
 
   return (
     <div className={cn(
-      "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border shadow-sm transition-all",
+      "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider border transition-all",
       config.color,
       className
     )}>

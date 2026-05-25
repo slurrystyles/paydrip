@@ -10,7 +10,7 @@ import { useUserRole } from '../hooks/useUserRole';
 export default function ClientsView() {
   const { currentOrganization } = useOrganization();
   const { capabilities = { canManageInvoices: false } } = useUserRole() || {};
-  const canWrite = capabilities.canManageInvoices; // In our roles, anyone who can manage invoices can manage clients
+  const canWrite = capabilities.canManageInvoices; 
   const [clients, setClients] = useState<(Client & { risk_score?: any })[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,18 +65,18 @@ export default function ClientsView() {
 
     if (editingId) {
       const { error } = await supabase
-        .from('clients')
-        .update(payload)
-        .eq('id', editingId)
-        .eq('organization_id', currentOrganization.id);
+         .from('clients')
+         .update(payload)
+         .eq('id', editingId)
+         .eq('organization_id', currentOrganization.id);
       if (!error) {
         setClients(clients.map(c => c.id === editingId ? { ...c, ...payload } : c));
       }
     } else {
       const { data, error } = await supabase
-        .from('clients')
-        .insert([payload])
-        .select();
+         .from('clients')
+         .insert([payload])
+         .select();
       if (!error && data) {
         setClients([...clients, data[0]]);
       }
@@ -127,19 +127,19 @@ export default function ClientsView() {
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={14} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#444444] group-focus-within:text-[#C8FF00] transition-colors" size={14} />
           <input 
             type="text" 
             placeholder="Search Counterparties..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl focus:border-indigo-600 outline-none transition-all text-[10px] font-black uppercase tracking-widest placeholder:text-slate-300 shadow-sm"
+            className="w-full pl-11 pr-4 py-2 bg-[#111111] border border-[#222222] rounded-lg focus:border-[#444444] outline-none transition-all text-xs font-medium text-[#EEEEEE] placeholder:text-[#444444]"
           />
         </div>
         {canWrite && (
           <button 
             onClick={() => openModal()}
-            className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center space-x-2 hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-95"
+            className="bg-[#C8FF00] text-[#080808] px-4 py-2 rounded-lg font-semibold text-xs flex items-center justify-center space-x-2 hover:bg-[#b8ef00] transition-all"
           >
             <Plus size={14} />
             <span>New Counterparty</span>
@@ -147,29 +147,29 @@ export default function ClientsView() {
         )}
       </div>
 
-      {/* Clients List */}
-      <div className="hidden md:block bento-card overflow-hidden">
+      {/* Clients List Table */}
+      <div className="hidden md:block bento-card overflow-hidden bg-[#111111] border border-[#222222] rounded-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Entity Name</th>
-                <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Risk Profile</th>
-                <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Contact Node</th>
-                <th className="px-5 py-2.5 text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest text-right">Protocol</th>
+              <tr className="bg-[#161616] border-b border-[#222222]">
+                <th className="px-5 py-3 text-xs font-mono font-medium text-[#888888] uppercase tracking-wider">Entity Name</th>
+                <th className="px-5 py-3 text-xs font-mono font-medium text-[#888888] uppercase tracking-wider">Risk Profile</th>
+                <th className="px-5 py-3 text-xs font-mono font-medium text-[#888888] uppercase tracking-wider">Contact Details</th>
+                <th className="px-5 py-3 text-xs font-mono font-medium text-[#888888] uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-[#222222]/50 text-xs">
               {filteredClients.map((client) => (
-                <tr key={client.id} className="hover:bg-indigo-50/30 transition-all group h-14">
-                  <td className="px-5 py-3 tracking-tighter">
+                <tr key={client.id} className="hover:bg-[#161616]/30 transition-all group h-14">
+                  <td className="px-5 py-3">
                     <div className="flex items-center space-x-3">
-                      <div className="h-9 w-9 rounded-xl bg-slate-900 flex items-center justify-center text-xs font-black text-white italic shadow-lg shadow-slate-200 group-hover:scale-110 transition-transform shrink-0">
+                      <div className="h-8 w-8 rounded-lg bg-[#1a1a1a] border border-[#222222] flex items-center justify-center text-xs font-semibold text-[#EEEEEE] shrink-0">
                         {client.name[0].toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-black text-slate-900 tracking-tight text-sm leading-none">{client.name}</p>
-                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">Counterparty Node</p>
+                        <p className="font-semibold text-[#EEEEEE] text-sm leading-none">{client.name}</p>
+                        <p className="text-[10px] text-[#444444] font-semibold uppercase tracking-wider mt-1">Counterparty</p>
                       </div>
                     </div>
                   </td>
@@ -177,14 +177,14 @@ export default function ClientsView() {
                     <RiskBadge level={client.risk_score as any} />
                   </td>
                   <td className="px-5 py-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center text-[9px] font-black uppercase tracking-widest text-slate-500">
-                        <Mail size={10} className="mr-1.5 text-indigo-500 opacity-60" />
+                    <div className="space-y-1 text-[#888888]">
+                      <div className="flex items-center text-[11px] font-mono">
+                        <Mail size={12} className="mr-1.5 text-[#888888]/60" />
                         {client.email}
                       </div>
                       {client.phone && (
-                        <div className="flex items-center text-[9px] font-black uppercase tracking-widest text-slate-500">
-                          <Phone size={10} className="mr-1.5 text-indigo-500 opacity-60" />
+                        <div className="flex items-center text-[11px] font-mono">
+                          <Phone size={12} className="mr-1.5 text-[#888888]/60" />
                           {client.phone}
                         </div>
                       )}
@@ -196,39 +196,38 @@ export default function ClientsView() {
                         <>
                           <button 
                             onClick={() => openModal(client)}
-                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-100"
+                            className="p-1.5 text-[#888888] hover:text-[#EEEEEE] hover:bg-[#1a1a1a] rounded-lg border border-transparent hover:border-[#222222] transition-all"
                           >
-                            <Edit2 size={14} />
+                            <Edit2 size={13} />
                           </button>
                           <button 
                             onClick={() => deleteClient(client.id)}
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-100"
+                            className="p-1.5 text-[#888888] hover:text-[#EF4444] hover:bg-[#EF444410] rounded-lg border border-transparent hover:border-[#EF444420] transition-all"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={13} />
                           </button>
                         </>
                       ) : (
-                        <span className="text-[8px] font-black uppercase text-slate-300">Read Only</span>
+                        <span className="text-[10px] font-mono uppercase text-[#444444]">Read Only</span>
                       )}
                     </div>
                   </td>
                 </tr>
               ))}
-              {/* SECTION 2: EMPTY STATE */}
               {filteredClients.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-24 px-6 text-center">
+                  <td colSpan={4} className="py-20 px-6 text-center">
                     <div className="flex flex-col items-center max-w-xs mx-auto">
-                      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 border border-slate-100 border-dashed mb-6">
-                        <Mail size={32} />
+                      <div className="w-12 h-12 bg-[#161616] border border-[#222222] rounded-xl flex items-center justify-center text-[#888888] mb-4">
+                        <Mail size={22} />
                       </div>
-                      <h3 className="text-xl font-black text-slate-900 mb-2 italic">No clients yet</h3>
-                      <p className="text-slate-400 text-sm font-medium mb-8">Add your first client to start invoicing</p>
+                      <h3 className="text-base font-semibold text-[#EEEEEE] mb-1">No counterparties found</h3>
+                      <p className="text-[#888888] text-xs font-normal mb-6">Add a counterparty to start issuing invoices.</p>
                       <button 
                         onClick={() => openModal()}
-                        className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-50 hover:bg-slate-900 transition-all"
+                        className="bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] px-4 py-2 rounded-lg font-semibold text-xs transition-all"
                       >
-                        Add Client
+                        Add Counterparty
                       </button>
                     </div>
                   </td>
@@ -244,30 +243,30 @@ export default function ClientsView() {
         {filteredClients.map((client) => (
           <div 
             key={client.id}
-            className="bg-white rounded-xl shadow-sm border border-slate-100 p-4"
+            className="bg-[#111111] border border-[#222222] rounded-xl p-4 text-left"
           >
             <div className="flex justify-between items-start mb-3">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-xs font-black text-white italic shadow-lg shadow-slate-200 shrink-0">
+                <div className="h-8 w-8 rounded-lg bg-[#1a1a1a] border border-[#222222] flex items-center justify-center text-xs font-semibold text-[#EEEEEE] shrink-0">
                   {client.name[0].toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-slate-900 truncate">{client.name}</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Counterparty</p>
+                  <p className="font-semibold text-[#EEEEEE] truncate text-sm">{client.name}</p>
+                  <p className="text-[10px] text-[#888888] font-bold uppercase tracking-wider">Counterparty</p>
                 </div>
               </div>
               <RiskBadge level={client.risk_score as any} />
             </div>
 
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center text-xs text-slate-600">
-                <Mail size={12} className="mr-2 text-indigo-500 opacity-60" />
-                <span className="truncate">{client.email}</span>
+            <div className="space-y-1.5 mb-4 text-xs text-[#888888]">
+              <div className="flex items-center">
+                <Mail size={12} className="mr-2 text-[#888888]/60" />
+                <span className="truncate font-mono">{client.email}</span>
               </div>
               {client.phone && (
-                <div className="flex items-center text-xs text-slate-600">
-                  <Phone size={12} className="mr-2 text-indigo-500 opacity-60" />
-                  <span>{client.phone}</span>
+                <div className="flex items-center">
+                  <Phone size={12} className="mr-2 text-[#888888]/60" />
+                  <span className="font-mono">{client.phone}</span>
                 </div>
               )}
             </div>
@@ -276,16 +275,16 @@ export default function ClientsView() {
               <div className="flex gap-2">
                 <button 
                   onClick={() => openModal(client)}
-                  className="flex-1 py-2.5 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-200 flex items-center justify-center gap-2"
+                  className="flex-1 py-2 bg-[#161616] border border-[#222222] text-[#EEEEEE] hover:bg-[#222222] rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
                 >
-                  <Edit2 size={12} />
+                  <Edit2 size={11} />
                   Edit
                 </button>
                 <button 
                   onClick={() => deleteClient(client.id)}
-                  className="flex-1 py-2.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center justify-center gap-2"
+                  className="flex-1 py-2 bg-[#EF444410] border border-[#EF444420] text-[#EF4444] hover:bg-[#EF444415] rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={11} />
                   Delete
                 </button>
               </div>
@@ -294,71 +293,73 @@ export default function ClientsView() {
         ))}
 
         {filteredClients.length === 0 && (
-          <div className="py-12 px-6 text-center bg-white rounded-2xl border border-dashed border-slate-200">
-             <Mail className="mx-auto text-slate-300 mb-4" size={40} />
-             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">No clients found</p>
+          <div className="py-12 px-6 text-center bg-[#111111] border border-[#222222] rounded-xl">
+             <Mail className="mx-auto text-[#444444] mb-4" size={32} />
+             <p className="text-[#888888] font-semibold tracking-wider text-xs uppercase">No counterparties found</p>
           </div>
         )}
       </div>
 
-      {/* Modal */}
+      {/* Form Dialog Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in transition-all">
-          <div className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
-            <div className="p-5 border-b border-slate-50 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in transition-all">
+          <div className="bg-[#111111] border border-[#222222] w-full max-w-md rounded-xl shadow-2xl overflow-hidden text-left">
+            <div className="p-5 border-b border-[#222222] flex items-center justify-between">
               <div>
-                <h3 className="font-black text-xl tracking-tighter text-slate-900 italic">{editingId ? 'Edit Counterparty' : 'Anchor New Node'}</h3>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5 font-mono">Counterparty Identification Protocol</p>
+                <h3 className="font-semibold text-base text-[#EEEEEE]">{editingId ? 'Edit Counterparty' : 'Add New Counterparty'}</h3>
+                <p className="text-[10px] text-[#888888] uppercase tracking-wider mt-0.5">Counterparty Details Profile</p>
               </div>
-              <button onClick={closeModal} className="p-1.5 bg-slate-50 rounded-xl text-slate-400 hover:text-slate-900 transition-all">
+              <button onClick={closeModal} className="p-1 bg-[#161616] border border-[#222222] rounded-lg text-[#888888] hover:text-[#EEEEEE] transition-all">
                 <Plus size={16} className="rotate-45" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1 font-mono">Entity Name</label>
+                <label className="block text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1.5 font-mono">Entity Name</label>
                 <input 
                   autoFocus
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-bold text-slate-700 text-sm"
+                  className="w-full px-3 py-2 bg-[#161616] border border-[#222222] focus:border-[#444444] rounded-lg outline-none transition-all font-semibold text-[#EEEEEE] text-xs"
                   placeholder="e.g. Acme Corp"
                 />
               </div>
               <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1 font-mono">Communication Node (Email)</label>
+                <label className="block text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1.5 font-mono">Contact Email</label>
                 <input 
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-bold text-slate-700 text-sm"
+                  className="w-full px-3 py-2 bg-[#161616] border border-[#222222] focus:border-[#444444] rounded-lg outline-none transition-all font-semibold text-[#EEEEEE] text-xs"
                   placeholder="billing@acme.com"
                 />
               </div>
               <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1 font-mono">Voice Uplink (Optional)</label>
+                <label className="block text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1.5 font-mono">Phone Number (Optional)</label>
                 <input 
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white outline-none transition-all font-bold text-slate-700 text-sm font-mono"
-                  placeholder="+91 98765 43210"
+                  className="w-full px-3 py-2 bg-[#161616] border border-[#222222] focus:border-[#444444] rounded-lg outline-none transition-all font-semibold text-xs text-[#EEEEEE] font-mono"
+                  placeholder="+1 555-0192"
                 />
               </div>
+              
               <div className="pt-2 flex gap-3">
                 <button 
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 py-3 px-4 bg-slate-50 text-slate-500 rounded-xl font-black uppercase tracking-[0.2em] text-[9px] hover:bg-slate-100 transition-all active:scale-95 border border-slate-200"
+                  className="flex-1 py-2 px-3 bg-[#161616] border border-[#222222] text-[#888888] hover:text-[#EEEEEE] hover:bg-[#222222] rounded-lg font-semibold text-xs transition-all"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-3 px-4 bg-indigo-600 text-white rounded-xl font-black uppercase tracking-[0.2em] text-[9px] hover:bg-slate-900 transition-all active:scale-95 shadow-xl shadow-indigo-100"
+                  className="flex-1 py-2 px-3 bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] rounded-lg font-semibold text-xs transition-all"
                 >
-                  {editingId ? 'Push Update' : 'Establish Node'}
+                  {editingId ? 'Update' : 'Create'}
                 </button>
               </div>
             </form>
