@@ -180,11 +180,13 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
           .select('*')
           .eq('client_id', invoice.client_id)
           .eq('organization_id', invoice.organization_id)
-          .single();
+          .maybeSingle();
+        setRiskScore(risk || null);
         if (risk) {
-          setRiskScore(risk);
           const rec = await recoveryService.getStrategicRecommendation(invoice, risk, invoice.organization_id);
           setRecommendation(rec);
+        } else {
+          setRecommendation(null);
         }
       }
     }
@@ -938,7 +940,13 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                 <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 break-words">{userProfile?.business_name || 'Your Company'}</h2>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <p className="text-slate-400 font-mono text-[10px] sm:text-xs uppercase tracking-widest leading-none truncate max-w-full">{userProfile?.email}</p>
-                  {riskScore && <RiskBadge level={riskScore.risk_level} />}
+                  {riskScore ? (
+                    <RiskBadge level={riskScore.risk_level} />
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border shadow-sm transition-all bg-slate-50 text-slate-500 border-slate-100">
+                      Risk score pending
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="text-left sm:text-right shrink-0">
