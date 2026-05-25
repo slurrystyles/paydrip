@@ -40,7 +40,7 @@ export default function LandingPage({ user }: { user: User | null }) {
       const link = document.createElement('link');
       link.id = linkId;
       link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Syne:wght@700;800&display=swap';
+      link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
       document.head.appendChild(link);
     }
   }, []);
@@ -112,40 +112,36 @@ export default function LandingPage({ user }: { user: User | null }) {
 
   // TODO: Replace hardcoded waitlist count with live Supabase query
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-[#F0EFE9] font-['DM_Sans'] selection:bg-[#F5A623] selection:text-[#0A0A0F] overflow-x-hidden relative">
+    <div className="min-h-screen bg-[#080808] text-[#EEEEEE] font-['Inter'] selection:bg-[#C8FF00] selection:text-[#080808] overflow-x-hidden relative">
       {/* Navigation */}
-      <nav className="border-b border-[#2A2A38] bg-[#0A0A0F]/95 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <nav className="border-b border-[#222222] bg-[#080808]/95 sticky top-0 z-50 h-16">
+        <div className="max-w-6xl mx-auto px-6 h-full flex items-center justify-between">
           <div 
             onClick={() => navigate('/')}
             className="flex items-center gap-3 cursor-pointer"
           >
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-9 h-9 bg-[#F5A623] rounded-xl flex items-center justify-center text-[#0A0A0F] font-['Syne'] font-extrabold italic text-sm shadow-xl"
-            >
+            <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm">
               P
-            </motion.div>
-            <span className="text-xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9]">Paydrip</span>
+            </div>
+            <span className="text-base font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
             <button 
               onClick={() => handleScrollTo('how-it-works')} 
-              className="text-sm font-medium text-[#8A8A9A] hover:text-[#F5A623] transition-colors"
+              className="text-sm font-medium text-[#888888] hover:text-[#C8FF00] transition-colors"
             >
               How it works
             </button>
             <button 
               onClick={() => handleScrollTo('features')} 
-              className="text-sm font-medium text-[#8A8A9A] hover:text-[#F5A623] transition-colors"
+              className="text-sm font-medium text-[#888888] hover:text-[#C8FF00] transition-colors"
             >
               Features
             </button>
             <button 
               onClick={() => handleScrollTo('pricing')} 
-              className="text-sm font-medium text-[#8A8A9A] hover:text-[#F5A623] transition-colors"
+              className="text-sm font-medium text-[#888888] hover:text-[#C8FF00] transition-colors"
             >
               Pricing
             </button>
@@ -156,7 +152,7 @@ export default function LandingPage({ user }: { user: User | null }) {
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => navigate('/dashboard')}
-                  className="hidden sm:flex px-5 py-2.5 bg-[#F5A623] hover:bg-[#E09615] text-[#0A0A0F] rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2"
+                  className="bg-[#C8FF00] text-[#080808] text-xs font-semibold rounded-lg px-4 py-2 hover:bg-[#b8ef00] transition-colors flex items-center gap-2"
                 >
                   Go to Dashboard
                   <ArrowUpRight size={14} />
@@ -165,7 +161,7 @@ export default function LandingPage({ user }: { user: User | null }) {
                 <div className="relative">
                   <button 
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="h-10 w-10 rounded-xl bg-[#13131A] border border-[#2A2A38] flex items-center justify-center text-xs font-bold text-[#F0EFE9] italic shadow-lg cursor-pointer hover:bg-[#1C1C26] transition-all active:scale-95"
+                    className="h-8 w-8 rounded-lg bg-[#111111] border border-[#222222] flex items-center justify-center text-xs font-medium text-[#EEEEEE] cursor-pointer hover:bg-[#1a1a1a] transition-all active:scale-95"
                   >
                     {user?.email?.[0].toUpperCase() || 'U'}
                   </button>
@@ -179,32 +175,32 @@ export default function LandingPage({ user }: { user: User | null }) {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 10, scale: 0.95 }}
                           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                          className="absolute top-full right-0 mt-4 w-64 bg-[#13131A] border border-[#2A2A38] rounded-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] p-6 z-50"
+                          className="absolute top-full right-0 mt-3 w-56 bg-[#111111] border border-[#222222] rounded-xl shadow-2xl p-4 z-50"
                         >
-                          <div className="mb-6">
-                            <p className="text-[9px] font-semibold text-[#F5A623] uppercase tracking-widest mb-1">
+                          <div className="mb-4">
+                            <p className="text-[10px] font-semibold text-[#888888] uppercase tracking-wider mb-1">
                               {plan === 'free' ? 'Free Plan' : `${plan} Access`}
                             </p>
-                            <p className="text-sm font-bold text-[#F0EFE9] truncate tracking-tight mb-0.5">{user?.email?.split('@')[0]}</p>
-                            <p className="text-[9px] text-[#8A8A9A] font-mono truncate">{user?.email}</p>
+                            <p className="text-sm font-bold text-[#EEEEEE] truncate tracking-tight">{user?.email?.split('@')[0]}</p>
+                            <p className="text-[10px] text-[#888888] font-mono truncate mt-0.5">{user?.email}</p>
                           </div>
                           
-                          <div className="space-y-1.5 border-t border-[#2A2A38] pt-4">
+                          <div className="space-y-1 border-t border-[#222222] pt-3 flex flex-col">
                             <button 
                               onClick={() => { navigate('/dashboard'); setIsProfileOpen(false); }}
-                              className="w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[#8A8A9A] hover:text-[#F5A623] hover:bg-[#1C1C26] rounded-xl transition-all"
+                              className="w-full text-left px-3 py-2 text-xs text-[#888888] hover:text-[#EEEEEE] hover:bg-[#1a1a1a] rounded-lg transition-all"
                             >
                               Open Dashboard
                             </button>
                             <button 
                               onClick={() => { navigate('/settings'); setIsProfileOpen(false); }}
-                              className="w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[#8A8A9A] hover:text-[#F5A623] hover:bg-[#1C1C26] rounded-xl transition-all"
+                              className="w-full text-left px-3 py-2 text-xs text-[#888888] hover:text-[#EEEEEE] hover:bg-[#1a1a1a] rounded-lg transition-all"
                             >
                               Settings
                             </button>
                             <button 
                               onClick={handleSignOut}
-                              className="w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[#EF4444] hover:bg-red-950/20 rounded-xl transition-all"
+                              className="w-full text-left px-3 py-2 text-xs text-[#EF4444] hover:bg-[#EF444410] rounded-lg transition-all"
                             >
                               Sign Out
                             </button>
@@ -219,7 +215,7 @@ export default function LandingPage({ user }: { user: User | null }) {
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setShowAuth(true)}
-                  className="px-6 py-2.5 border border-[#2A2A38] text-[#F0EFE9] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:border-[#F5A623] hover:text-[#F5A623] transition-all active:scale-95 bg-[#13131A]/40"
+                  className="border border-[#222222] bg-transparent text-[#EEEEEE] text-xs font-medium hover:border-[#C8FF00] rounded-lg px-4 py-2 transition-all active:scale-95"
                 >
                   Sign In
                 </button>
@@ -235,55 +231,50 @@ export default function LandingPage({ user }: { user: User | null }) {
         animate="visible"
       >
         {/* SECTION 1: HERO (ABOVE THE FOLD) */}
-        <section className="pt-16 pb-24 px-6 relative">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <section className="min-h-screen flex flex-col justify-center py-20 bg-[#080808] relative border-b border-[#222222]">
+          <div className="max-w-6xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-7 text-left">
-              <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-3 py-1 bg-[#F5A62320] border border-[#F5A62340] rounded-full text-[11px] font-semibold text-[#F5A623] uppercase tracking-[0.2em] mb-6">
-                <Zap size={10} className="fill-current" /> AI-Powered Invoice Recovery
+              <motion.div variants={itemVariants} className="inline-flex items-center bg-[#111111] border border-[#222222] rounded-full px-3 py-1 text-xs text-[#888888] mb-6">
+                AI-Powered Invoice Recovery
               </motion.div>
 
               <motion.h1 
                 variants={itemVariants} 
-                className="text-5xl md:text-6xl lg:text-7xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9] leading-[1.08] mb-6"
+                className="text-4xl md:text-5xl font-bold leading-tight tracking-tight mb-6 max-w-2xl text-[#EEEEEE]"
               >
                 Your invoices <br />
-                <span className="text-[#F5A623]">follow up themselves.</span>
+                <span className="text-[#C8FF00]">follow up themselves.</span>
               </motion.h1>
               
               <motion.p 
                 variants={itemVariants} 
-                className="text-[#8A8A9A] text-lg md:text-xl font-['DM_Sans'] max-w-xl mb-10 leading-relaxed font-semibold"
+                className="text-base text-[#888888] leading-relaxed mb-8 max-w-lg"
               >
-                Send once. Paydrip's AI generates personalised recovery sequences and delivers them across Email, SMS, and WhatsApp — automatically.
+                Send once. Paydrip's AI writes personalised recovery sequences and delivers them across Email, SMS, and WhatsApp — automatically.
               </motion.p>
               
               <motion.div variants={itemVariants} className="space-y-6">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-5">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                   <button 
                     onClick={() => user ? navigate('/dashboard') : setShowAuth(true)}
-                    className="px-8 py-4 bg-[#F5A623] hover:bg-[#E09615] text-[#0A0A0F] rounded-xl text-sm font-bold font-['DM_Sans'] transition-all flex items-center justify-center gap-2 group active:scale-95 shadow-lg hover:shadow-[#F5A62310]"
+                    className="bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] font-semibold text-sm rounded-lg px-6 py-3 transition-colors text-center active:scale-95"
                   >
-                    Start Free
-                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                    Start for free
                   </button>
                   <button 
                     onClick={() => handleScrollTo('how-it-works')}
-                    className="text-[#8A8A9A] hover:text-[#F5A623] py-2 text-sm font-bold font-['DM_Sans'] transition-colors flex items-center justify-center cursor-pointer gap-1"
+                    className="text-[#888888] text-sm hover:text-[#EEEEEE] underline underline-offset-4 hover:no-underline transition-all py-3 px-1 text-center cursor-pointer"
                   >
-                    See how it works →
+                    See how it works
                   </button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-2">
-                  <div className="flex items-center gap-1.5 text-[11px] font-['DM_Sans'] text-[#8A8A9A]">
-                    <CheckCircle size={12} className="text-[#F5A623]" /> No credit card
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[11px] font-['DM_Sans'] text-[#8A8A9A]">
-                    <CheckCircle size={12} className="text-[#F5A623]" /> Free forever plan
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[11px] font-['DM_Sans'] text-[#8A8A9A]">
-                    <CheckCircle size={12} className="text-[#F5A623]" /> Setup in 2 minutes
-                  </div>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-[#444444]">
+                  <span>No credit card</span>
+                  <span>·</span>
+                  <span>Free forever plan</span>
+                  <span>·</span>
+                  <span>Setup in 2 minutes</span>
                 </div>
               </motion.div>
             </div>
@@ -292,89 +283,83 @@ export default function LandingPage({ user }: { user: User | null }) {
               variants={itemVariants}
               className="lg:col-span-5 relative"
             >
-              <div className="absolute inset-0 bg-[#F5A623]/5 rounded-[4rem] -rotate-3 blur-3xl"></div>
-              
-              {/* WhatsApp Mockup */}
-              <div className="relative bg-[#0A0A0F] border border-[#2A2A38] w-full max-w-[320px] mx-auto rounded-3xl shadow-[0_32px_64px_-16px_rgba(245,166,35,0.15)] overflow-hidden aspect-[9/16] flex flex-col">
-                {/* Status Bar */}
-                <div className="h-6 bg-slate-950/20 flex justify-between px-6 items-center border-b border-[#2A2A38]/50">
-                  <div className="w-12 h-2 bg-slate-800 rounded-full"></div>
-                </div>
-
-                {/* Header */}
-                <div className="bg-[#13131A] p-4 flex items-center gap-3 border-b border-[#2A2A38]">
-                  <div className="w-8 h-8 bg-[#F5A623] rounded-xl flex items-center justify-center text-[#0A0A0F] text-[10px] font-['Syne'] font-extrabold italic">P</div>
-                  <div>
-                    <h4 className="text-[#F0EFE9] text-xs font-bold leading-none font-['DM_Sans']">Paydrip Finance</h4>
-                    <p className="text-[#22C55E] text-[8px] font-semibold mt-1 flex items-center gap-1">
-                      <span className="w-1 h-1 rounded-full bg-[#22C55E] relative">
-                        <span className="absolute inset-0 bg-[#22C55E] animate-ping rounded-full" />
-                      </span> 
-                      Online
-                    </p>
-                  </div>
-                </div>
-
-                {/* Chat Area */}
-                <div className="p-4 space-y-4 font-['DM_Sans'] h-full bg-[#0A0A0F]">
-                  <div className="flex justify-center">
-                    <span className="bg-[#13131A] text-[#8A8A9A] text-[8px] px-2.5 py-1 rounded-full font-bold uppercase tracking-widest border border-[#2A2A38]">Today</span>
+              <div className="relative flex justify-center lg:justify-end">
+                <div className="absolute inset-0 bg-[#C8FF0015] rounded-full blur-3xl opacity-50" />
+                
+                {/* WhatsApp Mockup phone frame */}
+                <div className="relative bg-[#111111] border border-[#222222] w-full max-w-[280px] h-[480px] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                  {/* Status Bar */}
+                  <div className="h-6 bg-black/45 flex justify-between px-6 items-center border-b border-[#222222]/30">
+                    <div className="w-12 h-2 bg-[#222222] rounded-full"></div>
                   </div>
 
-                  {/* Message Bubble */}
-                  <motion.div 
-                    initial={{ scale: 0.9, opacity: 0, x: -20 }}
-                    animate={{ scale: 1, opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5, ease: easeExpo }}
-                    className="bg-[#13131A] p-3.5 rounded-2xl rounded-tl-none shadow-sm max-w-[85%] relative border-l-4 border-l-[#F5A623] border-t border-r border-b border-t-[#2A2A38] border-r-[#2A2A38] border-b-[#2A2A38]"
-                  >
-                    <p className="text-[11px] text-[#8A8A9A] leading-relaxed font-medium">
-                      Hey Arjun Bhatia, just a quick reminder that invoice <span className="font-bold text-[#F0EFE9]">#INV-204</span> is due today. 
-                      <br /><br />
-                      Total: <span className="font-black text-[#F0EFE9]">₹12,450.00</span>
-                      <br /><br />
-                      Sharing the secure payment link here: 
-                    </p>
-                    <div className="mt-2.5 p-2 bg-[#0A0A0F] border border-[#2A2A38] rounded-xl flex items-center gap-2">
-                       <div className="w-6 h-6 bg-[#F5A623] rounded flex items-center justify-center text-[#0A0A0F] text-[8px] font-['Syne'] font-extrabold italic shrink-0">P</div>
-                       <div className="flex-1 overflow-hidden">
-                         <p className="text-[9px] font-bold text-[#F0EFE9] truncate">paydrip.io/v/secure</p>
-                         <p className="text-[7px] text-[#4A4A5A]">Click to pay invoice instantly</p>
-                       </div>
+                  {/* Header */}
+                  <div className="bg-[#1a1a1a] p-3 flex items-center gap-3 border-b border-[#222222]">
+                    <div className="w-7 h-7 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] text-[9px] font-bold">P</div>
+                    <div>
+                      <h4 className="text-[#EEEEEE] text-xs font-semibold leading-none">Paydrip Finance</h4>
+                      <p className="text-[#888888] text-[8px] mt-0.5">Online</p>
                     </div>
-                  </motion.div>
+                  </div>
 
-                  {/* Reply Bubble (Mocking real trust) */}
-                  <motion.div 
-                    initial={{ scale: 0.9, opacity: 0, x: 20 }}
-                    animate={{ scale: 1, opacity: 1, x: 0 }}
-                    transition={{ delay: 1.2, ease: easeExpo }}
-                    className="bg-[#131215] p-3.5 rounded-2xl rounded-tr-none shadow-sm max-w-[80%] ml-auto border border-[#2A2A38]"
-                  >
-                    <p className="text-[11px] text-[#F0EFE9] leading-relaxed font-medium">
-                      Ah thanks for the reminder! Just paid via UPI. ⚡️
-                    </p>
-                    <span className="text-[7px] text-[#4A4A5A] float-right mt-1.5 font-mono">10:42 AM</span>
-                  </motion.div>
+                  {/* Chat Area */}
+                  <div className="p-4 space-y-4 h-full bg-[#111111] overflow-y-auto">
+                    <div className="flex justify-center">
+                      <span className="bg-[#1a1a1a] text-[#444444] text-[8px] px-2.5 py-1 rounded-full font-semibold uppercase tracking-widest">Today</span>
+                    </div>
+
+                    {/* Message Bubble */}
+                    <motion.div 
+                      initial={{ scale: 0.9, opacity: 0, x: -10 }}
+                      animate={{ scale: 1, opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5, ease: easeExpo }}
+                      className="bg-[#1a1a1a] border border-[#222222] p-3 rounded-xl rounded-tl-none shadow-sm max-w-[85%]"
+                    >
+                      <p className="text-[10px] text-[#888888] leading-normal font-medium">
+                        Hey Arjun Bhatia, just a quick reminder that invoice <span className="font-semibold text-[#EEEEEE]">#INV-204</span> is due today. 
+                        <br /><br />
+                        Total: <span className="font-semibold text-[#EEEEEE]">₹12,450.00</span>
+                        <br /><br />
+                        Sharing secure payment link: 
+                      </p>
+                      <div className="mt-2 p-1.5 bg-[#111111] border border-[#222222] rounded-lg flex items-center gap-2">
+                         <div className="w-5 h-5 bg-[#C8FF00] rounded flex items-center justify-center text-[#080808] text-[7px] font-bold">P</div>
+                         <div className="flex-1 overflow-hidden">
+                           <p className="text-[8px] font-semibold text-[#EEEEEE] truncate">paydrip.io/v/secure</p>
+                         </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Reply Bubble */}
+                    <motion.div 
+                      initial={{ scale: 0.9, opacity: 0, x: 10 }}
+                      animate={{ scale: 1, opacity: 1, x: 0 }}
+                      transition={{ delay: 1.2, ease: easeExpo }}
+                      className="bg-[#1a1a1a] border border-[#222222] p-3 rounded-xl rounded-tr-none shadow-sm max-w-[80%] ml-auto"
+                    >
+                      <p className="text-[10px] text-[#EEEEEE] leading-normal font-medium">
+                        Ah thanks for the reminder! Just paid via UPI.
+                      </p>
+                      <span className="text-[7px] text-[#444444] float-right mt-1 font-mono">10:42 AM</span>
+                    </motion.div>
+                  </div>
                 </div>
+
+                {/* Floating Badge */}
+                <motion.div 
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -bottom-4 -left-4 bg-[#111111] border border-[#222222] rounded-xl p-4 flex items-center gap-3 shadow-2xl z-20"
+                >
+                  <div className="w-2.5 h-2.5 bg-[#C8FF00] rounded-full relative shrink-0">
+                    <span className="absolute inset-0 rounded-full bg-[#C8FF00] animate-ping opacity-75" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#EEEEEE]">₹12,450 recovered</p>
+                    <p className="text-[#444444] text-xs">just now</p>
+                  </div>
+                </motion.div>
               </div>
-
-              {/* Floating Badge */}
-              <motion.div 
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -bottom-4 -left-4 bg-[#13131A] p-5 rounded-2xl shadow-2xl border border-[#2A2A38] flex items-center gap-4 z-20"
-              >
-                <div className="w-10 h-10 bg-[#F5A62320] text-[#F5A623] rounded-xl flex items-center justify-center relative shrink-0">
-                  <span className="w-3.5 h-3.5 bg-[#22C55E] rounded-full relative">
-                    <span className="absolute inset-0 rounded-full bg-[#22C55E] animate-ping opacity-75" />
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold text-[#8A8A9A] uppercase tracking-widest leading-none mb-1 font-['DM_Sans']">Receipt Generated</p>
-                  <p className="text-sm font-extrabold text-[#F0EFE9] font-['Syne'] tracking-tight">₹12,450 Settled</p>
-                </div>
-              </motion.div>
             </motion.div>
           </div>
         </section>
@@ -386,89 +371,89 @@ export default function LandingPage({ user }: { user: User | null }) {
           initial={{ opacity: 0, y: 24 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="py-20 px-6 bg-[#0A0A0F] border-t border-b border-[#2A2A38]"
+          className="min-h-screen flex flex-col justify-center py-20 bg-[#111111] border-t border-b border-[#222222]"
         >
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <p className="text-[11px] font-semibold font-['DM_Sans'] uppercase tracking-[0.2em] text-[#F5A623] mb-4">How it works</p>
-              <h2 className="text-4xl md:text-5xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9]">From invoice to payment — on autopilot.</h2>
+          <div className="max-w-6xl mx-auto px-6 w-full">
+            <div className="mb-12">
+              <p className="text-xs text-[#888888] uppercase tracking-widest mb-3">How it works</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-[#EEEEEE] max-w-xl leading-tight">From invoice to payment, on autopilot.</h2>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-              {/* Steps (High Contrast Stepper Styling with Fix 2) */}
-              <div className="lg:col-span-6 space-y-4">
+              {/* Steps List */}
+              <div className="lg:col-span-6 space-y-0 divide-y divide-[#222222]">
                 {[
-                  { step: "01", title: "Set up your workspace", desc: "Add your org details and invite team members. Takes under 2 minutes." },
-                  { step: "02", title: "Add your clients", desc: "Build your client list with contact details and risk profiles. Paydrip auto-scores payment risk." },
-                  { step: "03", title: "Create & send invoices", desc: "Generate professional invoices instantly. Clients get a secure payment portal with UPI QR, card, and bank transfer options." },
-                  { step: "04", title: "AI sequences kick in", desc: "Paydrip's AI writes personalised follow-ups — polite, then firm, then final. Delivered on Email, SMS, and WhatsApp automatically." },
-                  { step: "05", title: "Get paid. Generate receipts.", desc: "Client pays and reports payment. You verify and generate a professional PDF receipt in one click." }
+                  { step: "01", title: "Set up your workspace", desc: "Add your org, invite your team. Under 2 minutes." },
+                  { step: "02", title: "Add your clients", desc: "Build your client list. Paydrip auto-scores payment risk." },
+                  { step: "03", title: "Create & send invoices", desc: "Professional invoices with a secure payment portal. UPI QR included." },
+                  { step: "04", title: "AI sequences kick in", desc: "Polite, firm, final — AI writes every follow-up across Email, SMS, and WhatsApp." },
+                  { step: "05", title: "Get paid. Generate receipts.", desc: "Client pays, you verify, PDF receipt in one click." }
                 ].map((item, i) => (
                   <div 
                     key={i} 
-                    className="p-6 bg-[#131118] border-l-4 border-l-[#2A2A38] border-t border-r border-b border-t-[#2A2A38] border-r-[#2A2A38] border-b-[#2A2A38] hover:border-l-[#F5A623] transition-colors duration-300 rounded-2xl flex gap-5 group"
+                    className="py-5 flex gap-5 group transition-colors duration-300"
                   >
-                    <div className="text-xl font-['Syne'] font-extrabold text-[#F5A623]/30 group-hover:text-[#F5A623] transition-colors">{item.step}</div>
+                    <div className={cn(
+                      "text-xs font-mono tabular-nums select-none pt-0.5",
+                      i === 0 ? "text-[#C8FF00]" : "text-[#444444] group-hover:text-[#C8FF00] transition-colors"
+                    )}>
+                      {item.step}
+                    </div>
                     <div>
-                      <h4 className="text-sm font-bold uppercase tracking-wider text-[#F0EFE9] mb-1 font-['DM_Sans']">{item.title}</h4>
-                      <p className="text-sm text-[#8A8A9A] font-medium leading-relaxed font-['DM_Sans']">{item.desc}</p>
+                      <h4 className="text-sm font-semibold text-[#EEEEEE] mb-1">{item.title}</h4>
+                      <p className="text-sm text-[#888888] leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Product Live Demo Mockup UI (Static React JSX Mockup) */}
-              <div className="lg:col-span-6 lg:sticky lg:top-28">
-                <div className="bg-[#13131A] border border-[#2A2A38] rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-[#2A2A38]/60 pb-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#F5A623]" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#22C55E]" />
-                    </div>
-                    <span className="text-[10px] uppercase font-mono tracking-widest text-[#4A4A5A]">live_dashboard_status</span>
+              {/* Product Live Demo Mockup UI */}
+              <div className="lg:col-span-6 lg:sticky lg:top-24">
+                <div className="bg-[#080808] border border-[#222222] rounded-xl p-6 shadow-2xl relative overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-[#222222]/30 pb-3 mb-4">
+                    <p className="text-xs text-[#444444] font-mono">paydrip · live</p>
                   </div>
 
                   {/* Mini Invoice Card */}
-                  <div className="bg-[#1C1C26] border border-[#2A2A38] rounded-xl p-4 mb-4">
+                  <div className="bg-[#111111] border border-[#222222] rounded-lg p-4 mb-4">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <p className="text-[10px] uppercase tracking-widest font-bold text-[#F5A623] mb-0.5 font-['DM_Sans']">Active Invoice</p>
-                        <span className="text-[14px] font-['Syne'] font-extrabold text-[#F0EFE9] block">Arjun Bhatia</span>
+                        <p className="text-[10px] uppercase tracking-widest font-semibold text-[#888888] mb-0.5">Active Invoice</p>
+                        <span className="text-sm font-semibold text-[#EEEEEE] block">Arjun Bhatia</span>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-[#F5A623]/20 text-[#F5A623]">
+                      <span className="px-2.5 py-0.5 rounded bg-[#1a1a1a] text-[#888888] text-[10px] font-semibold">
                         Sequence Active
                       </span>
                     </div>
-                    <div className="text-xl font-['Syne'] font-extrabold text-[#F5A623] mb-1">
+                    {/* ONE lime number in this section is the amount ₹12,450 */}
+                    <div className="text-xl font-bold text-[#C8FF00] mb-1">
                       ₹12,450
                     </div>
-                    <p className="text-[10px] text-[#8A8A9A] font-mono">Invoice #INV-204 · Overdue 5 days</p>
+                    <p className="text-[10px] text-[#444444] font-mono">Invoice #INV-204 · Overdue 5 days</p>
                   </div>
 
                   {/* Status Pills */}
                   <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div className="bg-[#1C1C26] border border-[#2A2A38] px-2 py-2.5 rounded-xl flex flex-col items-center justify-center text-center">
-                      <span className="text-lg mb-1">📧</span>
-                      <span className="text-[9px] font-bold uppercase text-[#22C55E]">Email Sent</span>
+                    <div className="bg-[#111111] border border-[#222222] px-2 py-2 rounded-lg flex flex-col items-center justify-center text-center">
+                      <span className="text-base mb-1">📧</span>
+                      <span className="text-[9px] font-semibold text-[#888888] uppercase">Email Sent</span>
                     </div>
-                    <div className="bg-[#1C1C26] border border-[#2A2A38] px-2 py-2.5 rounded-xl flex flex-col items-center justify-center text-center">
-                      <span className="text-lg mb-1">💬</span>
-                      <span className="text-[9px] font-bold uppercase text-[#F5A623]">SMS Queued</span>
+                    <div className="bg-[#111111] border border-[#222222] px-2 py-2 rounded-lg flex flex-col items-center justify-center text-center">
+                      <span className="text-base mb-1">💬</span>
+                      <span className="text-[9px] font-semibold text-[#888888] uppercase">SMS Queued</span>
                     </div>
-                    <div className="bg-[#1C1C26] border border-[#2A2A38] px-2 py-2.5 rounded-xl flex flex-col items-center justify-center text-center">
-                      <span className="text-lg mb-1">✅</span>
-                      <span className="text-[9px] font-bold uppercase text-[#22C55E]">WA Delivered</span>
+                    <div className="bg-[#111111] border border-[#222222] px-2 py-2 rounded-lg flex flex-col items-center justify-center text-center">
+                      <span className="text-base mb-1">✅</span>
+                      <span className="text-[9px] font-semibold text-[#888888] uppercase">WA Delivered</span>
                     </div>
                   </div>
 
                   {/* AI Message Preview Box */}
-                  <div className="border border-[#F5A623] rounded-xl p-4 bg-[#1C1C26]/50">
+                  <div className="border border-[#222222] bg-[#111111] rounded-lg p-4">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#F5A623] animate-pulse" />
-                      <span className="text-[9px] font-semibold uppercase tracking-wider text-[#F5A623] font-['DM_Sans']">AI-generated · Polite tone</span>
+                      <span className="text-[9px] font-semibold uppercase tracking-wider text-[#888888]">AI-generated · Polite tone</span>
                     </div>
-                    <p className="text-[11px] text-[#8A8A9A] leading-relaxed italic pr-4 font-['DM_Sans']">
+                    <p className="text-xs text-[#888888] leading-relaxed">
                       "We noticed invoice #INV-204 is due today. We kindly request settling payment via the secure portal linked below..."
                     </p>
                   </div>
@@ -478,61 +463,60 @@ export default function LandingPage({ user }: { user: User | null }) {
           </div>
         </motion.section>
 
-        {/* SECTION 3: FEATURES (BENTO GRID) */}
+        {/* SECTION 3: FEATURES */}
         <motion.section 
           id="features"
           whileInView={{ opacity: 1, y: 0 }} 
           initial={{ opacity: 0, y: 24 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="py-20 px-6 bg-[#13131A] relative"
+          className="min-h-screen flex flex-col justify-center py-20 bg-[#080808] border-b border-[#222222]"
         >
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <p className="text-[11px] font-semibold font-['DM_Sans'] uppercase tracking-[0.2em] text-[#F5A623] mb-4">Everything you need</p>
-              <h2 className="text-4xl md:text-5xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9]">Built for freelancers who mean business.</h2>
+          <div className="max-w-6xl mx-auto px-6 w-full">
+            <div className="mb-12">
+              <p className="text-xs text-[#888888] uppercase tracking-widest mb-3">Features</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-[#EEEEEE] max-w-xl leading-tight">Everything you need to get paid.</h2>
             </div>
 
-            {/* Bento Grid layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 [&>*:nth-child(1)]:lg:col-span-2 [&>*:nth-child(4)]:lg:col-span-2">
+            {/* Grid layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <FeatureCard 
-                icon={<Zap size={22} />}
+                icon={<Zap size={20} />}
                 title="AI Recovery Sequences"
-                isLarge
-                description="Gemini AI writes personalised follow-up messages for every client — polite, firm, and final. Tone adapts to invoice age and client history. You never write a chase email again."
-                badge="Powered by Gemini 2.0 Flash"
+                description="Gemini AI writes every follow-up — polite, firm, final. Tone adapts to invoice age."
+                badge="Gemini 2.0 Flash"
               />
 
               <FeatureCard 
-                icon={<MessageSquare size={22} />}
+                icon={<MessageSquare size={20} />}
                 title="Multi-Channel Delivery"
-                description="Email via Resend, SMS via Twilio, WhatsApp manual prompt. All three in one sequence."
+                description="Email, SMS, and WhatsApp in one automated sequence. Nothing falls through the cracks."
               />
 
               <FeatureCard 
-                icon={<BarChart3 size={22} />}
+                icon={<BarChart3 size={20} />}
                 title="Client Risk Scoring"
-                description="Auto-calculated risk score on every client. Know who needs chasing before they're overdue."
+                description="Every client gets an auto-calculated risk score. Know who needs attention before they're overdue."
               />
 
               <FeatureCard 
-                icon={<ExternalLink size={22} />}
-                title="Client Payment Portal"
-                isLarge
-                description="Every invoice gets a public, mobile-first payment page. UPI QR code, bank transfer details, and payment reporting — all included. No login required for your clients."
-                badge="UPI · Bank Transfer · Card"
+                icon={<ExternalLink size={20} />}
+                title="Payment Portal"
+                description="A mobile-first payment page for every invoice. UPI QR, bank transfer, no client login needed."
+                badge="UPI · Bank Transfer"
               />
 
               <FeatureCard 
-                icon={<BarChart3 size={22} />}
-                title="Real-time Analytics"
-                description="Track recovery rates, overdue amounts, and sequence performance. Full dashboard included."
+                icon={<BarChart3 size={20} />}
+                title="Analytics Dashboard"
+                description="Recovery rates, overdue amounts, sequence performance. Full visibility, always."
               />
 
               <FeatureCard 
-                icon={<Zap size={22} />}
-                title="Webhook & White-label"
-                description="Enterprise-grade webhooks and white-label portal with custom domain. Built for agencies."
+                icon={<Zap size={20} />}
+                title="Webhooks & White-label"
+                description="Enterprise webhooks, custom domain, white-label portal. Built for agencies."
+                badge="Enterprise"
               />
             </div>
           </div>
@@ -544,27 +528,28 @@ export default function LandingPage({ user }: { user: User | null }) {
           initial={{ opacity: 0, y: 24 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="py-16 px-6 bg-[#0A0A0F]"
+          className="min-h-screen flex flex-col justify-center py-20 bg-[#111111] border-b border-[#222222]"
         >
-          <div className="max-w-4xl mx-auto text-center">
-            <p className="text-[11px] font-semibold font-['DM_Sans'] uppercase tracking-[0.2em] text-[#F5A623] mb-4">Early access</p>
-            <h2 className="text-3xl md:text-5xl font-['Syne'] font-extrabold text-[#F0EFE9] mb-8">Built in public. Launching soon.</h2>
+          <div className="max-w-2xl mx-auto px-6 w-full text-center">
+            <p className="text-xs text-[#888888] uppercase tracking-widest mb-3">Early access</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#EEEEEE] mb-10">Built in public. Launching soon.</h2>
             
-            <div className="max-w-2xl mx-auto bg-[#13131A] border border-[#2A2A38] rounded-2xl p-8 md:p-12 text-center">
+            <div className="bg-[#080808] border border-[#222222] rounded-xl p-10 text-center max-w-xl mx-auto shadow-2xl">
               <div className="flex flex-col items-center">
-                <span className="font-['Syne'] font-extrabold text-6xl md:text-8xl text-[#F5A623]">47</span>
-                <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#8A8A9A] mt-2 font-['DM_Sans']">freelancers on the waitlist</span>
+                {/* // TODO: Replace with live Supabase count */}
+                <span className="text-5xl font-bold text-[#C8FF00]">47</span>
+                <span className="text-sm text-[#888888] mt-1">freelancers on the waitlist</span>
               </div>
               
-              <div className="border-b border-[#2A2A38] my-8 w-24 mx-auto" />
+              <div className="border-b border-[#222222] w-12 mx-auto my-8" />
               
-              <p className="text-sm font-['DM_Sans'] text-[#8A8A9A] max-w-md mx-auto leading-relaxed mb-8 font-medium">
-                Paydrip is in active beta. We're onboarding freelancers and agencies for early access. Free plan available now — no credit card required.
+              <p className="text-sm text-[#888888] max-w-sm mx-auto leading-relaxed">
+                Paydrip is in active beta. We're onboarding freelancers and agencies for early access. Free plan available now — no credit card.
               </p>
               
               <button 
                 onClick={() => user ? navigate('/dashboard') : setShowAuth(true)}
-                className="px-8 py-3.5 bg-[#F5A623] hover:bg-[#E09615] text-[#0A0A0F] rounded-xl text-sm font-bold font-['DM_Sans'] transition-all active:scale-95 shadow-md"
+                className="bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] font-semibold text-sm rounded-lg px-6 py-3 mt-6 transition-colors inline-block cursor-pointer"
               >
                 Join the waitlist
               </button>
@@ -579,25 +564,25 @@ export default function LandingPage({ user }: { user: User | null }) {
           initial={{ opacity: 0, y: 24 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="py-20 px-6 bg-[#13131A]"
+          className="min-h-screen flex flex-col justify-center py-20 bg-[#080808] border-b border-[#222222]"
         >
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <p className="text-[11px] font-semibold font-['DM_Sans'] uppercase tracking-[0.2em] text-[#F5A623] mb-4">Pricing</p>
-              <h2 className="text-4xl md:text-5xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9]">Start free. Scale when you're ready.</h2>
+          <div className="max-w-6xl mx-auto px-6 w-full">
+            <div className="mb-10 text-center">
+              <p className="text-xs text-[#888888] uppercase tracking-widest mb-3">Pricing</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-[#EEEEEE] leading-tight">Start free. Scale when ready.</h2>
               
               {/* Currency Toggle */}
-              <div className="flex justify-center mt-8">
-                <div className="bg-[#13131A] border border-[#2A2A38] rounded-full p-1.5 flex items-center gap-1.5">
+              <div className="flex justify-center mt-6">
+                <div className="bg-[#111111] border border-[#222222] rounded-lg p-1 inline-flex gap-1">
                   {(['usd', 'inr', 'eur'] as const).map((curr) => (
                     <button
                       key={curr}
                       onClick={() => setCurrency(curr)}
                       className={cn(
-                        "px-4 py-1.5 rounded-full text-xs font-bold font-['DM_Sans'] uppercase tracking-wider transition-all",
+                        "rounded-md px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-all",
                         currency === curr
-                          ? "bg-[#F5A623] text-[#0A0A0F]"
-                          : "text-[#8A8A9A] hover:text-[#F0EFE9]"
+                          ? "bg-[#C8FF00] text-[#080808]"
+                          : "text-[#888888] hover:text-[#EEEEEE]"
                       )}
                     >
                       {curr}
@@ -608,7 +593,7 @@ export default function LandingPage({ user }: { user: User | null }) {
             </div>
 
             {/* Pricing columns */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mt-12 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mt-10 max-w-6xl mx-auto w-full">
               <PricingCard 
                 name="Free"
                 priceKey="free"
@@ -687,17 +672,19 @@ export default function LandingPage({ user }: { user: User | null }) {
           initial={{ opacity: 0, y: 24 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="py-24 px-6 text-center bg-[#0A0A0F]"
+          className="min-h-screen flex flex-col justify-center py-20 bg-[#111111] text-center border-b border-[#222222]"
         >
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9]">Stop chasing payments.</h2>
-            <p className="font-['Syne'] font-extrabold text-3xl md:text-5xl text-[#F5A623] mt-3 mb-6">Start recovering them.</p>
-            <p className="text-[#8A8A9A] font-['DM_Sans'] text-sm max-w-lg mx-auto mb-10 leading-relaxed font-semibold">
+          <div className="max-w-xl mx-auto px-6 w-full">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#EEEEEE] tracking-tight leading-tight">
+              Stop chasing payments. <br />
+              <span className="text-[#C8FF00]">Start recovering them.</span>
+            </h2>
+            <p className="text-sm text-[#888888] mt-4 mb-8 max-w-md mx-auto leading-relaxed">
               Join freelancers using Paydrip to automate invoice recovery across Email, SMS, and WhatsApp.
             </p>
             <button 
               onClick={() => user ? navigate('/dashboard') : setShowAuth(true)}
-              className="px-10 py-5 bg-[#F5A623] hover:bg-[#E09615] text-[#0A0A0F] rounded-xl text-base font-bold font-['DM_Sans'] transition-all active:scale-95 shadow-xl hover:shadow-[#F5A62310]"
+              className="bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] font-semibold text-sm rounded-lg px-8 py-3 transition-colors active:scale-95"
             >
               Create your first invoice — it's free
             </button>
@@ -706,22 +693,22 @@ export default function LandingPage({ user }: { user: User | null }) {
       </motion.main>
 
       {/* FOOTER */}
-      <footer className="py-16 px-6 bg-[#0A0A0F] border-t border-[#2A2A38] text-sm">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
+      <footer className="bg-[#080808] border-t border-[#222222] py-10 px-6 text-xs">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#F5A623] rounded-xl flex items-center justify-center text-[#0A0A0F] font-['Syne'] font-extrabold italic text-xs">P</div>
-            <span className="text-lg font-['Syne'] font-extrabold text-[#F0EFE9]">Paydrip</span>
+            <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm">P</div>
+            <span className="text-base font-semibold text-[#EEEEEE] tracking-tight">Paydrip</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 font-medium font-['DM_Sans'] text-[#8A8A9A]">
-            <button onClick={() => handleScrollTo('how-it-works')} className="hover:text-[#F5A623] transition-colors">How it works</button>
-            <button onClick={() => handleScrollTo('features')} className="hover:text-[#F5A623] transition-colors">Features</button>
-            <button onClick={() => handleScrollTo('pricing')} className="hover:text-[#F5A623] transition-colors">Pricing</button>
-            <Link to="/privacy" className="hover:text-[#F5A623] transition-colors">Privacy</Link>
-            <Link to="/terms" className="hover:text-[#F5A623] transition-colors">Terms</Link>
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 font-medium text-[#444444]">
+            <button onClick={() => handleScrollTo('how-it-works')} className="hover:text-[#888888] transition-colors">How it works</button>
+            <button onClick={() => handleScrollTo('features')} className="hover:text-[#888888] transition-colors">Features</button>
+            <button onClick={() => handleScrollTo('pricing')} className="hover:text-[#888888] transition-colors">Pricing</button>
+            <Link to="/privacy" className="hover:text-[#888888] transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-[#888888] transition-colors">Terms</Link>
           </div>
 
-          <p className="text-[11px] font-semibold text-[#4A4A5A] uppercase tracking-widest font-['DM_Sans']">
+          <p className="text-xs text-[#444444]">
             Made for freelancers, everywhere.
           </p>
         </div>
@@ -768,18 +755,18 @@ export default function LandingPage({ user }: { user: User | null }) {
   );
 }
 
-function FeatureCard({ icon, title, description, isLarge, badge }: { icon: React.ReactNode, title: string, description: string, isLarge?: boolean, badge?: string }) {
+function FeatureCard({ icon, title, description, badge }: { icon: React.ReactNode, title: string, description: string, badge?: string }) {
   return (
-    <div className="bg-[#0A0A0F] border border-[#2A2A38] rounded-2xl p-8 hover:border-[#F5A62360] transition-colors duration-300 flex flex-col justify-between text-left min-h-[200px]">
+    <div className="bg-[#111111] border border-[#222222] rounded-xl p-6 hover:border-[#333333] transition-colors flex flex-col justify-between text-left min-h-[180px]">
       <div>
-        <div className="w-12 h-12 bg-[#F5A62320] text-[#F5A623] rounded-xl flex items-center justify-center mb-6">
+        <div className="text-[#EEEEEE]">
           {icon}
         </div>
-        <h3 className="text-xl font-['Syne'] font-extrabold text-[#F0EFE9] mb-3">{title}</h3>
-        <p className="text-sm font-['DM_Sans'] text-[#8A8A9A] leading-relaxed mb-6 font-medium">{description}</p>
+        <h3 className="text-base font-semibold text-[#EEEEEE] mt-4">{title}</h3>
+        <p className="text-sm text-[#888888] mt-2 leading-relaxed">{description}</p>
       </div>
       {badge && (
-        <span className="text-[10px] uppercase tracking-widest font-bold text-[#F5A623] bg-[#F5A62320] px-3.5 py-1 rounded-full w-fit font-['DM_Sans']">
+        <span className="text-xs text-[#444444] mt-4 block">
           {badge}
         </span>
       )}
@@ -794,59 +781,62 @@ function PricingCard({ name, priceKey, yearlyPriceKey, features, cta, onCta, isP
   // TODO: Add Lemon Squeezy integration for subscription syncing on checkout completion below
 
   return (
-    <div className={cn(
-      "relative p-8 rounded-2xl flex flex-col justify-between transition-all duration-300 h-full bg-[#0A0A0F] border text-left",
-      isPro ? "border-[#F5A623] shadow-[0_0_40px_#F5A62315]" : "border-[#2A2A38] hover:border-[#F5A62360]"
-    )}>
+    <div className="flex flex-col h-full justify-end relative">
       {isPro && (
-        <div className="absolute -top-3.5 left-8 bg-[#F5A623] text-[#0A0A0F] text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full font-['DM_Sans']">
+        <div className="text-xs text-[#C8FF00] font-medium mb-2 tracking-wide block">
           Most popular
         </div>
       )}
-
-      <div>
-        <h3 className={cn(
-          "text-[10px] font-bold uppercase tracking-[0.2em] mb-6 font-['DM_Sans']",
-          isPro ? "text-[#F5A623]" : "text-[#8A8A9A]"
-        )}>{name}</h3>
-        
-        <div className="mb-8">
-          <div className="text-4xl font-['Syne'] font-extrabold tracking-tight text-[#F0EFE9]">
-            {priceVal}
-          </div>
-          {priceKey === 'free' && (
-            <p className="text-[11px] text-[#8A8A9A] font-['DM_Sans'] mt-1">Free forever</p>
-          )}
-          {yearlyVal && (
-            <div className="text-[11px] font-medium text-[#8A8A9A] mt-2 font-['DM_Sans']">
-              or {yearlyVal} billed yearly
+      {!isPro && (
+        <div className="text-xs text-transparent font-medium mb-2 opacity-0 select-none pointer-events-none block">
+          Placeholder
+        </div>
+      )}
+      <div className={cn(
+        "relative p-8 rounded-xl flex flex-col justify-between transition-all duration-300 flex-1 bg-[#111111] border text-left",
+        isPro ? "border-[#C8FF00] shadow-[0_0_30px_rgba(200,255,0,0.06)]" : "border-[#222222] hover:border-[#333333]"
+      )}>
+        <div>
+          <h3 className="text-xs text-[#888888] uppercase tracking-widest font-medium mb-6">{name}</h3>
+          
+          <div className="mb-8">
+            <div className="text-4xl font-bold text-[#EEEEEE]">
+              {priceKey === 'free' ? 'Free' : priceVal}
             </div>
-          )}
+            {priceKey === 'free' && (
+              <p className="text-xs text-[#444444] mt-1">forever</p>
+            )}
+            {yearlyVal && (
+              <div className="text-xs text-[#444444] mt-1">
+                or {yearlyVal} / year
+              </div>
+            )}
+          </div>
+
+          <ul className="space-y-3 mb-10">
+            {features.map((f: string) => (
+              <li key={f} className="flex items-start gap-2 text-sm leading-normal">
+                <div className="shrink-0 mt-0.5">
+                  <Check size={13} className="text-[#888888]" />
+                </div>
+                <span className="text-[#888888]">{f}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <ul className="space-y-4 mb-10">
-          {features.map((f: string) => (
-            <li key={f} className="flex items-start gap-3 text-xs font-medium font-['DM_Sans'] leading-normal">
-              <div className="shrink-0 mt-0.5">
-                <CheckCircle size={14} className="text-[#F5A623]" />
-              </div>
-              <span className="text-[#8A8A9A]">{f}</span>
-            </li>
-          ))}
-        </ul>
+        <button 
+          onClick={onCta}
+          className={cn(
+            "w-full py-2.5 rounded-lg text-sm transition-all active:scale-95 text-center mt-auto",
+            isPro 
+              ? "bg-[#C8FF00] text-[#080808] font-semibold hover:bg-[#b8ef00]" 
+              : "border border-[#222222] text-[#EEEEEE] bg-transparent font-medium hover:border-[#333333]"
+          )}
+        >
+          {cta}
+        </button>
       </div>
-
-      <button 
-        onClick={onCta}
-        className={cn(
-          "w-full py-3.5 rounded-xl font-bold uppercase tracking-widest text-[10px] font-['DM_Sans'] transition-all active:scale-95 shadow-lg",
-          isPro 
-            ? "bg-[#F5A623] text-[#0A0A0F] hover:bg-[#E09615] hover:shadow-[#F5A62310]" 
-            : "border border-[#2A2A38] text-[#F0EFE9] hover:border-[#F5A623] hover:text-[#F5A623] bg-[#13131A]/30"
-        )}
-      >
-        {cta}
-      </button>
     </div>
   );
 }
