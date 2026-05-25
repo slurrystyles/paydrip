@@ -895,7 +895,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+        className="absolute inset-0 bg-[#080808]/85 backdrop-blur-sm"
       />
       
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
@@ -904,7 +904,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="bg-white w-full max-w-5xl sm:rounded-3xl shadow-2xl overflow-y-auto md:overflow-hidden flex flex-col md:flex-row h-screen sm:h-[90vh] relative z-10"
+        className="bg-[#111111] border border-[#222222] w-full max-w-5xl sm:rounded-3xl shadow-2xl overflow-y-auto md:overflow-hidden flex flex-col md:flex-row h-screen sm:h-[90vh] relative z-10"
       >
         {/* Toast Notification */}
         <AnimatePresence>
@@ -913,130 +913,130 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 20, opacity: 1 }}
               exit={{ y: -20, opacity: 0 }}
-              className="absolute top-0 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-3 whitespace-nowrap"
+              className="absolute top-0 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-[#161616] border border-[#222222] text-[#EEEEEE] rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-3 whitespace-nowrap"
             >
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-[#C8FF00] animate-pulse" />
               {toast}
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Mobile Header with Close Button */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b border-slate-50 bg-white sticky top-0 z-20">
+        <div className="lg:hidden flex items-center justify-between p-4 border-b border-[#222222] bg-[#111111] sticky top-0 z-20">
           <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black italic shadow-lg">P</div>
-             <p className="font-black text-slate-900 leading-none">Invoice #{invoice.invoice_number}</p>
+             <div className="w-8 h-8 bg-[#222222] border border-[#333333] rounded-lg flex items-center justify-center text-[#C8FF00] font-black italic shadow-lg">P</div>
+             <p className="font-black text-[#EEEEEE] leading-none">Invoice #{invoice.invoice_number}</p>
           </div>
-          <button onClick={onClose} className="p-3 bg-slate-50 rounded-xl text-slate-400 active:scale-90 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center">
+          <button onClick={onClose} className="p-3 bg-[#161616] border border-[#222222] rounded-xl text-[#888888] active:scale-90 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center">
              <X size={20} />
           </button>
         </div>
 
         {/* Preview Panel */}
-        <div className="shrink-0 md:flex-1 bg-slate-50/50 md:overflow-y-auto p-3 sm:p-8 md:p-12 border-b md:border-b-0 md:border-r border-slate-100">
-          <div className="bg-white p-5 sm:p-8 md:p-12 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-200/60 min-h-[400px] md:min-h-[800px] flex flex-col">
+        <div className="shrink-0 md:flex-1 bg-[#111111] md:overflow-y-auto p-3 sm:p-8 md:p-12 border-b md:border-b-0 md:border-r border-[#222222]">
+          <div className="bg-[#161616] p-5 sm:p-8 md:p-12 rounded-3xl border border-[#222222] min-h-[400px] md:min-h-[800px] flex flex-col">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-12 sm:mb-16">
               <div className="min-w-0">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 break-words">{userProfile?.business_name || 'Your Company'}</h2>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <p className="text-slate-400 font-mono text-[10px] sm:text-xs uppercase tracking-widest leading-none truncate max-w-full">{userProfile?.email}</p>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[#EEEEEE] break-words uppercase italic">{userProfile?.business_name || 'Your Company'}</h2>
+                <div className="flex flex-wrap items-center gap-2 mt-2 font-mono">
+                  <p className="text-[#888888] font-mono text-[10px] sm:text-xs uppercase tracking-widest leading-none truncate max-w-full">{userProfile?.email}</p>
                   {riskScore ? (
                     <RiskBadge level={riskScore.risk_level} />
                   ) : (
-                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border shadow-sm transition-all bg-slate-50 text-slate-500 border-slate-100">
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border transition-all bg-[#111111] text-[#888888] border-[#222222] font-mono">
                       Risk score pending
                     </div>
                   )}
                 </div>
               </div>
-              <div className="text-left sm:text-right shrink-0">
-                <p className="font-mono text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-widest">Digital Invoice</p>
-                <p className="text-lg sm:text-xl font-black text-slate-900">#{invoice.invoice_number}</p>
+              <div className="text-left sm:text-right shrink-0 font-mono">
+                <p className="font-mono text-[9px] sm:text-[10px] text-[#888888] uppercase tracking-widest">Digital Invoice</p>
+                <p className="text-lg sm:text-xl font-black text-[#EEEEEE]">#{invoice.invoice_number}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 mb-12 sm:mb-16">
               <div>
-                <p className="font-mono text-[9px] sm:text-[10px] uppercase text-slate-400 mb-2 tracking-widest">Bill To</p>
-                <p className="font-bold text-base sm:text-lg text-slate-900">{clientInfo.name}</p>
-                <p className="text-slate-500 text-xs sm:text-sm italic truncate">{clientInfo.email}</p>
+                <p className="font-mono text-[9px] sm:text-[10px] uppercase text-[#888888] mb-2 tracking-widest">Bill To</p>
+                <p className="font-bold text-base sm:text-lg text-[#EEEEEE]">{clientInfo.name}</p>
+                <p className="text-[#888888] text-xs sm:text-sm italic truncate">{clientInfo.email}</p>
               </div>
               <div className="text-left sm:text-right">
-                <p className="font-mono text-[9px] sm:text-[10px] uppercase text-slate-400 mb-2 tracking-widest">Timeline</p>
-                <div className="space-y-1">
-                  <p className="text-xs sm:text-sm"><span className="text-slate-400">Issued:</span> <span className="font-bold">{new Date(invoice.created_at).toLocaleDateString()}</span></p>
-                  <p className="text-xs sm:text-sm"><span className="text-slate-400">Due:</span> <span className="font-bold text-indigo-600">{new Date(invoice.due_date).toLocaleDateString()}</span></p>
+                <p className="font-mono text-[9px] sm:text-[10px] uppercase text-[#888888] mb-2 tracking-widest">Timeline</p>
+                <div className="space-y-1 font-mono">
+                  <p className="text-xs sm:text-sm"><span className="text-[#888888]">Issued:</span> <span className="font-bold text-[#EEEEEE]">{new Date(invoice.created_at).toLocaleDateString()}</span></p>
+                  <p className="text-xs sm:text-sm"><span className="text-[#888888]">Due:</span> <span className="font-bold text-[#C8FF00]">{new Date(invoice.due_date).toLocaleDateString()}</span></p>
                 </div>
               </div>
             </div>
 
             <div className="flex-1">
               <table className="w-full text-left">
-                <thead className="border-b border-slate-100">
+                <thead className="border-b border-[#222222]">
                   <tr>
-                    <th className="py-4 font-mono text-[10px] uppercase text-slate-400 tracking-widest">Description</th>
-                    <th className="py-4 text-right font-mono text-[10px] uppercase text-slate-400 tracking-widest">Total</th>
+                    <th className="py-4 font-mono text-[10px] uppercase text-[#888888] tracking-widest">Description</th>
+                    <th className="py-4 text-right font-mono text-[10px] uppercase text-[#888888] tracking-widest">Total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-[#222222]/40">
                   <tr>
-                    <td className="py-6 text-sm font-medium text-slate-700 font-sans">
+                    <td className="py-6 text-sm font-medium text-[#EEEEEE] font-sans">
                       Standard Professional Services
-                      <p className="text-[10px] text-slate-400 mt-1 font-normal italic">Fixed price project delivery</p>
+                      <p className="text-[10px] text-[#888888] mt-1 font-normal italic">Fixed price project delivery</p>
                     </td>
-                    <td className="py-6 text-right font-black font-mono text-slate-900">{formatCurrency(invoice.amount)}</td>
+                    <td className="py-6 text-right font-black font-mono text-[#EEEEEE]">{formatCurrency(invoice.amount)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="border-t-2 border-slate-900 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+            <div className="border-t-2 border-[#222222] pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
               <div className="max-w-[200px]">
-                <p className="text-[9px] sm:text-[10px] text-slate-400 font-mono uppercase tracking-widest mb-2">Terms & Notes</p>
-                <p className="text-[10px] sm:text-xs text-slate-500 leading-relaxed italic line-clamp-3">"{invoice.notes || 'Please settle within 7 days of receipt.'}"</p>
+                <p className="text-[9px] sm:text-[10px] text-[#888888] font-mono uppercase tracking-widest mb-2">Terms & Notes</p>
+                <p className="text-[10px] sm:text-xs text-[#888888] leading-relaxed italic line-clamp-3">"{invoice.notes || 'Please settle within 7 days of receipt.'}"</p>
               </div>
               <div className="text-left sm:text-right w-full sm:w-auto">
-                <div className="space-y-1 mb-2">
+                <div className="space-y-1 mb-2 font-mono">
                   <div className="flex justify-between sm:justify-end gap-12 text-[10px] sm:text-xs font-bold">
-                    <span className="text-slate-400 uppercase tracking-widest">Subtotal</span>
-                    <span className="text-slate-900">{formatCurrency(invoice.amount)}</span>
+                    <span className="text-[#888888] uppercase tracking-widest">Subtotal</span>
+                    <span className="text-[#EEEEEE]">{formatCurrency(invoice.amount)}</span>
                   </div>
                   {totalPaid > 0 && (
                     <div className="flex justify-between sm:justify-end gap-12 text-[10px] sm:text-xs font-bold">
                       <span className="text-green-500 uppercase tracking-widest">Paid to Date</span>
-                      <span className="text-green-600">-{formatCurrency(totalPaid)}</span>
+                      <span className="text-green-400">-{formatCurrency(totalPaid)}</span>
                     </div>
                   )}
                 </div>
-                <p className="text-[9px] sm:text-[10px] text-slate-400 font-mono uppercase tracking-tighter mb-1">Final Balance Due</p>
-                <p className="text-4xl sm:text-5xl font-black tracking-tighter text-indigo-600">{formatCurrency(remainingBalance)}</p>
+                <p className="text-[9px] sm:text-[10px] text-[#888888] font-mono uppercase tracking-tighter mb-1">Final Balance Due</p>
+                <p className="text-4xl sm:text-5xl font-black tracking-tighter text-[#C8FF00] font-mono">{formatCurrency(remainingBalance)}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Action Panel */}
-        <div className="shrink-0 md:flex-1 lg:flex-none lg:w-96 bg-white flex flex-col border-l border-slate-100 min-h-0">
-          <div className="hidden lg:flex p-6 border-b border-slate-100 items-center justify-between">
+        <div className="shrink-0 md:flex-1 lg:flex-none lg:w-96 bg-[#111111] flex flex-col border-l border-[#222222] min-h-0">
+          <div className="hidden lg:flex p-6 border-b border-[#222222] items-center justify-between bg-[#111111]">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></div>
-              <h3 className="font-black uppercase font-mono text-[10px] text-slate-400 tracking-widest">Management Console</h3>
+              <div className="w-2 h-2 rounded-full bg-[#C8FF00] animate-pulse"></div>
+              <h3 className="font-black uppercase font-mono text-[10px] text-[#888888] tracking-widest">Management Console</h3>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-2xl transition-all text-slate-400 hover:text-slate-900">
+            <button onClick={onClose} className="p-2 hover:bg-[#161616] rounded-2xl transition-all text-[#888888] hover:text-[#EEEEEE]">
               <X size={20} />
             </button>
           </div>
 
           <div className="flex-1 p-4 sm:p-6 space-y-8 md:overflow-y-auto custom-scrollbar pb-32 lg:pb-6">
             {/* Nav Tabs */}
-            <div className="flex gap-1 bg-slate-50 p-1 rounded-2xl overflow-x-auto scrollbar-hide shrink-0">
+            <div className="flex gap-1 bg-[#161616] p-1 border border-[#222222]/80 rounded-2xl overflow-x-auto scrollbar-hide shrink-0">
                {(['recovery', 'payments', 'history'] as const).map(tab => (
                  <button
                    key={tab}
                    onClick={() => setActiveTab(tab)}
                    className={cn(
-                     "flex-1 min-w-[80px] py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all",
-                     activeTab === tab ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                     "flex-1 min-w-[80px] py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all font-mono",
+                     activeTab === tab ? "bg-[#222222] text-[#C8FF00] border border-[#333333]" : "text-[#888888] hover:text-[#EEEEEE]"
                    )}
                  >
                    {tab}
@@ -1048,30 +1048,30 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Verify Payment Section */}
                 {canUpdate && invoice.status === 'payment_reported' && (
-                  <div className="p-6 bg-amber-50 border-2 border-amber-200 rounded-[2rem] space-y-4 shadow-xl shadow-amber-100/50">
-                    <div className="flex items-center gap-3 text-amber-800">
-                      <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+                  <div className="p-6 bg-[#21160a] border border-amber-950/40 rounded-[2rem] space-y-4 font-mono shadow-xl shadow-amber-950/10">
+                    <div className="flex items-center gap-3 text-amber-500">
+                      <div className="w-10 h-10 bg-amber-950/40 rounded-xl flex items-center justify-center text-amber-400 border border-amber-900/30">
                         <Smartphone size={20} />
                       </div>
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest leading-none">Payment Reported</p>
-                        <p className="text-sm font-black mt-1">Ref: {invoice.payment_reference || 'No Reference'}</p>
+                        <p className="text-sm font-black mt-1 text-[#EEEEEE]">Ref: {invoice.payment_reference || 'No Reference'}</p>
                       </div>
                     </div>
                     <div className="flex gap-3">
                       <button 
                         onClick={() => verifyPayment(true)}
                         disabled={loading}
-                        className="flex-1 py-4 bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-100"
+                        className="flex-1 py-4 bg-[#C8FF00] text-[#080808] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#b8ef00] transition-all"
                       >
-                        Confirm Payment
+                        Confirm
                       </button>
                       <button 
                         onClick={() => verifyPayment(false)}
                         disabled={loading}
-                        className="flex-1 py-4 bg-white border-2 border-red-100 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all"
+                        className="flex-1 py-4 bg-[#161616] border border-[#222222] text-red-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1a1112] transition-all"
                       >
-                        Reject Payment
+                        Reject
                       </button>
                     </div>
                   </div>
@@ -1079,40 +1079,40 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
 
                 {/* Send Invoice Button for Drafts */}
                 {canUpdate && invoice.status === 'draft' && (
-                  <div className="p-4 bg-indigo-50 border-2 border-indigo-200 rounded-[2rem] border-dashed">
+                  <div className="p-4 bg-[#13152b] border border-indigo-950 border-dashed rounded-[2rem]">
                      <button
                         onClick={handleSendInvoice}
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-3 py-5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-3 py-5 bg-[#C8FF00] text-[#080808] rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#b8ef00] transition-all active:scale-95 disabled:opacity-50 font-mono"
                      >
                         {loading ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white" />
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#080808]/20 border-t-[#080808]" />
                         ) : (
                           <Send size={16} />
                         )}
                         {loading ? 'Sending...' : 'Send Invoice Now'}
                      </button>
-                     <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest text-center mt-4">Automated sequences will activate after sending</p>
+                     <p className="text-[9px] text-[#888888] font-bold uppercase tracking-widest text-center mt-4 font-mono">Automated sequences will activate after sending</p>
                   </div>
                 )}
 
                 {/* Status Section */}
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Recovery Stage</label>
+                <div className="space-y-3 font-mono">
+                    <div className="flex items-center justify-between font-mono">
+                      <label className="block text-[10px] font-black text-[#888888] uppercase font-mono tracking-widest">Recovery Stage</label>
                       <div className="flex items-center gap-2">
                         {emailLogs.length > 0 && (
                           <span className={cn(
-                            "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
-                            emailLogs[0].audit_type === 'email_sent' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                            "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest font-mono",
+                            emailLogs[0].audit_type === 'email_sent' ? "bg-[#112415] text-green-400 border border-green-950/40" : "bg-[#211315] text-red-400 border border-red-950/40"
                           )}>
                             Email {emailLogs[0].audit_type === 'email_sent' ? 'Sent' : 'Failed'}
                           </span>
                         )}
                         {smsLogs.length > 0 && (
                           <span className={cn(
-                            "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
-                            smsLogs[0].audit_type === 'sms_sent' ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"
+                            "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest font-mono",
+                            smsLogs[0].audit_type === 'sms_sent' ? "bg-[#101b2b] text-blue-400 border border-blue-950/40" : "bg-[#211315] text-red-400 border border-red-950/40"
                           )}>
                             SMS {smsLogs[0].audit_type === 'sms_sent' ? 'Sent' : 'Failed'}
                           </span>
@@ -1120,9 +1120,9 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                       </div>
                     </div>
                   <div className={cn(
-                    "p-4 rounded-2xl border-2 flex items-center justify-between transition-all duration-500",
-                    isFullyPaid ? 'bg-green-50/50 border-green-200 text-green-700 shadow-lg shadow-green-100/50' :
-                    invoice.status === 'overdue' ? 'bg-red-50/50 border-red-200 text-red-700 shadow-lg shadow-red-100/50' : 'bg-slate-50/50 border-slate-200 text-slate-700'
+                    "p-4 rounded-2xl border flex items-center justify-between transition-all duration-500 font-mono",
+                    isFullyPaid ? 'bg-[#112415] border-green-950/60 text-green-400 shadow-lg' :
+                    invoice.status === 'overdue' ? 'bg-[#211315] border-red-950/60 text-red-400 shadow-lg' : 'bg-[#161616] border-[#222222] text-[#EEEEEE]'
                   )}>
                     <div className="flex items-center gap-3">
                         <div className={cn(
@@ -1130,14 +1130,14 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                           isFullyPaid ? 'bg-green-500' : 'bg-orange-500'
                         )}></div>
                         <div>
-                          <span className="font-black text-[10px] uppercase tracking-widest block leading-none mb-1">{isFullyPaid ? 'Settled' : invoice.recovery_stage.replace('_', ' ')}</span>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Next Action: {invoice.next_action_at ? new Date(invoice.next_action_at).toLocaleDateString() : 'Immediate Nudge'}</p>
+                          <span className="font-black text-[10px] uppercase tracking-widest block leading-none mb-1 font-mono">{isFullyPaid ? 'Settled' : invoice.recovery_stage.replace('_', ' ')}</span>
+                          <p className="text-[8px] font-bold text-[#888888] uppercase tracking-tighter col-span-1">Next Action: {invoice.next_action_at ? new Date(invoice.next_action_at).toLocaleDateString() : 'Immediate Nudge'}</p>
                         </div>
                     </div>
                     {!isFullyPaid && canUpdate && (
                         <button 
                           onClick={() => updateStatus('paid')}
-                          className="text-[9px] font-black uppercase tracking-widest bg-slate-900 text-white px-3 py-2 rounded-xl"
+                          className="text-[9px] font-black uppercase tracking-widest bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] px-3 py-2 rounded-xl transition-all"
                         >
                           Recovered
                         </button>
@@ -1162,12 +1162,12 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                       </div>
                     </div>
                     
-                    <div className="bg-slate-50 border border-slate-100 rounded-3xl p-6 space-y-6">
+                    <div className="bg-[#161616] border border-[#222222] rounded-3xl p-6 space-y-6 font-mono">
                     <div className="flex gap-2">
                         {canUpdate && sequence.status === 'active' && (
                           <button 
                             onClick={() => updateSequenceStatus('paused')}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-orange-300 transition-all"
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#161616] border border-[#222222] rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-orange-500 hover:text-orange-400 text-[#888888] transition-all font-mono"
                           >
                             <Pause size={12} /> Pause
                           </button>
@@ -1175,7 +1175,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                         {canUpdate && sequence.status === 'paused' && (
                           <button 
                             onClick={() => updateSequenceStatus('active')}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all"
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#C8FF00] text-[#080808] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#b8ef00] transition-all font-mono"
                           >
                             <Play size={12} /> Resume
                           </button>
@@ -1183,7 +1183,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                         {canUpdate && (sequence.status === 'active' || sequence.status === 'paused') && (
                           <button 
                             onClick={cancelSequence}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-red-300 transition-all text-red-500"
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#161616] border border-[#222222] rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-red-500 hover:text-red-400 transition-all text-red-500 font-mono"
                           >
                             <Ban size={12} /> Cancel
                           </button>
@@ -1194,13 +1194,13 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                         {sequenceSteps.map((step, idx) => (
                           <div key={step.id} className="flex gap-4 relative">
                             {idx !== sequenceSteps.length - 1 && (
-                               <div className="absolute left-4 top-10 bottom-0 w-0.5 bg-slate-200"></div>
+                               <div className="absolute left-4 top-10 bottom-0 w-0.5 bg-[#222222]"></div>
                             )}
                             <div className={cn(
-                              "w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10",
-                              step.status === 'sent' ? "bg-green-500 text-white" :
-                              step.status === 'failed' ? "bg-red-500 text-white" :
-                              step.status === 'pending' ? "bg-white border-2 border-slate-200 text-slate-400" : "bg-slate-200 text-slate-400"
+                              "w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 border",
+                              step.status === 'sent' ? "bg-[#112415] border-green-950 text-green-400" :
+                              step.status === 'failed' ? "bg-[#211315] border-red-950 text-red-500" :
+                              "bg-[#111111] border-[#222222] text-[#444444]"
                             )}>
                               {step.status === 'sent' ? <CheckCircle2 size={14} /> : 
                                step.status === 'failed' ? <AlertCircle size={14} /> : 
@@ -1210,14 +1210,14 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                             <div className="flex-1 pb-4">
                                <div className="flex justify-between items-start">
                                   <div>
-                                     <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{step.template_type.replace('_', ' ')}</p>
-                                     <p className="text-[9px] text-slate-400 font-medium">Scheduled for {new Date(step.scheduled_at).toLocaleDateString()}</p>
+                                     <p className="text-[10px] font-black text-[#EEEEEE] uppercase tracking-tight">{step.template_type.replace('_', ' ')}</p>
+                                     <p className="text-[9px] text-[#888888] font-medium font-mono">Scheduled for {new Date(step.scheduled_at).toLocaleDateString()}</p>
                                   </div>
                                   <span className={cn(
-                                    "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full",
-                                    step.status === 'sent' ? "bg-green-50 text-green-600" :
-                                    step.status === 'failed' ? "bg-red-50 text-red-600" :
-                                    "bg-slate-100 text-slate-400"
+                                    "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border",
+                                    step.status === 'sent' ? "bg-[#112415] text-green-400 border-green-950/40" :
+                                    step.status === 'failed' ? "bg-[#211315] text-red-400 border-red-950/40" :
+                                    "bg-[#161616] border-[#222222] text-[#888888]"
                                   )}>
                                     {step.status}
                                   </span>
@@ -1228,14 +1228,14 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                       </div>
 
                       {sequence.status === 'completed' && (
-                        <div className="pt-4 border-t border-slate-200 text-center">
-                           <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Sequence Completed</p>
-                           <p className="text-[9px] text-slate-400 mt-1">Total {sequenceSteps.filter(s => s.status === 'sent').length} contact attempts made.</p>
+                        <div className="pt-4 border-t border-[#222222] text-center font-mono">
+                           <p className="text-[10px] font-black text-[#C8FF00] uppercase tracking-widest">Sequence Completed</p>
+                           <p className="text-[9px] text-[#888888] mt-1">Total {sequenceSteps.filter(s => s.status === 'sent').length} contact attempts made.</p>
                         </div>
                       )}
                       
                       {sequence.status === 'cancelled' && (
-                        <div className="pt-4 border-t border-slate-200 text-center">
+                        <div className="pt-4 border-t border-[#222222] text-center font-mono">
                            <p className="text-[10px] font-black text-red-500 uppercase tracking-widest">Sequence Cancelled</p>
                         </div>
                       )}
@@ -1245,25 +1245,24 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
 
                 {/* AI Recommendation Panel */}
                 {!isFullyPaid && (
-                  <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-6 rounded-[2rem] text-white shadow-xl shadow-indigo-200 relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:scale-150 transition-transform duration-1000 opacity-50"></div>
-                     <div className="relative z-10">
+                  <div className="bg-gradient-to-br from-[#12152c] to-[#12131e] border border-indigo-950 p-6 rounded-[2rem] text-white shadow-xl shadow-indigo-950/20 relative overflow-hidden group">
+                     <div className="relative z-10 font-mono">
                         <div className="flex items-center justify-between mb-4">
-                           <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">AI Strategy Engine</p>
+                           <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#888888]">AI Strategy Engine</p>
                            <div className="flex items-center gap-2">
                              {riskScore?.metrics?.recovery_probability && (
-                               <span className="text-[9px] bg-white/20 px-2 py-0.5 rounded-full font-black">
+                               <span className="text-[9px] bg-indigo-950/40 border border-indigo-900/30 px-2 py-0.5 rounded-full font-black text-indigo-400">
                                  {Math.round(riskScore.metrics.recovery_probability)}% Recovery Prob
                                </span>
                              )}
-                             <Zap size={14} className="text-yellow-400 fill-yellow-400" />
+                             <Zap size={14} className="text-[#C8FF00] fill-[#C8FF00]" />
                            </div>
                         </div>
-                        <h4 className="text-xl font-black italic tracking-tighter mb-4 leading-tight">
-                           {recommendation?.action || 'Optimize Recovery'} for ₹{formatCurrency(remainingBalance)}
+                        <h4 className="text-xl font-black italic tracking-tighter mb-4 leading-tight text-[#EEEEEE]">
+                           {recommendation?.action || 'Optimize Recovery'} for {formatCurrency(remainingBalance)}
                         </h4>
-                        <p className="text-[10px] opacity-80 mb-4 leading-relaxed font-medium">
-                          {recommendation?.strategy || 'AI is analyzing client behavior to suggest the best next step.'}
+                        <p className="text-[10px] text-[#888888] mb-4 leading-relaxed font-medium">
+                           {recommendation?.strategy || 'AI is analyzing client behavior to suggest the best next step.'}
                         </p>
                         <div className="grid grid-cols-3 gap-2">
                            {(['polite', 'firm', 'final'] as const).map((tone) => (
@@ -1271,32 +1270,32 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                                key={tone}
                                onClick={() => handleGenerateAI(tone)}
                                disabled={isGeneratingAI || !canUpdate}
-                               className="py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all border border-white/10 disabled:opacity-50"
+                               className="py-2.5 bg-[#161616] hover:bg-[#222222] text-[#EEEEEE] border border-[#222222] rounded-xl text-[8px] font-black uppercase tracking-widest transition-all disabled:opacity-50 font-mono"
                              >
                                {tone}
                              </button>
                            ))}
                         </div>
-                        <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
-                           <p className="text-[10px] font-black opacity-60 leading-relaxed uppercase tracking-widest">
-                              Peak Response: <span className="text-white font-bold">{recommendation?.timing || '24h'}</span>
+                        <div className="mt-4 pt-4 border-t border-[#222222]/80 flex items-center justify-between">
+                           <p className="text-[10px] font-black text-[#888888] leading-relaxed uppercase tracking-widest">
+                               Peak Response: <span className="text-[#C8FF00] font-bold">{recommendation?.timing || '24h'}</span>
                            </p>
                            <div className="flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                              <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-[#C8FF00] opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C8FF00]"></span>
                            </div>
                         </div>
                      </div>
                   </div>
                 )}
 
-                {/* Reminder Controls */}
+                 {/* Reminder Controls */}
                 <div className={cn("space-y-4", (isFullyPaid || !canUpdate) && "opacity-40 grayscale pointer-events-none")}>
                   <div className="flex items-center justify-between">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Escalation Arsenal</label>
+                    <label className="block text-[10px] font-black text-[#888888] uppercase font-mono tracking-widest">Escalation Arsenal</label>
                     <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Tools Ready</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#C8FF00]"></div>
+                      <span className="text-[10px] font-mono text-[#888888] uppercase tracking-tighter">Tools Ready</span>
                     </div>
                   </div>
                   <div className="space-y-4">
@@ -1306,7 +1305,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                       onClick={() => startWhatsAppFlow('polite')}
                       onEmailClick={() => startEmailFlow('polite')}
                       onSMSClick={() => startSMSFlow('polite')}
-                      icon={<Shield size={16} className="text-indigo-500" />}
+                      icon={<Shield size={16} className="text-[#C8FF00]" />}
                     />
                     <WhatsAppTemplateButton 
                       label="Firm mandate" 
@@ -1330,21 +1329,21 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                 {/* Recovery Actions Group */}
                 {!isFullyPaid && canUpdate && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="flex items-center justify-between p-4 bg-[#161616] rounded-2xl border border-[#222222]">
                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm">
+                        <div className="w-10 h-10 bg-[#222222] border border-[#333333] rounded-xl flex items-center justify-center text-[#888888] scale-100 shadow-sm">
                            <ShieldAlert size={18} />
                         </div>
                         <div>
-                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-900 leading-none">Dispute Protocol</p>
-                           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-1">Pauses all automation</p>
+                           <p className="text-[10px] font-black uppercase tracking-widest text-[#EEEEEE] leading-none">Dispute Protocol</p>
+                           <p className="text-[8px] font-bold text-[#888888] uppercase tracking-tighter mt-1">Pauses all automation</p>
                         </div>
                      </div>
                      <button 
                        onClick={() => recoveryService.toggleDispute(invoice.id, !invoice.is_disputed, invoice.organization_id).then(onUpdate)}
                        className={cn(
-                        "w-12 h-6 rounded-full transition-all relative p-1",
-                        invoice.is_disputed ? "bg-red-500" : "bg-slate-200"
+                        "w-12 h-6 rounded-full transition-all relative p-1 border",
+                        invoice.is_disputed ? "bg-red-600 border-red-700" : "bg-[#222222] border-[#333333]"
                        )}
                      >
                         <div className={cn(
@@ -1354,23 +1353,23 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                      </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 font-mono">
                     <button 
                       onClick={() => setShowLegalModal(true)}
-                      className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-center gap-3 group hover:bg-red-600 transition-all shadow-xl shadow-slate-200/50"
+                      className="p-4 bg-[#161616] rounded-2xl border border-[#222222] flex items-center justify-center gap-3 group hover:bg-[#211315] hover:border-red-950/60 transition-all font-mono"
                     >
-                      <Scale size={20} className="text-white/60 group-hover:text-white" />
+                      <Scale size={20} className="text-[#888888] group-hover:text-red-400" />
                       <div className="text-left">
-                        <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none">Legal Notice</p>
+                        <p className="text-[10px] font-black text-[#EEEEEE] group-hover:text-red-400 uppercase tracking-widest leading-none">Legal Notice</p>
                       </div>
                     </button>
                     <button 
                       onClick={() => updateStatus('paid')}
-                      className="p-4 bg-green-500 rounded-2xl border border-green-400 flex items-center justify-center gap-3 group hover:bg-green-600 transition-all shadow-xl shadow-green-100/50"
+                      className="p-4 bg-[#C8FF00] border border-[#b8ef00] rounded-2xl flex items-center justify-center gap-3 group hover:bg-[#b8ef00] transition-all font-mono"
                     >
-                      <CheckCircle2 size={20} className="text-white" />
+                      <CheckCircle2 size={20} className="text-[#080808]" />
                       <div className="text-left">
-                        <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none">Recovered</p>
+                        <p className="text-[10px] font-black text-[#080808] uppercase tracking-widest leading-none">Recovered</p>
                       </div>
                     </button>
                   </div>
@@ -1383,12 +1382,12 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Partial Payment Section */}
                 {!isFullyPaid && canUpdate && (
-                  <div className="space-y-4">
+                  <div className="space-y-4 font-mono">
                     <div className="flex items-center justify-between">
-                      <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Add Payment</label>
+                      <label className="block text-[10px] font-black text-[#888888] uppercase font-mono tracking-widest">Add Payment</label>
                       <button 
                         onClick={() => setShowPaymentForm(!showPaymentForm)}
-                        className="text-[10px] font-bold text-indigo-600 flex items-center gap-1"
+                        className="text-[10px] font-bold text-[#C8FF00] flex items-center gap-1 font-mono hover:underline"
                       >
                         {showPaymentForm ? 'Cancel' : <><Plus size={12}/> Record Partial</>}
                       </button>
@@ -1400,19 +1399,19 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden space-y-3"
+                          className="overflow-hidden space-y-3 font-mono"
                         >
                           <input 
                             type="number"
                             placeholder="Amount (₹)"
                             value={paymentAmount}
                             onChange={(e) => setPaymentAmount(e.target.value)}
-                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all"
+                            className="w-full p-4 bg-[#161616] border border-[#222222] text-[#EEEEEE] rounded-2xl text-sm font-bold placeholder:text-[#444444] outline-none transition-all font-mono"
                           />
                           <button 
                             onClick={() => recordPayment(parseFloat(paymentAmount))}
                             disabled={loading || !paymentAmount}
-                            className="w-full py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-50 hover:bg-slate-900 transition-all active:scale-95 shadow-xl shadow-indigo-100"
+                            className="w-full py-4 bg-[#C8FF00] text-[#080808] rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-50 hover:bg-[#b8ef00] transition-all font-mono"
                           >
                             {loading ? 'Processing...' : 'Record Payment'}
                           </button>
@@ -1423,25 +1422,25 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                 )}
 
                 {payments.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-4 font-mono">
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest flex items-center gap-2">
+                          <p className="text-[10px] font-black text-[#888888] uppercase font-mono tracking-widest flex items-center gap-2">
                             <History size={12} /> Payment History
                           </p>
                         </div>
                         <div className="space-y-3">
                           {payments.map((p) => (
-                            <div key={p.id} className="flex items-center justify-between p-4 bg-white rounded-2xl text-[11px] font-bold border border-slate-100 shadow-sm">
+                            <div key={p.id} className="flex items-center justify-between p-4 bg-[#161616] rounded-2xl text-[11px] font-bold border border-[#222222] font-mono">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
+                                <div className="w-8 h-8 bg-green-950/20 rounded-lg flex items-center justify-center text-green-400 border border-green-905/30">
                                    <CheckCircle size={14} />
                                 </div>
                                 <div>
-                                  <span className="text-slate-900">{formatCurrency(p.amount)}</span>
-                                  <p className="text-[9px] text-slate-400 mt-0.5">{new Date(p.paid_at).toLocaleDateString()}</p>
+                                  <span className="text-[#EEEEEE]">{formatCurrency(p.amount)}</span>
+                                  <p className="text-[9px] text-[#888888] mt-0.5">{new Date(p.paid_at).toLocaleDateString()}</p>
                                 </div>
                               </div>
-                              <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{p.method}</span>
+                              <span className="text-[9px] font-black text-[#888888] uppercase tracking-widest">{p.method}</span>
                             </div>
                           ))}
                         </div>
@@ -1453,10 +1452,10 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
               {activeTab === 'history' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest">Chronological Audit Trail</label>
+                  <label className="block text-[10px] font-black text-[#888888] uppercase font-mono tracking-widest">Chronological Audit Trail</label>
                 </div>
                 
-                <div className="space-y-6 relative pl-4 border-l-2 border-slate-100 py-2">
+                <div className="space-y-6 relative pl-4 border-l border-[#222222] py-2 font-mono">
                   {eventLogs.concat(reminderLogs).concat(emailLogs).sort((a,b) => new Date(b.created_at || b.sent_at).getTime() - new Date(a.created_at || a.sent_at).getTime()).map((event, i) => {
                     const isReminder = !!event.tone;
                     const isEmail = ['email_sent', 'email_failed', 'email_cap_reached'].includes(event.audit_type);
@@ -1464,27 +1463,27 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
                     return (
                       <div key={i} className="relative">
                         <div className={cn(
-                          "absolute -left-[2.35rem] top-1.5 w-7 h-7 rounded-full border-4 border-white flex items-center justify-center shadow-sm",
-                          isReminder ? "bg-indigo-600 text-white" : 
-                          isEmail ? "bg-indigo-400 text-white" :
-                          "bg-slate-900 text-white"
+                          "absolute -left-[2.15rem] top-1.5 w-6 h-6 rounded-full border-2 border-[#111111] flex items-center justify-center shadow-lg",
+                          isReminder ? "bg-amber-950 text-amber-400 border-amber-900/40" : 
+                          isEmail ? "bg-blue-950 text-blue-400 border-blue-900/40" :
+                          "bg-[#222222] text-[#EEEEEE] border-[#333333]"
                         )}>
                           {isReminder ? <Smartphone size={10} /> : 
                            isEmail ? <FileText size={10} /> :
                            <Zap size={10} />}
                         </div>
                         <div className="space-y-1">
-                          <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none">
+                          <p className="text-[10px] font-black text-[#EEEEEE] uppercase tracking-widest leading-none">
                             {isReminder ? `${event.tone} Reminder` : 
                              isEmail ? `Email ${event.audit_type.split('_')[1].toUpperCase()}` :
                              event.event_type.replace('_', ' ')}
                           </p>
-                          <p className="text-[8px] font-mono text-slate-400 uppercase">
+                          <p className="text-[8px] font-mono text-[#888888] uppercase">
                             {new Date(event.created_at || event.sent_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                           </p>
                           {(event.metadata || event.meta) && (
-                            <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
-                               <p className="text-[9px] text-slate-500 font-medium leading-relaxed italic">
+                            <div className="mt-2 p-2 bg-[#161616] rounded-lg border border-[#222222]">
+                               <p className="text-[9px] text-[#888888] font-medium leading-relaxed italic truncate font-mono">
                                  {JSON.stringify(event.metadata || event.meta)}
                                </p>
                             </div>
@@ -1498,35 +1497,35 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
             )}
 
             {/* Support Actions */}
-            <div className="space-y-3 pt-4 border-t border-slate-50">
-               <label className="block text-[10px] font-black text-slate-400 uppercase font-mono tracking-widest mb-4">Assets & Links</label>
-               <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-3 pt-4 border-t border-[#222222]">
+               <label className="block text-[10px] font-black text-[#888888] uppercase font-mono tracking-widest mb-4">Assets & Links</label>
+               <div className="grid grid-cols-2 gap-3 font-mono">
                   <button 
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/v/${invoice.public_token}`);
-                      alert("Link copied!");
+                      setToast("Link copied!");
                     }}
-                    className="flex flex-col items-center justify-center gap-3 p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-indigo-300 hover:bg-white transition-all group"
+                    className="flex flex-col items-center justify-center gap-3 p-6 bg-[#161616] rounded-3xl border border-[#222222] hover:border-[#333333] hover:bg-[#222222] transition-all group font-mono"
                   >
-                     <Share2 size={24} className="text-slate-300 group-hover:text-indigo-600" />
-                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900">Copy Link</span>
+                     <Share2 size={24} className="text-[#888888] group-hover:text-[#C8FF00]" />
+                     <span className="text-[9px] font-black uppercase tracking-widest text-[#888888] group-hover:text-[#EEEEEE]">Copy Link</span>
                   </button>
                   <button 
                     onClick={() => plan === 'pro' ? generatePDF() : setShowUpgradeModal(true)}
-                    className="flex flex-col items-center justify-center gap-3 p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-indigo-300 hover:bg-white transition-all group"
+                    className="flex flex-col items-center justify-center gap-3 p-6 bg-[#161616] rounded-3xl border border-[#222222] hover:border-[#333333] hover:bg-[#222222] transition-all group font-mono"
                   >
-                     <FileText size={24} className="text-slate-300 group-hover:text-indigo-600" />
-                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900">PDF Invoice</span>
+                     <FileText size={24} className="text-[#888888] group-hover:text-[#C8FF00]" />
+                     <span className="text-[9px] font-black uppercase tracking-widest text-[#888888] group-hover:text-[#EEEEEE]">PDF Invoice</span>
                   </button>
                </div>
             </div>
           </div>
 
           {canUpdate && (
-            <div className="p-6 border-t border-slate-100 shrink-0">
+            <div className="p-6 border-t border-[#222222] shrink-0">
                <button 
                  onClick={deleteInvoice}
-                 className="w-full flex items-center justify-center p-4 text-slate-400 hover:text-red-600 hover:bg-red-50/50 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest group border border-transparent hover:border-red-100"
+                 className="w-full flex items-center justify-center p-4 text-[#888888] hover:text-red-400 hover:bg-[#211315]/80 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest font-mono group border border-transparent hover:border-red-950/60"
                >
                  <Trash2 size={16} className="mr-2" />
                  Delete Invoice
