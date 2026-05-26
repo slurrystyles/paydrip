@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from '@supabase/supabase-js';
 import { usePlan } from '../contexts/PlanContext';
@@ -37,6 +37,7 @@ function NavItem({ icon, label, path, active, disabled, onClick }: NavItemProps)
   const navigate = useNavigate();
   return (
     <button
+      type="button"
       onClick={() => {
         if (disabled) return;
         navigate(path);
@@ -62,7 +63,7 @@ function NavItem({ icon, label, path, active, disabled, onClick }: NavItemProps)
   );
 }
 
-export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+export default function AuthenticatedLayout({ children }: { children?: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -182,6 +183,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
         <div className="flex items-center gap-2">
           <NotificationCenter />
           <button 
+            type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="p-2 bg-[#111111] border border-[#222222] rounded-lg text-[#EEEEEE] transition-all active:scale-90"
           >
@@ -220,7 +222,11 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                     <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm">P</div>
                     <span className="font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
                   </div>
-                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-[#1a1a1a] border border-[#222222]/30 rounded-lg text-[#888888]">
+                  <button 
+                    type="button"
+                    onClick={() => setIsMobileMenuOpen(false)} 
+                    className="p-2 hover:bg-[#1a1a1a] border border-[#222222]/30 rounded-lg text-[#888888]"
+                  >
                     <X size={20} />
                   </button>
                </div>
@@ -239,6 +245,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                    ))}
                     {plan === 'free' && (
                       <button 
+                        type="button"
                         onClick={() => {
                           setShowUpgradeModal(true);
                           setIsMobileMenuOpen(false);
@@ -268,6 +275,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                     </div>
                   </div>
                   <button 
+                    type="button"
                     onClick={handleSignOut}
                     className="w-full flex items-center gap-3 p-4 text-xs font-semibold text-[#EF4444] hover:bg-[#EF444410] rounded-xl transition-all"
                   >
@@ -370,7 +378,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                animate={{ opacity: 1, y: 0 }}
                transition={{ duration: 0.5, ease: [0, 0, 0.2, 1] }}
              >
-               {children}
+               {children || <Outlet />}
              </motion.div>
           </div>
         </main>

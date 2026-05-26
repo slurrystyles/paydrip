@@ -85,14 +85,16 @@ export default function App() {
               <Route path="/pricing" element={user ? <AuthenticatedLayout><PricingPage isNested /></AuthenticatedLayout> : <PricingPage />} />
               
               {/* Protected Routes */}
-              <Route path="/dashboard" element={user ? <AuthenticatedLayout><DashboardView /></AuthenticatedLayout> : <Navigate to="/" />} />
-              <Route path="/analytics" element={user ? <AuthenticatedLayout><AnalyticsDashboard /></AuthenticatedLayout> : <Navigate to="/" />} />
-              <Route path="/recovery" element={user ? <AuthenticatedLayout><RecoveryDashboard /></AuthenticatedLayout> : <Navigate to="/" />} />
-              <Route path="/operations" element={user ? <AuthenticatedLayout><RecoveryOpsCenter /></AuthenticatedLayout> : <Navigate to="/" />} />
-              <Route path="/invoices" element={user ? <AuthenticatedLayout><InvoicesView /></AuthenticatedLayout> : <Navigate to="/" />} />
-              <Route path="/clients" element={user ? <AuthenticatedLayout><ClientsView /></AuthenticatedLayout> : <Navigate to="/" />} />
-              <Route path="/templates" element={user ? <AuthenticatedLayout><TemplateManager /></AuthenticatedLayout> : <Navigate to="/" />} />
-              <Route path="/settings" element={user ? <AuthenticatedLayout><SettingsView /></AuthenticatedLayout> : <Navigate to="/" />} />
+              <Route element={user ? <AuthenticatedLayout /> : <Navigate to="/" />}>
+                <Route path="/dashboard" element={<DashboardView />} />
+                <Route path="/analytics" element={<AnalyticsDashboard />} />
+                <Route path="/recovery" element={<RecoveryDashboard />} />
+                <Route path="/operations" element={<RecoveryOpsCenter />} />
+                <Route path="/invoices" element={<InvoicesView />} />
+                <Route path="/clients" element={<ClientsView />} />
+                <Route path="/templates" element={<TemplateManager />} />
+                <Route path="/settings" element={<SettingsView />} />
+              </Route>
               
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" />} />
