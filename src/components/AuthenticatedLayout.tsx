@@ -79,6 +79,23 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     });
   }, []);
 
+  // Auto-close mobile menu on any navigation or space switching
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname, currentOrganization?.id]);
+
+  // Freeze background scrolling when the mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   const navItems = [
     { icon: <LayoutDashboard size={16} />, label: 'Dashboard', path: '/dashboard', required: 'read' },
     { icon: <BarChart2 size={16} />, label: 'Analytics', path: '/analytics', required: 'read' },
@@ -105,7 +122,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       <aside className="w-64 border-r border-[#222222] bg-[#111111] hidden lg:flex flex-col sticky top-0 h-screen z-30">
         <div className="p-5 space-y-6">
           <div 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className="flex items-center gap-3 cursor-pointer group"
           >
             <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm select-none">
@@ -156,7 +173,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#080808] border-b border-[#222222] px-4 flex items-center justify-between z-40">
         <div 
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 cursor-pointer"
         >
           <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm">P</div>
@@ -193,7 +210,13 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
               onClick={e => e.stopPropagation()}
             >
                <div className="p-6 border-b border-[#222222] flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div 
+                    onClick={() => {
+                      navigate('/dashboard');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                  >
                     <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm">P</div>
                     <span className="font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
                   </div>
@@ -214,6 +237,18 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                        onClick={() => setIsMobileMenuOpen(false)}
                      />
                    ))}
+                    {plan === 'free' && (
+                      <button 
+                        onClick={() => {
+                          setShowUpgradeModal(true);
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="flex items-center w-full px-4 py-3 text-xs font-semibold text-[#080808] bg-[#C8FF00] rounded-lg hover:bg-[#b8ef00] transition-all group mt-6"
+                      >
+                        <Zap size={14} className="mr-3 fill-[#080808]" />
+                        Upgrade to Pro
+                      </button>
+                    )}
                  </nav>
 
                  <div className="px-2">
