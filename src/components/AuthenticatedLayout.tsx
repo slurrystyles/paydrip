@@ -123,7 +123,7 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
       <aside className="w-64 border-r border-[#222222] bg-[#111111] hidden lg:flex flex-col sticky top-0 h-screen z-30">
         <div className="p-5 space-y-6">
           <div 
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/')}
             className="flex items-center gap-3 cursor-pointer group"
           >
             <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm select-none">
@@ -174,7 +174,7 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#080808] border-b border-[#222222] px-4 flex items-center justify-between z-40">
         <div 
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/')}
           className="flex items-center gap-2 cursor-pointer"
         >
           <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm">P</div>
@@ -214,7 +214,7 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
                <div className="p-6 border-b border-[#222222] flex items-center justify-between">
                   <div 
                     onClick={() => {
-                      navigate('/dashboard');
+                      navigate('/');
                       setIsMobileMenuOpen(false);
                     }}
                     className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
