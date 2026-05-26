@@ -49,12 +49,14 @@ export default function App() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const newUser = session?.user ?? null;
+      setUser(prev => prev?.id === newUser?.id ? prev : newUser);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const newUser = session?.user ?? null;
+      setUser(prev => prev?.id === newUser?.id ? prev : newUser);
     });
 
     return () => subscription.unsubscribe();
