@@ -8,21 +8,21 @@ import AuthenticatedLayout from './components/AuthenticatedLayout';
 import { PlanProvider } from './contexts/PlanContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
 
-// Route-based dynamic lazy imports
-const DashboardView = lazy(() => import('./components/DashboardView'));
-const RecoveryDashboard = lazy(() => import('./components/RecoveryDashboard').then(m => ({ default: m.RecoveryDashboard })));
-const ClientsView = lazy(() => import('./components/ClientsView'));
-const InvoicesView = lazy(() => import('./components/InvoicesView'));
-const SettingsView = lazy(() => import('./components/SettingsView'));
-const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
-const LandingPage = lazy(() => import('./components/LandingPage'));
-const PublicInvoiceView = lazy(() => import('./components/PublicInvoiceView'));
-const RecoveryOpsCenter = lazy(() => import('./components/RecoveryOpsCenter'));
-const TemplateManager = lazy(() => import('./components/TemplateManager'));
-const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
-const TermsPage = lazy(() => import('./components/TermsPage'));
-const ContactPage = lazy(() => import('./components/ContactPage'));
-const PricingPage = lazy(() => import('./pages/PricingPage'));
+// Synchronous imports of all components to guarantee zero router-level unmounts, full screen loader flashes, or state wipes during internal workspace navigation
+import DashboardView from './components/DashboardView';
+import { RecoveryDashboard } from './components/RecoveryDashboard';
+import ClientsView from './components/ClientsView';
+import InvoicesView from './components/InvoicesView';
+import SettingsView from './components/SettingsView';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
+import LandingPage from './components/LandingPage';
+import PublicInvoiceView from './components/PublicInvoiceView';
+import RecoveryOpsCenter from './components/RecoveryOpsCenter';
+import TemplateManager from './components/TemplateManager';
+import PrivacyPage from './components/PrivacyPage';
+import TermsPage from './components/TermsPage';
+import ContactPage from './components/ContactPage';
+import PricingPage from './pages/PricingPage';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
