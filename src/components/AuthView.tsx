@@ -56,7 +56,7 @@ export default function AuthView({ onClose }: { onClose?: () => void }) {
           <img 
             src="/images/logo.png" 
             alt="Paydrip Logo" 
-            className="w-24 h-8 object-contain mx-auto mb-2 select-none" 
+            className="h-8 w-auto object-contain mx-auto mb-2 select-none" 
             referrerPolicy="no-referrer"
           />
           <p className="text-[#888888] mt-1 font-mono text-[9px] uppercase tracking-[0.2em] font-bold">

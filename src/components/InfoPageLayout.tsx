@@ -32,7 +32,7 @@ export default function InfoPageLayout({
             <img 
               src="/images/logo.png" 
               alt="Paydrip Logo" 
-              className="w-8 h-8 object-contain rounded-lg" 
+              className="h-8 w-auto object-contain" 
               referrerPolicy="no-referrer"
             />
           </div>
@@ -70,7 +70,7 @@ export default function InfoPageLayout({
             <img 
               src="/images/logo.png" 
               alt="Paydrip Logo" 
-              className="w-8 h-8 object-contain rounded-xl" 
+              className="h-8 w-auto object-contain" 
               referrerPolicy="no-referrer"
             />
           </div>

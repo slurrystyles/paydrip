@@ -927,7 +927,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
              <img 
                src="/images/logo.png" 
                alt="Paydrip Logo" 
-               className="w-8 h-8 object-contain rounded-lg shadow-lg border border-[#222222]" 
+               className="h-8 w-auto object-contain" 
                referrerPolicy="no-referrer"
              />
              <p className="font-black text-[#EEEEEE] leading-none">Invoice #{invoice.invoice_number}</p>

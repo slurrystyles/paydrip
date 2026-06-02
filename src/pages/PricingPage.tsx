@@ -126,7 +126,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                 whileTap={{ scale: 0.95 }}
                 src="/images/logo.png" 
                 alt="Paydrip Logo" 
-                className="w-10 h-10 object-contain rounded-xl"
+                className="h-10 w-auto object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -413,7 +413,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
               <img 
                 src="/images/logo.png" 
                 alt="Paydrip Logo" 
-                className="w-8 h-8 object-contain rounded-xl" 
+                className="h-8 w-auto object-contain" 
                 referrerPolicy="no-referrer"
               />
             </div>

@@ -123,7 +123,7 @@ export default function LandingPage({ user }: { user: User | null }) {
             <img 
               src="/images/logo.png" 
               alt="Paydrip Logo" 
-              className="w-8 h-8 object-contain rounded-lg" 
+              className="h-8 w-auto object-contain select-none" 
               referrerPolicy="no-referrer"
             />
           </div>
@@ -701,7 +701,7 @@ export default function LandingPage({ user }: { user: User | null }) {
             <img 
               src="/images/logo.png" 
               alt="Paydrip Logo" 
-              className="w-8 h-8 object-contain rounded-lg" 
+              className="h-6 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" 
               referrerPolicy="no-referrer"
             />
           </div>

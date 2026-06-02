@@ -129,7 +129,7 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
             <img 
               src="/images/logo.png" 
               alt="Paydrip Logo" 
-              className="w-8 h-8 object-contain rounded-lg select-none" 
+              className="h-8 w-auto object-contain select-none" 
               referrerPolicy="no-referrer"
             />
             <div className="flex flex-col justify-center">
@@ -182,7 +182,7 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
           <img 
             src="/images/logo.png" 
             alt="Paydrip Logo" 
-            className="w-8 h-8 object-contain rounded-lg" 
+            className="h-8 w-auto object-contain" 
             referrerPolicy="no-referrer"
           />
         </div>
@@ -228,7 +228,7 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
                     <img 
                       src="/images/logo.png" 
                       alt="Paydrip Logo" 
-                      className="w-8 h-8 object-contain rounded-lg" 
+                      className="h-8 w-auto object-contain" 
                       referrerPolicy="no-referrer"
                     />
                   </div>
