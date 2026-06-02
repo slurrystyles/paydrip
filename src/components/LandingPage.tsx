@@ -30,6 +30,24 @@ export default function LandingPage({ user }: { user: User | null }) {
   const navigate = useNavigate();
   const { plan } = usePlan();
 
+  const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function getWaitlistCount() {
+      try {
+        const { count, error } = await supabase
+          .from('users')
+          .select('id', { count: 'exact', head: true });
+        if (error) throw error;
+        setWaitlistCount(count || 0);
+      } catch (err) {
+        console.warn('Could not fetch live count from users table:', err);
+        setWaitlistCount(0);
+      }
+    }
+    getWaitlistCount();
+  }, []);
+
   // Location-based pricing logic
   const [currency, setCurrency] = useState<'usd'|'inr'|'eur'>('usd');
 
@@ -123,7 +141,7 @@ export default function LandingPage({ user }: { user: User | null }) {
             <img 
               src="/images/logo.png" 
               alt="Paydrip Logo" 
-              className="h-8 w-auto object-contain select-none" 
+              className="h-12 w-auto object-contain select-none" 
               referrerPolicy="no-referrer"
             />
           </div>
@@ -538,9 +556,16 @@ export default function LandingPage({ user }: { user: User | null }) {
             
             <div className="bg-[#080808] border border-[#222222] rounded-xl p-10 text-center max-w-xl mx-auto shadow-2xl">
               <div className="flex flex-col items-center">
-                {/* // TODO: Replace with live Supabase count */}
-                <span className="text-5xl font-bold text-[#C8FF00]">47</span>
-                <span className="text-sm text-[#888888] mt-1">freelancers on the waitlist</span>
+                {waitlistCount === 0 ? (
+                  <span className="text-3xl font-bold text-[#C8FF00] mb-1">Be among the first</span>
+                ) : (
+                  <span className="text-5xl font-bold text-[#C8FF00]">
+                    {waitlistCount === null ? '...' : waitlistCount}
+                  </span>
+                )}
+                <span className="text-sm text-[#888888] mt-1">
+                  {waitlistCount === 1 ? 'freelancer on the waitlist' : 'freelancers on the waitlist'}
+                </span>
               </div>
               
               <div className="border-b border-[#222222] w-12 mx-auto my-8" />
@@ -701,7 +726,7 @@ export default function LandingPage({ user }: { user: User | null }) {
             <img 
               src="/images/logo.png" 
               alt="Paydrip Logo" 
-              className="h-6 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" 
+              className="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" 
               referrerPolicy="no-referrer"
             />
           </div>

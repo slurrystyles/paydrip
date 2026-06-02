@@ -112,10 +112,10 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
   };
 
   return (
-    <div className={cn("min-h-screen selection:bg-indigo-100 selection:text-indigo-900", isNested ? "bg-transparent" : "bg-[#FDFDFF]")}>
+    <div className={cn("min-h-screen selection:bg-[#C8FF00] selection:text-[#080808] text-[#EEEEEE]", isNested ? "bg-transparent" : "bg-[#080808]")}>
       {/* Navigation */}
       {!isNested && (
-        <nav className="border-b border-slate-100 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
+        <nav className="border-b border-[#222222] bg-[#080808]/95 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div 
               onClick={() => navigate('/')}
@@ -126,7 +126,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                 whileTap={{ scale: 0.95 }}
                 src="/images/logo.png" 
                 alt="Paydrip Logo" 
-                className="h-10 w-auto object-contain"
+                className="h-8 w-auto object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -135,7 +135,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                  <div className="flex items-center gap-4">
                    <button 
                      onClick={() => navigate('/dashboard')}
-                     className="hidden sm:flex px-5 py-2.5 bg-slate-50 border border-slate-100 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 flex items-center gap-2"
+                     className="hidden sm:flex px-5 py-2.5 bg-[#111111] border border-[#222222] text-[#EEEEEE] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:border-[#C8FF00] transition-all active:scale-95 flex items-center gap-2"
                    >
                      Go to Dashboard
                      <ArrowUpRight size={14} />
@@ -144,7 +144,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                    <div className="relative">
                      <button 
                        onClick={() => setIsProfileOpen(!isProfileOpen)}
-                       className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-xs font-black text-white italic shadow-lg shadow-slate-200 cursor-pointer hover:bg-indigo-600 transition-all active:scale-95"
+                       className="h-10 w-10 rounded-xl bg-[#111111] border border-[#222222] flex items-center justify-center text-xs font-bold text-[#C8FF00] uppercase cursor-pointer hover:border-[#C8FF00] transition-all active:scale-95"
                      >
                        {user?.email?.[0].toUpperCase() || 'U'}
                      </button>
@@ -157,30 +157,30 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
                              animate={{ opacity: 1, y: 0, scale: 1 }}
                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                             className="absolute top-full right-0 mt-4 w-64 bg-white rounded-[1.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] border border-slate-100 p-6 z-50"
+                             className="absolute top-full right-0 mt-4 w-64 bg-[#111111] rounded-[1.5rem] shadow-2xl border border-[#222222] p-6 z-50"
                            >
                              <div className="mb-6">
-                               <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1 italic">Active Node</p>
-                               <p className="text-sm font-black text-slate-900 truncate tracking-tight mb-0.5">{user?.email?.split('@')[0]}</p>
-                               <p className="text-[9px] text-slate-400 font-mono truncate">{user?.email}</p>
+                               <p className="text-[10px] font-bold text-[#C8FF00] uppercase tracking-widest mb-1">Active User</p>
+                               <p className="text-sm font-bold text-[#EEEEEE] truncate tracking-tight mb-0.5">{user?.email?.split('@')[0]}</p>
+                               <p className="text-[9px] text-[#888888] font-mono truncate">{user?.email}</p>
                              </div>
                              
-                             <div className="space-y-1.5 border-t border-slate-50 pt-4">
+                             <div className="space-y-1.5 border-t border-[#222222] pt-4">
                                <button 
                                  onClick={() => { navigate('/dashboard'); setIsProfileOpen(false); }}
-                                 className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all"
+                                 className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#888888] hover:text-[#C8FF00] hover:bg-[#161616] rounded-xl transition-all"
                                >
                                  Open Dashboard
                                </button>
                                <button 
                                  onClick={() => { navigate('/settings'); setIsProfileOpen(false); }}
-                                 className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all"
+                                 className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#888888] hover:text-[#C8FF00] hover:bg-[#161616] rounded-xl transition-all"
                                >
                                  Node Settings
                                </button>
                                <button 
                                  onClick={handleSignOut}
-                                 className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                 className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-500 hover:bg-red-950/20 rounded-xl transition-all"
                                >
                                  Exit Session
                                </button>
@@ -194,7 +194,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
               ) : (
                  <Link 
                     to="/" 
-                    className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-100"
+                    className="px-6 py-2.5 bg-[#C8FF00] text-[#080808] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[#b8ef00] transition-all active:scale-95"
                  >
                     Get Started
                  </Link>
@@ -206,32 +206,31 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
 
       <main className={cn(isNested && "pt-6")}>
         {/* Header Section */}
-        <section className="relative pt-24 pb-16 overflow-hidden">
-        <div className="absolute top-0 right-0 p-40 bg-indigo-50/50 blur-[120px] rounded-full -mr-20 -mt-20" />
+        <section className="relative pt-20 pb-16 overflow-hidden">
         <div className="container mx-auto px-6 relative z-10 text-center">
             <motion.div
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
-               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 border border-indigo-100 mb-8"
+               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#111111] border border-[#222222] mb-8"
             >
-               <Zap size={14} className="text-indigo-600 fill-current" />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600">Flexible Scaling</span>
+               <Zap size={14} className="text-[#C8FF00] fill-current" />
+               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C8FF00]">Flexible Scaling</span>
             </motion.div>
             
             <motion.h1 
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.1 }}
-               className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 mb-6 italic uppercase"
+               className="text-4xl md:text-6xl font-bold tracking-tight text-[#EEEEEE] mb-6 uppercase"
             >
-               Transparent <span className="text-indigo-600">Pricing</span>
+               Transparent <span className="text-[#C8FF00]">Pricing</span>
             </motion.h1>
             
             <motion.p 
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.2 }}
-               className="text-xl text-slate-500 max-w-2xl mx-auto font-medium"
+               className="text-lg text-[#888888] max-w-2xl mx-auto font-medium"
             >
                Scale your collection operations without the guesswork. Start free, upgrade as you grow.
             </motion.p>
@@ -242,82 +241,92 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                transition={{ delay: 0.3 }}
                className="mt-12 flex items-center justify-center gap-4"
             >
-               <span className={cn("text-sm font-bold uppercase tracking-widest transition-colors", !isYearly ? "text-slate-900" : "text-slate-400")}>Monthly</span>
+               <span className={cn("text-xs font-bold uppercase tracking-widest transition-colors", !isYearly ? "text-[#EEEEEE]" : "text-[#888888]")}>Monthly</span>
                <button 
                   onClick={() => setIsYearly(!isYearly)}
-                  className="w-14 h-8 bg-slate-900 rounded-full p-1 relative transition-colors"
+                  className="w-14 h-8 bg-[#111111] border border-[#222222] rounded-full p-1 relative transition-colors"
                >
                   <motion.div 
                      animate={{ x: isYearly ? 24 : 0 }}
-                     className="w-6 h-6 bg-white rounded-full shadow-lg"
+                     className="w-6 h-6 bg-[#C8FF00] rounded-full shadow-lg"
                   />
                </button>
-               <span className={cn("text-sm font-bold uppercase tracking-widest transition-colors", isYearly ? "text-slate-900" : "text-slate-400")}>Yearly</span>
-               <div className="px-3 py-1 rounded-full bg-green-50 border border-green-100 text-[10px] font-black uppercase tracking-widest text-green-600 ml-2">
+               <span className={cn("text-xs font-bold uppercase tracking-widest transition-colors", isYearly ? "text-[#EEEEEE]" : "text-[#888888]")}>Yearly</span>
+               <div className="px-3 py-1 rounded-full bg-[#1e2501] border border-[#3e4a05] text-[10px] font-bold uppercase tracking-widest text-[#C8FF00] ml-2">
                   Save 20%
                </div>
             </motion.div>
-        </div>
-      </section>
+         </div>
+       </section>
 
       {/* Pricing Cards */}
       <section className="pb-24">
          <div className="container mx-auto px-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-               {PRICING_PLANS.map((plan, i) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+               {PRICING_PLANS.map((p, i) => (
                   <motion.div
-                     key={plan.name}
+                     key={p.name}
                      initial={{ opacity: 0, y: 20 }}
                      whileInView={{ opacity: 1, y: 0 }}
                      viewport={{ once: true }}
                      transition={{ delay: i * 0.1 }}
                      className={cn(
-                        "relative bg-white rounded-[3rem] p-10 border transition-all hover:shadow-2xl hover:shadow-slate-200/50",
-                        plan.highlight ? "border-indigo-200 shadow-xl shadow-indigo-100/30 scale-105 z-10" : "border-slate-100 shadow-sm"
+                        "relative bg-[#111111] rounded-[2rem] p-8 border transition-all hover:border-[#C8FF00]/50",
+                        p.highlight ? "border-[#C8FF00] scale-105 z-10" : "border-[#222222]"
                      )}
                   >
-                     {plan.highlight && (
-                        <div className="absolute -top-4 left-1/2 -track-x-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-2 rounded-full">
+                     {p.highlight && (
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#C8FF00] text-[#080808] text-[9px] font-bold uppercase tracking-[0.2em] px-6 py-1.5 rounded-full">
                            Recommended
                         </div>
                      )}
 
-                     <h3 className="text-xl font-black text-slate-900 italic uppercase mb-2 tracking-tighter">{plan.name}</h3>
-                     <p className="text-sm text-slate-400 font-medium leading-relaxed mb-8">{plan.description}</p>
+                     <h3 className="text-xl font-bold text-[#EEEEEE] uppercase mb-2 tracking-wide">{p.name}</h3>
+                     <p className="text-xs text-[#888888] font-medium leading-relaxed mb-8">{p.description}</p>
 
-                     <div className="mb-10">
+                     <div className="mb-8">
                         <div className="flex items-baseline gap-1">
-                           <span className="text-4xl font-black text-slate-900 italic tracking-tight">
-                              ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                           <span className="text-4xl font-bold text-[#EEEEEE] tracking-tight">
+                              ${isYearly ? p.yearlyPrice : p.monthlyPrice}
                            </span>
-                           <span className="text-sm font-bold text-slate-400">/{isYearly ? 'year' : 'mo'}</span>
+                           <span className="text-xs font-bold text-[#888888]">/{isYearly ? 'yr' : 'mo'}</span>
                         </div>
-                        {isYearly && plan.monthlyPrice > 0 && (
-                           <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-2 shrink-0">
+                        {isYearly && p.monthlyPrice > 0 && (
+                           <p className="text-[10px] font-bold text-[#C8FF00] uppercase tracking-widest mt-2 shrink-0">
                               Billed annually
                            </p>
                         )}
                      </div>
 
-                     <div className="space-y-4 mb-10">
-                        {plan.features.map((feature, j) => (
+                     <div className="space-y-4 mb-8">
+                        {p.features.map((feature, j) => (
                            <div key={j} className="flex items-center gap-3">
-                              <div className="w-5 h-5 rounded-full bg-slate-50 flex items-center justify-center">
-                                 <Check size={12} className="text-indigo-600" />
+                              <div className="w-5 h-5 rounded-full bg-[#161616] border border-[#222222] flex items-center justify-center">
+                                 <Check size={12} className="text-[#C8FF00]" />
                               </div>
-                              <span className="text-xs font-semibold text-slate-600">{feature}</span>
+                              <span className="text-xs font-semibold text-[#888888]">{feature}</span>
                            </div>
                         ))}
                      </div>
 
-                     <button className={cn(
-                        "w-full py-5 rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all",
-                        plan.highlight 
-                           ? "bg-slate-900 text-white hover:bg-indigo-600 shadow-xl shadow-slate-200" 
-                           : "bg-slate-50 text-slate-400 cursor-not-allowed"
-                     )}>
-                        {plan.cta}
-                     </button>
+                     {p.monthlyPrice === 0 ? (
+                       <button 
+                         onClick={() => {
+                           if (user) {
+                             navigate('/dashboard');
+                           } else {
+                             navigate('/');
+                           }
+                         }}
+                         className="w-full py-4 bg-[#161616] border border-[#222222] text-[#EEEEEE] rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] hover:border-[#C8FF00] transition-colors"
+                       >
+                         {p.cta}
+                       </button>
+                     ) : (
+                       <button className="w-full py-4 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] transition-all bg-[#161616] border border-[#222222] text-[#888888] cursor-not-allowed">
+                         {p.cta}
+                       </button>
+                     )}
                   </motion.div>
                ))}
             </div>
@@ -325,24 +334,24 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
       </section>
 
       {/* Comparison Grid */}
-      <section className="py-24 bg-slate-50">
+      <section className="py-20 bg-[#111111]/50 border-t border-b border-[#222222]">
          <div className="container mx-auto px-6">
-            <div className="max-w-4xl mx-auto text-center mb-16">
-               <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tight mb-4">Compare Features</h2>
-               <p className="text-slate-500 font-medium">Detailed breakdown of what you get in every tier.</p>
+            <div className="max-w-4xl mx-auto text-center mb-12">
+               <h2 className="text-2xl font-bold text-[#EEEEEE] uppercase tracking-wide mb-3">Compare Features</h2>
+               <p className="text-[#888888] text-sm font-medium">Detailed breakdown of what you get in every tier.</p>
             </div>
 
-            <div className="max-w-5xl mx-auto overflow-x-auto">
+            <div className="max-w-4xl mx-auto overflow-x-auto">
                <table className="w-full text-left">
                   <thead>
-                     <tr className="border-b border-slate-200">
-                        <th className="py-6 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Feature</th>
-                        <th className="py-6 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Free</th>
-                        <th className="py-6 px-4 text-[10px] font-black uppercase tracking-widest text-slate-900">Pro</th>
-                        <th className="py-6 px-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Enterprise</th>
+                     <tr className="border-b border-[#222222]">
+                        <th className="py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-[#888888]">Feature</th>
+                        <th className="py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-[#888888]">Free</th>
+                        <th className="py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-[#C8FF00]">Pro</th>
+                        <th className="py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-[#888888]">Enterprise</th>
                      </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#222222]">
                      {[
                         { title: 'Invoices per Month', free: '10', pro: 'Unlimited', enterprise: 'Unlimited' },
                         { title: 'Team Members', free: '1 Seat', pro: 'Up to 3 Seats', enterprise: 'Unlimited' },
@@ -352,11 +361,11 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                         { title: 'WhatsApp Integration', free: 'No', pro: 'Partial', enterprise: 'Full API' },
                         { title: 'Support', free: 'Email', pro: 'Priority', enterprise: 'Dedicated Manager' }
                      ].map((row, i) => (
-                        <tr key={i} className="hover:bg-slate-100/50 transition-colors">
-                           <td className="py-5 px-4 text-xs font-bold text-slate-900 uppercase tracking-tight">{row.title}</td>
-                           <td className="py-5 px-4 text-xs font-medium text-slate-500">{row.free}</td>
-                           <td className="py-5 px-4 text-xs font-black text-indigo-600">{row.pro}</td>
-                           <td className="py-5 px-4 text-xs font-medium text-slate-500">{row.enterprise}</td>
+                        <tr key={i} className="hover:bg-[#111111] transition-colors">
+                           <td className="py-4 px-4 text-xs font-bold text-[#EEEEEE] uppercase tracking-tight">{row.title}</td>
+                           <td className="py-4 px-4 text-xs font-medium text-[#888888]">{row.free}</td>
+                           <td className="py-4 px-4 text-xs font-black text-[#C8FF00]">{row.pro}</td>
+                           <td className="py-4 px-4 text-xs font-medium text-[#888888]">{row.enterprise}</td>
                         </tr>
                      ))}
                   </tbody>
@@ -366,19 +375,19 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
       </section>
 
       {/* FAQ */}
-      <section className="py-24">
+      <section className="py-20">
          <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
-               <div className="text-center mb-16">
-                  <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tight mb-4">Frequently Asked Questions</h2>
-                  <p className="text-slate-500 font-medium">Everything you need to know about our plans.</p>
+               <div className="text-center mb-12">
+                  <h2 className="text-2xl font-bold text-[#EEEEEE] uppercase tracking-wide mb-3">Frequently Asked Questions</h2>
+                  <p className="text-[#888888] text-sm font-medium">Everything you need to know about our plans.</p>
                </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {FAQS.map((faq, i) => (
-                     <div key={i} className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm">
-                        <h4 className="text-sm font-black text-slate-900 mb-3 tracking-tight">{faq.q}</h4>
-                        <p className="text-xs text-slate-500 font-medium leading-relaxed">{faq.a}</p>
+                     <div key={i} className="p-6 bg-[#111111] border border-[#222222] rounded-[1.5rem]">
+                        <h4 className="text-xs font-bold text-[#EEEEEE] mb-2 tracking-wide uppercase">{faq.q}</h4>
+                        <p className="text-xs text-[#888888] font-medium leading-relaxed">{faq.a}</p>
                      </div>
                   ))}
                </div>
@@ -387,18 +396,20 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
       </section>
 
       {/* Final CTA */}
-      <section className="py-24">
+      <section className="py-16">
          <div className="container mx-auto px-6">
-            <div className="bg-slate-900 rounded-[4rem] p-12 md:p-24 text-center relative overflow-hidden">
-               <div className="absolute top-0 left-0 p-40 bg-indigo-500/10 blur-[100px] rounded-full -ml-20 -mt-20" />
+            <div className="bg-[#111111] border border-[#222222] rounded-[2rem] p-12 text-center relative overflow-hidden max-w-4xl mx-auto">
                <div className="relative z-10">
-                  <h2 className="text-4xl md:text-6xl font-black text-white italic uppercase tracking-tighter mb-8 max-w-4xl mx-auto">
-                     Ready to <span className="text-indigo-400">Automate</span> Your Collection?
+                  <h2 className="text-2xl md:text-3xl font-bold text-[#EEEEEE] uppercase tracking-tight mb-4">
+                     Ready to Automate Your Collection?
                   </h2>
-                  <button className="px-10 py-6 bg-white text-slate-900 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] hover:bg-indigo-400 hover:text-white transition-all shadow-2xl shadow-black/20">
+                  <button 
+                    onClick={() => navigate('/')}
+                    className="px-8 py-4 bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] rounded-xl text-xs font-bold uppercase tracking-widest transition-all cursor-pointer"
+                  >
                      Join the Early Access
                   </button>
-                  <p className="mt-8 text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">No Credit Card Required • Pro Trial Included</p>
+                  <p className="mt-4 text-[#888888] text-[9px] font-bold uppercase tracking-[0.2em]">No Credit Card Required • Pro Trial Included</p>
                </div>
             </div>
          </div>
@@ -407,7 +418,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
 
       {/* Footer */}
       {!isNested && (
-        <footer className="py-12 px-6 border-t border-slate-100 font-bold uppercase tracking-widest bg-white">
+        <footer className="py-10 px-6 border-t border-[#222222] font-bold uppercase tracking-widest bg-[#080808]">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-3">
               <img 
@@ -417,10 +428,10 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                 referrerPolicy="no-referrer"
               />
             </div>
-            <div className="flex gap-8 text-[10px] text-slate-400">
-              <Link to="/privacy" className="hover:text-indigo-600 transition-colors">Privacy</Link>
-              <Link to="/terms" className="hover:text-indigo-600 transition-colors">Terms</Link>
-              <Link to="/contact" className="hover:text-indigo-600 transition-colors">Contact</Link>
+            <div className="flex gap-8 text-[10px] text-[#888888] font-mono">
+              <Link to="/privacy" className="hover:text-[#C8FF00] transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-[#C8FF00] transition-colors">Terms</Link>
+              <Link to="/contact" className="hover:text-[#C8FF00] transition-colors">Contact</Link>
             </div>
           </div>
         </footer>

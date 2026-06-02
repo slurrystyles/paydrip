@@ -5,43 +5,43 @@ export default function TermsPage() {
   return (
     <InfoPageLayout 
       title="Terms of Service" 
-      subtitle="The rules of the Paydrip network."
+      subtitle="The digital agreement governing the Paydrip network and billing framework."
     >
-      <div className="space-y-8 text-slate-600 font-medium">
+      <div className="space-y-8 text-[#CCCCCC] font-normal leading-relaxed">
         <section>
-          <h2 className="text-2xl font-black text-slate-900 italic tracking-tight mb-4">1. Acceptance</h2>
+          <h2 className="text-xl font-bold text-[#C8FF00] mb-3 uppercase tracking-wide">1. Acceptance of Terms</h2>
           <p>
-            By using Paydrip, you agree to these terms. Paydrip is a tool for freelancers to manage their invoices and 
-            is provided "as is" without warranties of any kind.
+            By initializing a user login session, connecting via Google Authentication, registering a business profile, or generating an invoice ledger with Paydrip, you agree to bind yourself to our Terms of Service. These terms constitute a legally binding service-level agreement between you (the "Operator") and the Paydrip Protocol.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-black text-slate-900 italic tracking-tight mb-4">2. Usage Limits</h2>
+          <h2 className="text-xl font-bold text-[#C8FF00] mb-3 uppercase tracking-wide">2. Scope of Service & Operational Limits</h2>
+          <p className="mb-4">
+            Paydrip provides an India-first ledger recovery tool, assisting operators with local invoice dispatch, UPI-based quick-remittance, automated escalation queues, and communication alerts. Usage tiers are partitioned as follows:
+          </p>
+          <ul className="list-disc pl-5 space-y-2 text-[#AAAAAA]">
+            <li><strong>Free Accounts:</strong> Restricted to 5 client files, 10 generated invoice items per calendar month, and manual email reminder triggers.</li>
+            <li><strong>Pro & Enterprise Tiers:</strong> Entitled to unlimited clients, unlimited ledger records, multi-frequency automated sequences, white-label client-facing pay links, and native SMS/WhatsApp integration pipelines.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-bold text-[#C8FF00] mb-3 uppercase tracking-wide">3. Commercial Responsibility & Compliance</h2>
           <p>
-            Free accounts are limited to 3 invoices per month. Pro and Pro+ plans unlock higher volumes and additional 
-            features as described in our pricing section.
+            You retain absolute, sole responsibility for the financial accuracy, rate of calculations, and tax liabilities associated with payments you solicit or collect through Paydrip. Paydrip is strictly an informational tool; we are not a financial intermediary, nor do we act as a formal merchant of record (MoR) or licensed banking service. Operators are instructed to verify all customer UPI references prior to finalizing contracts.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-black text-slate-900 italic tracking-tight mb-4">3. Responsibility</h2>
+          <h2 className="text-xl font-bold text-[#C8FF00] mb-3 uppercase tracking-wide">4. Prohibited Uses & Automated Alert Rules</h2>
           <p>
-            You are solely responsible for the accuracy of your invoices and the taxes associated with your payments. 
-            Paydrip is not a tax advisor or a payment processor.
+            Any distribution of abusive, predatory, or high-volume spam communication is strictly prohibited. Sending repeated or threatening WhatsApp prompts or spoofed legal notices to clients is grounds for immediate, permanent service shutdown and deletion of all access tokens. Paydrip reserves the right to rate-limit or pause any escalation pipelines that breach standard fair-use thresholds.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-2xl font-black text-slate-900 italic tracking-tight mb-4">4. Fair Use</h2>
-          <p>
-            WhatsApp reminders must be used professionally and politely. Spamming or harassing clients is a violation 
-            of these terms and may result in account termination.
-          </p>
-        </section>
-
-        <footer className="pt-8 border-t border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">
-          Paydrip Operating Agreement • v1.0
+        <footer className="pt-8 border-t border-[#222222] text-[10px] font-bold uppercase tracking-widest text-[#888888] font-mono">
+          Paydrip Core Operations Terms of Service • v1.1 Active Schema
         </footer>
       </div>
     </InfoPageLayout>

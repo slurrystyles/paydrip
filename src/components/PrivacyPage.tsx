@@ -5,43 +5,50 @@ export default function PrivacyPage() {
   return (
     <InfoPageLayout 
       title="Privacy Policy" 
-      subtitle="How we protect your data and identity."
+      subtitle="How we protect your data, financial info, and operational identity."
     >
-      <div className="space-y-8 text-slate-600 font-medium">
+      <div className="space-y-8 text-[#CCCCCC] font-normal leading-relaxed">
         <section>
-          <h2 className="text-2xl font-black text-slate-900 italic tracking-tight mb-4">1. Data Collection</h2>
+          <h2 className="text-xl font-bold text-[#C8FF00] mb-3 uppercase tracking-wide">1. Data Collected & Received</h2>
+          <p className="mb-4">
+            Paydrip collects and processes minimal information required to execute our India-first payment recovery framework. We receive the following types of information when you interact with our services:
+          </p>
+          <ul className="list-disc pl-5 space-y-2 text-[#AAAAAA]">
+            <li><strong>Identity & Credentials:</strong> Email address, avatar url, and access metadata provided via Google Authentication.</li>
+            <li><strong>Business Profiles:</strong> Your business/freelance name, company identifiers, GST registration references (optional), and payment collection endpoints (e.g., UPI IDs, VPA, bank IFSC codes).</li>
+            <li><strong>Client Operational Records:</strong> Client contact details (name, email addresses, phone/WhatsApp numbers) strictly to dispatch invoice notifications.</li>
+            <li><strong>Invoice Structures:</strong> Financial amounts, due dates, receipt status, and ledger reference numbers.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-bold text-[#C8FF00] mb-3 uppercase tracking-wide">2. Financial Integrity & Storage</h2>
           <p>
-            Paydrip collects minimal information required to provide our service. This includes your email address (via Google Auth), 
-            business details you provide in settings, and client information necessary for invoice generation.
+            We enforce secure encryption standards. Processing files, tokens, and ledger entries are stored with strict Row-Level Security (RLS) on our database clusters. All sensitive payloads—such as bank accounts, UPI configurations, and collection links—are encrypted in transit and in storage, ensuring that unauthorized actors cannot access or spoof your ledger.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-black text-slate-900 italic tracking-tight mb-4">2. Financial Information</h2>
-          <p>
-            We do not process direct payments on our servers. Paydrip facilitates UPI QR code generation and payment tracking. 
-            Your bank details and UPI IDs are stored securely and used only for inclusion in your invoices.
+          <h2 className="text-xl font-bold text-[#C8FF00] mb-3 uppercase tracking-wide">3. Third-Party Integrations & Data Sub-processors</h2>
+          <p className="mb-4">
+            To coordinate automated sequences and notification dispatches, Paydrip transfers limited payloads to verified sub-processors under secure APIs:
           </p>
+          <ul className="list-disc pl-5 space-y-2 text-[#AAAAAA]">
+            <li><strong>Supabase:</strong> For identity auth, backend database clusters, and persistence structure.</li>
+            <li><strong>WhatsApp Business Platform / Twilio:</strong> To transmit verified customer payment links.</li>
+            <li><strong>Resend / SendGrid:</strong> To coordinate multi-step email notification sequences.</li>
+          </ul>
         </section>
 
         <section>
-          <h2 className="text-2xl font-black text-slate-900 italic tracking-tight mb-4">3. Security</h2>
+          <h2 className="text-xl font-bold text-[#C8FF00] mb-3 uppercase tracking-wide">4. Rerouting & Verification (No Spam Policy)</h2>
           <p>
-            Your data is stored using industry-standard encryption protocols. We use Supabase and Google Cloud to ensure 
-            your ledger remains private and accessible only to you.
+            Paydrip has an absolute zero-tolerance policy for harassment, spam, and unsolicited communications. Invoices, reminders, and escalation logs must only be dispatched to legitimate counterparties who have prior commercial relationships. We actively log delivery statistics and rate levels to comply with international anti-spam standards.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-2xl font-black text-slate-900 italic tracking-tight mb-4">4. WhatsApp Integration</h2>
-          <p>
-            When you send reminders via WhatsApp, Paydrip generates a message template. We do not have access to your personal 
-            WhatsApp chats or contacts.
-          </p>
-        </section>
-
-        <footer className="pt-8 border-t border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">
-          Last Updated: May 2026 • Paydrip Protocol
+        <footer className="pt-8 border-t border-[#222222] text-[10px] font-bold uppercase tracking-widest text-[#888888] font-mono">
+          Last Updated: May 2026 • Paydrip Protocol Security Group • Active Node Verified
         </footer>
       </div>
     </InfoPageLayout>
