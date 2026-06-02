@@ -19,6 +19,8 @@ import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { useNavigate, Link } from 'react-router-dom';
+import PublicHeader from '../components/PublicHeader';
+import PublicFooter from '../components/PublicFooter';
 
 const PRICING_PLANS = [
   {
@@ -114,7 +116,8 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
   return (
     <div className={cn("min-h-screen selection:bg-[#C8FF00] selection:text-[#080808] text-[#EEEEEE]", isNested ? "bg-transparent" : "bg-[#080808]")}>
       {/* Navigation */}
-      {!isNested && (
+      {!isNested && <PublicHeader />}
+      {false && (
         <nav className="border-b border-[#222222] bg-[#080808]/95 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div 
@@ -417,25 +420,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
       </main>
 
       {/* Footer */}
-      {!isNested && (
-        <footer className="py-10 px-6 border-t border-[#222222] font-bold uppercase tracking-widest bg-[#080808]">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="flex items-center gap-3">
-              <img 
-                src="/images/logo.png" 
-                alt="Paydrip Logo" 
-                className="h-8 w-auto object-contain" 
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            <div className="flex gap-8 text-[10px] text-[#888888] font-mono">
-              <Link to="/privacy" className="hover:text-[#C8FF00] transition-colors">Privacy</Link>
-              <Link to="/terms" className="hover:text-[#C8FF00] transition-colors">Terms</Link>
-              <Link to="/contact" className="hover:text-[#C8FF00] transition-colors">Contact</Link>
-            </div>
-          </div>
-        </footer>
-      )}
+      {!isNested && <PublicFooter />}
     </div>
   );
 }
