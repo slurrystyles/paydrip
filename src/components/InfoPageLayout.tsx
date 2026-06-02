@@ -35,7 +35,6 @@ export default function InfoPageLayout({
               className="w-8 h-8 object-contain rounded-lg" 
               referrerPolicy="no-referrer"
             />
-            <span className="font-black tracking-tighter italic group-hover:text-indigo-600 transition-colors">Paydrip</span>
           </div>
         </div>
       </nav>
@@ -74,7 +73,6 @@ export default function InfoPageLayout({
               className="w-8 h-8 object-contain rounded-xl" 
               referrerPolicy="no-referrer"
             />
-            <span className="text-lg font-black tracking-tight italic">Paydrip</span>
           </div>
           <p className="text-[9px] text-slate-400 font-mono">© 2026 Paydrip Protocol • All rights reserved</p>
         </div>

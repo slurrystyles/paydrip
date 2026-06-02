@@ -126,7 +126,6 @@ export default function LandingPage({ user }: { user: User | null }) {
               className="w-8 h-8 object-contain rounded-lg" 
               referrerPolicy="no-referrer"
             />
-            <span className="text-base font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
@@ -705,7 +704,6 @@ export default function LandingPage({ user }: { user: User | null }) {
               className="w-8 h-8 object-contain rounded-lg" 
               referrerPolicy="no-referrer"
             />
-            <span className="text-base font-semibold text-[#EEEEEE] tracking-tight">Paydrip</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 font-medium text-[#444444]">

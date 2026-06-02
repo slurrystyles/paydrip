@@ -129,7 +129,6 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                 className="w-10 h-10 object-contain rounded-xl"
                 referrerPolicy="no-referrer"
               />
-              <span className="text-xl font-black tracking-tighter text-slate-900">Paydrip</span>
             </div>
             <div className="flex items-center gap-6">
               {user ? (
@@ -417,7 +416,6 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                 className="w-8 h-8 object-contain rounded-xl" 
                 referrerPolicy="no-referrer"
               />
-              <span className="text-lg font-black tracking-tight text-slate-900">Paydrip</span>
             </div>
             <div className="flex gap-8 text-[10px] text-slate-400">
               <Link to="/privacy" className="hover:text-indigo-600 transition-colors">Privacy</Link>

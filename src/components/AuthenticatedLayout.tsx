@@ -132,9 +132,8 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
               className="w-8 h-8 object-contain rounded-lg select-none" 
               referrerPolicy="no-referrer"
             />
-            <div className="flex flex-col">
-              <span className="text-base font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
-              <span className="text-[9px] uppercase tracking-wider text-[#444444] mt-0.5">Professional Core</span>
+            <div className="flex flex-col justify-center">
+              <span className="text-[9px] uppercase tracking-wider text-[#444444] leading-none">Professional Core</span>
             </div>
           </div>
 
@@ -186,7 +185,6 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
             className="w-8 h-8 object-contain rounded-lg" 
             referrerPolicy="no-referrer"
           />
-          <span className="font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
         </div>
         <div className="flex items-center gap-2">
           <NotificationCenter />
@@ -233,7 +231,6 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
                       className="w-8 h-8 object-contain rounded-lg" 
                       referrerPolicy="no-referrer"
                     />
-                    <span className="font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
                   </div>
                   <button 
                     type="button"
