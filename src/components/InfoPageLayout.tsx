@@ -29,7 +29,12 @@ export default function InfoPageLayout({
             onClick={() => navigate('/')}
             className="flex items-center gap-2 cursor-pointer group"
           >
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black italic group-hover:bg-indigo-700 transition-colors">P</div>
+            <img 
+              src="/images/logo.png" 
+              alt="Paydrip Logo" 
+              className="w-8 h-8 object-contain rounded-lg" 
+              referrerPolicy="no-referrer"
+            />
             <span className="font-black tracking-tighter italic group-hover:text-indigo-600 transition-colors">Paydrip</span>
           </div>
         </div>
@@ -63,7 +68,12 @@ export default function InfoPageLayout({
       <footer className="py-12 px-6 border-t border-slate-100 font-bold uppercase tracking-widest bg-white">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic">P</div>
+            <img 
+              src="/images/logo.png" 
+              alt="Paydrip Logo" 
+              className="w-8 h-8 object-contain rounded-xl" 
+              referrerPolicy="no-referrer"
+            />
             <span className="text-lg font-black tracking-tight italic">Paydrip</span>
           </div>
           <p className="text-[9px] text-slate-400 font-mono">© 2026 Paydrip Protocol • All rights reserved</p>

@@ -121,13 +121,14 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
               onClick={() => navigate('/')}
               className="flex items-center gap-3 cursor-pointer"
             >
-              <motion.div 
+              <motion.img 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-indigo-100 italic"
-              >
-                P
-              </motion.div>
+                src="/images/logo.png" 
+                alt="Paydrip Logo" 
+                className="w-10 h-10 object-contain rounded-xl"
+                referrerPolicy="no-referrer"
+              />
               <span className="text-xl font-black tracking-tighter text-slate-900">Paydrip</span>
             </div>
             <div className="flex items-center gap-6">
@@ -410,7 +411,12 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
         <footer className="py-12 px-6 border-t border-slate-100 font-bold uppercase tracking-widest bg-white">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic">P</div>
+              <img 
+                src="/images/logo.png" 
+                alt="Paydrip Logo" 
+                className="w-8 h-8 object-contain rounded-xl" 
+                referrerPolicy="no-referrer"
+              />
               <span className="text-lg font-black tracking-tight text-slate-900">Paydrip</span>
             </div>
             <div className="flex gap-8 text-[10px] text-slate-400">

@@ -924,7 +924,12 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
         {/* Mobile Header with Close Button */}
         <div className="lg:hidden flex items-center justify-between p-4 border-b border-[#222222] bg-[#111111] sticky top-0 z-20">
           <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-[#222222] border border-[#333333] rounded-lg flex items-center justify-center text-[#C8FF00] font-black italic shadow-lg">P</div>
+             <img 
+               src="/images/logo.png" 
+               alt="Paydrip Logo" 
+               className="w-8 h-8 object-contain rounded-lg shadow-lg border border-[#222222]" 
+               referrerPolicy="no-referrer"
+             />
              <p className="font-black text-[#EEEEEE] leading-none">Invoice #{invoice.invoice_number}</p>
           </div>
           <button onClick={onClose} className="p-3 bg-[#161616] border border-[#222222] rounded-xl text-[#888888] active:scale-90 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center">

@@ -126,9 +126,12 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
             onClick={() => navigate('/')}
             className="flex items-center gap-3 cursor-pointer group"
           >
-            <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm select-none">
-              P
-            </div>
+            <img 
+              src="/images/logo.png" 
+              alt="Paydrip Logo" 
+              className="w-8 h-8 object-contain rounded-lg select-none" 
+              referrerPolicy="no-referrer"
+            />
             <div className="flex flex-col">
               <span className="text-base font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
               <span className="text-[9px] uppercase tracking-wider text-[#444444] mt-0.5">Professional Core</span>
@@ -177,7 +180,12 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
           onClick={() => navigate('/')}
           className="flex items-center gap-2 cursor-pointer"
         >
-          <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm">P</div>
+          <img 
+            src="/images/logo.png" 
+            alt="Paydrip Logo" 
+            className="w-8 h-8 object-contain rounded-lg" 
+            referrerPolicy="no-referrer"
+          />
           <span className="font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
         </div>
         <div className="flex items-center gap-2">
@@ -219,7 +227,12 @@ export default function AuthenticatedLayout({ children }: { children?: React.Rea
                     }}
                     className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
                   >
-                    <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm">P</div>
+                    <img 
+                      src="/images/logo.png" 
+                      alt="Paydrip Logo" 
+                      className="w-8 h-8 object-contain rounded-lg" 
+                      referrerPolicy="no-referrer"
+                    />
                     <span className="font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
                   </div>
                   <button 

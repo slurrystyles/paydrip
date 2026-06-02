@@ -120,9 +120,12 @@ export default function LandingPage({ user }: { user: User | null }) {
             onClick={() => navigate('/')}
             className="flex items-center gap-3 cursor-pointer"
           >
-            <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm">
-              P
-            </div>
+            <img 
+              src="/images/logo.png" 
+              alt="Paydrip Logo" 
+              className="w-8 h-8 object-contain rounded-lg" 
+              referrerPolicy="no-referrer"
+            />
             <span className="text-base font-semibold tracking-tight text-[#EEEEEE]">Paydrip</span>
           </div>
 
@@ -696,7 +699,12 @@ export default function LandingPage({ user }: { user: User | null }) {
       <footer className="bg-[#080808] border-t border-[#222222] py-10 px-6 text-xs">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#C8FF00] rounded-lg flex items-center justify-center text-[#080808] font-bold text-sm">P</div>
+            <img 
+              src="/images/logo.png" 
+              alt="Paydrip Logo" 
+              className="w-8 h-8 object-contain rounded-lg" 
+              referrerPolicy="no-referrer"
+            />
             <span className="text-base font-semibold text-[#EEEEEE] tracking-tight">Paydrip</span>
           </div>
 
