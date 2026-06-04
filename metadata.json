@@ -2,5 +2,7 @@
   "name": "Paydrip",
   "description": "Adaptive payment recovery platform for freelancers. Features predictive risk scoring, behavior-aware AI reminders, and strategic collection intelligence to maximize revenue recovery.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
