@@ -7,6 +7,7 @@ import { User } from '@supabase/supabase-js';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
 import { PlanProvider } from './contexts/PlanContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 
 // Synchronous imports of all components to guarantee zero router-level unmounts, full screen loader flashes, or state wipes during internal workspace navigation
 import DashboardView from './components/DashboardView';
@@ -71,39 +72,41 @@ export default function App() {
   }
 
   return (
-    <Router>
-      <OrganizationProvider>
-        <PlanProvider>
-          <ScrollToTop />
-          <Suspense fallback={<RouteLoader />}>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<LandingPage user={user} />} />
-              <Route path="/pay/:token" element={<PublicInvoiceView />} />
-              <Route path="/v/:token" element={<PublicInvoiceView />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/pricing" element={user ? <AuthenticatedLayout><PricingPage isNested /></AuthenticatedLayout> : <PricingPage />} />
-              
-              {/* Protected Routes */}
-              <Route element={user ? <AuthenticatedLayout /> : <Navigate to="/" />}>
-                <Route path="/dashboard" element={<DashboardView />} />
-                <Route path="/analytics" element={<AnalyticsDashboard />} />
-                <Route path="/recovery" element={<RecoveryDashboard />} />
-                <Route path="/operations" element={<RecoveryOpsCenter />} />
-                <Route path="/invoices" element={<InvoicesView />} />
-                <Route path="/clients" element={<ClientsView />} />
-                <Route path="/templates" element={<TemplateManager />} />
-                <Route path="/settings" element={<SettingsView />} />
-              </Route>
-              
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </Suspense>
-        </PlanProvider>
-      </OrganizationProvider>
-    </Router>
+    <CurrencyProvider>
+      <Router>
+        <OrganizationProvider>
+          <PlanProvider>
+            <ScrollToTop />
+            <Suspense fallback={<RouteLoader />}>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<LandingPage user={user} />} />
+                <Route path="/pay/:token" element={<PublicInvoiceView />} />
+                <Route path="/v/:token" element={<PublicInvoiceView />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/pricing" element={user ? <AuthenticatedLayout><PricingPage isNested /></AuthenticatedLayout> : <PricingPage />} />
+                
+                {/* Protected Routes */}
+                <Route element={user ? <AuthenticatedLayout /> : <Navigate to="/" />}>
+                  <Route path="/dashboard" element={<DashboardView />} />
+                  <Route path="/analytics" element={<AnalyticsDashboard />} />
+                  <Route path="/recovery" element={<RecoveryDashboard />} />
+                  <Route path="/operations" element={<RecoveryOpsCenter />} />
+                  <Route path="/invoices" element={<InvoicesView />} />
+                  <Route path="/clients" element={<ClientsView />} />
+                  <Route path="/templates" element={<TemplateManager />} />
+                  <Route path="/settings" element={<SettingsView />} />
+                </Route>
+                
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </Suspense>
+          </PlanProvider>
+        </OrganizationProvider>
+      </Router>
+    </CurrencyProvider>
   );
 }

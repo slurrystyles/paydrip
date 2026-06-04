@@ -12,6 +12,7 @@ import {
   Globe
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -22,12 +23,13 @@ interface UpgradeModalProps {
 export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
   const [activeMobileTab, setActiveMobileTab] = React.useState(1); // Default to 'Pro' (index 1)
   const [billingCycle, setBillingCycle] = React.useState<'monthly' | 'yearly'>('monthly');
+  const { currency, prices, isIndia } = useCurrency();
 
   const plans = React.useMemo(() => [
     {
       name: 'Free',
       slug: 'free',
-      price: '$0',
+      price: prices[currency].free,
       interval: 'forever',
       features: [
         '5 clients',
@@ -43,7 +45,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
     {
       name: 'Pro',
       slug: 'pro',
-      price: billingCycle === 'monthly' ? '$12' : '$99',
+      price: billingCycle === 'monthly' ? prices[currency].pro_monthly : prices[currency].pro_annual,
       interval: billingCycle === 'monthly' ? 'per month' : 'per year',
       features: [
         'Unlimited clients',
@@ -61,7 +63,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
     {
       name: 'Enterprise',
       slug: 'enterprise',
-      price: billingCycle === 'monthly' ? '$39' : '$299',
+      price: billingCycle === 'monthly' ? prices[currency].ent_monthly : prices[currency].ent_annual,
       interval: billingCycle === 'monthly' ? 'per month' : 'per year',
       features: [
         'Everything in Pro',
@@ -75,12 +77,17 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
       cta: 'Contact Sales',
       color: 'slate'
     }
-  ], [billingCycle]);
+  ], [billingCycle, currency, prices]);
 
   // After successful payment, Lemon Squeezy 
   // redirects to /dashboard?upgraded=true
   // The dashboard handles showing a success message
   const handleUpgrade = (slug: string, cycle: 'monthly' | 'yearly') => {
+    if (isIndia) {
+      alert('Indian payments via Razorpay coming soon. Contact hello@paydripapp.com to upgrade.');
+      return;
+    }
+
     if (slug === 'enterprise') {
       // TODO: Replace with active enterprise contact 
       // or Lemon Squeezy enterprise flow

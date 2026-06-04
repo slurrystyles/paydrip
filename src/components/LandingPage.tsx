@@ -19,6 +19,7 @@ import { UpgradeModal } from './UpgradeModal';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { usePlan } from '../contexts/PlanContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 
@@ -62,8 +63,7 @@ export default function LandingPage({ user }: { user: User | null }) {
     }
   }, [window.location.hash]);
 
-  // Location-based pricing logic
-  const [currency, setCurrency] = useState<'usd'|'inr'|'eur'>('usd');
+  const { currency, setCurrency, prices: PRICES } = useCurrency();
 
   useEffect(() => {
     // Dynamic Font Injection
@@ -76,29 +76,6 @@ export default function LandingPage({ user }: { user: User | null }) {
       document.head.appendChild(link);
     }
   }, []);
-
-  useEffect(() => {
-    fetch('https://ipapi.co/json/')
-      .then(r => r.json())
-      .then(data => {
-        const country = data.country_code;
-        if (country === 'IN') setCurrency('inr');
-        else if (['GB','DE','FR','IT','ES','NL','PT','SE',
-                   'NO','DK','FI','AT','BE','CH','PL'].includes(country)) 
-          setCurrency('eur');
-        else setCurrency('usd');
-      })
-      .catch(() => setCurrency('usd'));
-  }, []);
-
-  const PRICES = {
-    usd: { free: '$0', pro_monthly: '$12/mo', pro_annual: '$99/yr', 
-           ent_monthly: '$39/mo', ent_annual: '$299/yr' },
-    inr: { free: '₹0', pro_monthly: '₹399/mo', pro_annual: '₹2,999/yr', 
-           ent_monthly: '₹999/mo', ent_annual: '₹7,999/yr' },
-    eur: { free: '€0', pro_monthly: '€11/mo', pro_annual: '€89/yr', 
-           ent_monthly: '€35/mo', ent_annual: '€269/yr' },
-  };
 
   useEffect(() => {
     // Only fetch/load heavy video streams after page is fully loaded to maximize load efficiency
@@ -503,7 +480,7 @@ export default function LandingPage({ user }: { user: User | null }) {
               {/* Currency Toggle */}
               <div className="flex justify-center mt-6">
                 <div className="bg-[#111111] border border-[#222222] rounded-lg p-1 inline-flex gap-1">
-                  {(['usd', 'inr', 'eur'] as const).map((curr) => (
+                  {(['usd', 'inr'] as const).map((curr) => (
                     <button
                       key={curr}
                       onClick={() => setCurrency(curr)}
