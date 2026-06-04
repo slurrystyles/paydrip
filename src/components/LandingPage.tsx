@@ -63,7 +63,7 @@ export default function LandingPage({ user }: { user: User | null }) {
     }
   }, [window.location.hash]);
 
-  const { currency, setCurrency, prices: PRICES } = useCurrency();
+  const { currency, prices: PRICES } = useCurrency();
 
   useEffect(() => {
     // Dynamic Font Injection
@@ -476,26 +476,6 @@ export default function LandingPage({ user }: { user: User | null }) {
             <div className="mb-10 text-center">
               <p className="text-xs text-[#888888] uppercase tracking-widest mb-3">Pricing</p>
               <h2 className="text-3xl md:text-4xl font-bold text-[#EEEEEE] leading-tight">Start free. Scale when ready.</h2>
-              
-              {/* Currency Toggle */}
-              <div className="flex justify-center mt-6">
-                <div className="bg-[#111111] border border-[#222222] rounded-lg p-1 inline-flex gap-1">
-                  {(['usd', 'inr'] as const).map((curr) => (
-                    <button
-                      key={curr}
-                      onClick={() => setCurrency(curr)}
-                      className={cn(
-                        "rounded-md px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-all",
-                        currency === curr
-                          ? "bg-[#C8FF00] text-[#080808]"
-                          : "text-[#888888] hover:text-[#EEEEEE]"
-                      )}
-                    >
-                      {curr}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Pricing columns */}
