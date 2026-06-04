@@ -74,7 +74,7 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
         'Enterprise support',
         'Continuous recovery'
       ],
-      cta: 'Contact Sales',
+      cta: 'Upgrade to Enterprise',
       color: 'slate'
     }
   ], [billingCycle, currency, prices]);
@@ -85,13 +85,6 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
   const handleUpgrade = (slug: string, cycle: 'monthly' | 'yearly') => {
     if (isIndia) {
       alert('Indian payments via Razorpay coming soon. Contact hello@paydripapp.com to upgrade.');
-      return;
-    }
-
-    if (slug === 'enterprise') {
-      // TODO: Replace with active enterprise contact 
-      // or Lemon Squeezy enterprise flow
-      alert('Enterprise enquiries coming soon. Sign up free and we will reach out.');
       return;
     }
     

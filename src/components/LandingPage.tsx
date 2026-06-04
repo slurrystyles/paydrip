@@ -26,8 +26,7 @@ import PublicFooter from './PublicFooter';
 export default function LandingPage({ user }: { user: User | null }) {
   const [showAuth, setShowAuth] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
-  // TODO: Extend targetPlan type to include 'enterprise' when Lemon Squeezy billing is wired
-  const [targetPlan, setTargetPlan] = useState<'pro'>('pro');
+  const [targetPlan, setTargetPlan] = useState<'pro' | 'enterprise'>('pro');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [loadVideo, setLoadVideo] = useState(false);
   const navigate = useNavigate();
@@ -542,10 +541,10 @@ export default function LandingPage({ user }: { user: User | null }) {
                   "Custom domain",
                   "Priority support"
                 ]}
-                cta="Contact us"
-                // TODO: Replace with active contact email or Lemon Squeezy enterprise flow
+                cta="Start Enterprise"
                 onCta={() => {
-                  alert('Enterprise enquiries coming soon. For now, sign up free and we will reach out.');
+                  setTargetPlan('enterprise');
+                  setShowUpgrade(true);
                 }}
               />
             </div>
