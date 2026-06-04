@@ -1,14 +1,9 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const LEMONSQUEEZY_WEBHOOK_SECRET = Deno.env.get("LEMONSQUEEZY_WEBHOOK_SECRET");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-signature",
-};
 
 /**
  * Timing-safe signature verification for Lemon Squeezy Webhooks
@@ -93,11 +88,6 @@ function mapSubscriptionStatus(status: string): "active" | "past_due" | "cancele
 }
 
 serve(async (req) => {
-  // Handle CORS preflight request
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
   try {
     // 1. Signature Verification
     const signature = req.headers.get("x-signature");
@@ -105,7 +95,7 @@ serve(async (req) => {
       console.error("Webhook rejected: Missing x-signature header");
       return new Response(JSON.stringify({ error: "Missing identity verification signature." }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -113,7 +103,7 @@ serve(async (req) => {
       console.error("Missing server-side configuration: LEMONSQUEEZY_WEBHOOK_SECRET");
       return new Response(JSON.stringify({ error: "Server misconfiguration. Webhook secret is not set." }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -124,7 +114,7 @@ serve(async (req) => {
       console.error("Webhook rejected: Invalid signature provided.");
       return new Response(JSON.stringify({ error: "Invalid signature. Request could not be verified." }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -147,7 +137,7 @@ serve(async (req) => {
       console.log(`Skipping event "${eventName}" as it matches no subscription tracking criteria.`);
       return new Response(JSON.stringify({ success: true, message: `Ignored unhandled event: ${eventName}` }), {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -202,7 +192,7 @@ serve(async (req) => {
         message: "Signature verified but could not resolve user ID/email in application database." 
       }), {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -346,17 +336,17 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message: "Subscription schema synchronized beautifully in user profile and security workspaces." 
+      message: "Webhook processed successfully." 
     }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
     });
 
   } catch (error) {
     console.error("Critical error in lemonsqueezy-webhook Edge Function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
     });
   }
 });
