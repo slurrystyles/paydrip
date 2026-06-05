@@ -24,6 +24,16 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
   const [activeMobileTab, setActiveMobileTab] = React.useState(1); // Default to 'Pro' (index 1)
   const [billingCycle, setBillingCycle] = React.useState<'monthly' | 'yearly'>('monthly');
   const { currency, prices, isIndia } = useCurrency();
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    setReady(true);
+  }, [currency, isIndia]);
+
+  React.useEffect(() => {
+    console.log('Currency resolved:', { 
+      currency, isIndia });
+  }, [currency, isIndia]);
 
   const plans = React.useMemo(() => [
     {
@@ -324,7 +334,9 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
                {/* Sticky Footer */}
                <div className="mt-auto p-4 md:p-5 border-t border-[#222222] bg-[#111111] flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 text-[10px]">
                   <p className="font-semibold uppercase tracking-wider text-[#444444] font-mono">
-                     Secured by Lemon Squeezy
+                     {isIndia 
+                        ? "Secured by Razorpay" 
+                        : "Secured by Lemon Squeezy"}
                   </p>
                   <Link 
                      to="/pricing" 
