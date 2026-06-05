@@ -34,6 +34,8 @@ export default function LandingPage({ user }: { user: User | null }) {
   const { plan } = usePlan();
 
   const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
+  const [pendingCheckout, setPendingCheckout] = 
+    useState<{slug: string, cycle: 'monthly' | 'yearly'} | null>(null);
 
   useEffect(() => {
     async function getWaitlistCount() {
@@ -109,6 +111,7 @@ export default function LandingPage({ user }: { user: User | null }) {
     cycle: 'monthly' | 'yearly'
   ) => {
     if (!user) {
+      setPendingCheckout({ slug, cycle });
       setShowAuth(true);
       return;
     }
@@ -154,6 +157,14 @@ export default function LandingPage({ user }: { user: User | null }) {
       '_blank'
     );
   };
+
+  useEffect(() => {
+    if (user && pendingCheckout) {
+      const { slug, cycle } = pendingCheckout;
+      setPendingCheckout(null);
+      handleCheckout(slug, cycle);
+    }
+  }, [user, pendingCheckout]);
 
   const easeExpo = [0.16, 1, 0.3, 1] as any;
 
