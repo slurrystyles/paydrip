@@ -82,12 +82,33 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
   // After successful payment, Lemon Squeezy 
   // redirects to /dashboard?upgraded=true
   // The dashboard handles showing a success message
-  const handleUpgrade = (slug: string, cycle: 'monthly' | 'yearly') => {
-    if (isIndia) {
-      alert('Indian payments via Razorpay coming soon. Contact hello@paydripapp.com to upgrade.');
+  const handleUpgrade = (
+    slug: string, 
+    cycle: 'monthly' | 'yearly'
+  ) => {
+    if (slug === 'enterprise') {
+      // TODO: Replace with active enterprise 
+      // contact or dedicated enterprise flow
+      alert('Enterprise enquiries coming soon. Contact hello@paydripapp.com to upgrade.');
       return;
     }
-    
+
+    const key = `${slug}-${cycle === 'yearly' ? 'annual' : 'monthly'}`;
+
+    if (isIndia) {
+      // Razorpay payment links for INR
+      const razorpayLinks: Record<string, string> = {
+        'pro-monthly': import.meta.env.VITE_RAZORPAY_PRO_MONTHLY,
+        'pro-annual': import.meta.env.VITE_RAZORPAY_PRO_ANNUAL,
+        'ent-monthly': import.meta.env.VITE_RAZORPAY_ENT_MONTHLY,
+        'ent-annual': import.meta.env.VITE_RAZORPAY_ENT_ANNUAL,
+      };
+      const link = razorpayLinks[key];
+      if (link) window.open(link, '_blank');
+      return;
+    }
+
+    // Lemon Squeezy checkout for USD
     const variantMap: Record<string, string> = {
       'pro-monthly': import.meta.env.VITE_LEMONSQUEEZY_PRO_MONTHLY_VARIANT,
       'pro-annual': import.meta.env.VITE_LEMONSQUEEZY_PRO_ANNUAL_VARIANT,
@@ -95,11 +116,9 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
       'ent-annual': import.meta.env.VITE_LEMONSQUEEZY_ENT_ANNUAL_VARIANT,
     };
 
-    const key = `${slug}-${cycle}`;
     const variantId = variantMap[key];
-    
     if (!variantId) return;
-    
+
     const checkoutUrl = `https://paydripapp.lemonsqueezy.com/checkout/buy/${variantId}`;
     window.open(checkoutUrl, '_blank');
   };
