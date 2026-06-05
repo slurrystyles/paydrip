@@ -29,6 +29,7 @@ export default function LandingPage({ user }: { user: User | null }) {
   const [targetPlan, setTargetPlan] = useState<'pro' | 'enterprise'>('pro');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [loadVideo, setLoadVideo] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const navigate = useNavigate();
   const { plan } = usePlan();
 
@@ -62,7 +63,7 @@ export default function LandingPage({ user }: { user: User | null }) {
     }
   }, [window.location.hash]);
 
-  const { currency, prices: PRICES } = useCurrency();
+  const { currency, prices: PRICES, isIndia } = useCurrency();
 
   useEffect(() => {
     // Dynamic Font Injection
@@ -101,6 +102,57 @@ export default function LandingPage({ user }: { user: User | null }) {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  };
+
+  const handleCheckout = (
+    slug: string,
+    cycle: 'monthly' | 'yearly'
+  ) => {
+    if (!user) {
+      setShowAuth(true);
+      return;
+    }
+
+    if (slug === 'free') {
+      navigate('/dashboard');
+      return;
+    }
+
+    if (slug === 'enterprise') {
+      alert('Enterprise enquiries coming soon. Contact hello@paydripapp.com to upgrade.');
+      return;
+    }
+
+    const key = `${slug}-${
+      cycle === 'yearly' ? 'annual' : 'monthly'
+    }`;
+
+    if (isIndia) {
+      const razorpayLinks: Record<string, string> = {
+        'pro-monthly': import.meta.env.VITE_RAZORPAY_PRO_MONTHLY,
+        'pro-annual': import.meta.env.VITE_RAZORPAY_PRO_ANNUAL,
+        'ent-monthly': import.meta.env.VITE_RAZORPAY_ENT_MONTHLY,
+        'ent-annual': import.meta.env.VITE_RAZORPAY_ENT_ANNUAL,
+      };
+      const link = razorpayLinks[key];
+      if (link) window.open(link, '_blank');
+      return;
+    }
+
+    const variantMap: Record<string, string> = {
+      'pro-monthly': import.meta.env.VITE_LEMONSQUEEZY_PRO_MONTHLY_VARIANT,
+      'pro-annual': import.meta.env.VITE_LEMONSQUEEZY_PRO_ANNUAL_VARIANT,
+      'ent-monthly': import.meta.env.VITE_LEMONSQUEEZY_ENT_MONTHLY_VARIANT,
+      'ent-annual': import.meta.env.VITE_LEMONSQUEEZY_ENT_ANNUAL_VARIANT,
+    };
+
+    const variantId = variantMap[key];
+    if (!variantId) return;
+
+    window.open(
+      `https://paydripapp.lemonsqueezy.com/checkout/buy/${variantId}`,
+      '_blank'
+    );
   };
 
   const easeExpo = [0.16, 1, 0.3, 1] as any;
@@ -223,7 +275,7 @@ export default function LandingPage({ user }: { user: User | null }) {
                       <div className="mt-2 p-1.5 bg-[#111111] border border-[#222222] rounded-lg flex items-center gap-2">
                          <div className="w-5 h-5 bg-[#C8FF00] rounded flex items-center justify-center text-[#080808] text-[7px] font-bold">P</div>
                          <div className="flex-1 overflow-hidden">
-                           <p className="text-[8px] font-semibold text-[#EEEEEE] truncate">paydrip.io/v/secure</p>
+                           <p className="text-[8px] font-semibold text-[#EEEEEE] truncate">paydripapp.com/pay</p>
                          </div>
                       </div>
                     </motion.div>
@@ -475,15 +527,43 @@ export default function LandingPage({ user }: { user: User | null }) {
             <div className="mb-10 text-center">
               <p className="text-xs text-[#888888] uppercase tracking-widest mb-3">Pricing</p>
               <h2 className="text-3xl md:text-4xl font-bold text-[#EEEEEE] leading-tight">Start free. Scale when ready.</h2>
+              
+              <div className="flex justify-center mt-6">
+                <div className="flex items-center gap-1 bg-[#111111] border border-[#222222] rounded-lg p-1">
+                  <button
+                    onClick={() => setBillingCycle('monthly')}
+                    className={cn(
+                      "px-4 py-1.5 rounded-md text-xs font-semibold transition-all",
+                      billingCycle === 'monthly'
+                        ? "bg-[#C8FF00] text-[#080808]"
+                        : "text-[#888888] hover:text-[#EEEEEE]"
+                    )}
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    onClick={() => setBillingCycle('yearly')}
+                    className={cn(
+                      "px-4 py-1.5 rounded-md text-xs font-semibold transition-all",
+                      billingCycle === 'yearly'
+                        ? "bg-[#C8FF00] text-[#080808]"
+                        : "text-[#888888] hover:text-[#EEEEEE]"
+                    )}
+                  >
+                    Yearly
+                    <span className="ml-1.5 text-[10px] text-emerald-500 font-bold">
+                      Save 20%
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Pricing columns */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mt-10 max-w-6xl mx-auto w-full">
               <PricingCard 
                 name="Free"
-                priceKey="free"
-                currency={currency}
-                prices={PRICES}
+                price={PRICES[currency]?.free}
                 features={[
                   "10 invoices / month",
                   "5 clients",
@@ -500,11 +580,9 @@ export default function LandingPage({ user }: { user: User | null }) {
 
               <PricingCard 
                 name="Pro"
-                priceKey="pro_monthly"
-                yearlyPriceKey="pro_annual"
+                price={billingCycle === 'monthly' ? PRICES[currency]?.pro_monthly : PRICES[currency]?.pro_annual}
+                yearlyPrice={billingCycle === 'monthly' ? PRICES[currency]?.pro_annual : undefined}
                 isPro
-                currency={currency}
-                prices={PRICES}
                 features={[
                   "500 invoices / month",
                   "Unlimited clients",
@@ -517,19 +595,14 @@ export default function LandingPage({ user }: { user: User | null }) {
                   "No Paydrip branding"
                 ]}
                 cta="Start Pro"
-                onCta={() => {
-                  setTargetPlan('pro');
-                  setShowUpgrade(true);
-                }}
+                onCta={() => handleCheckout('pro', billingCycle)}
               />
 
               <PricingCard 
                 name="Enterprise"
-                priceKey="ent_monthly"
-                yearlyPriceKey="ent_annual"
+                price={billingCycle === 'monthly' ? PRICES[currency]?.ent_monthly : PRICES[currency]?.ent_annual}
+                yearlyPrice={billingCycle === 'monthly' ? PRICES[currency]?.ent_annual : undefined}
                 isEnterprise
-                currency={currency}
-                prices={PRICES}
                 features={[
                   "Unlimited everything",
                   "WhatsApp Business API",
@@ -542,10 +615,7 @@ export default function LandingPage({ user }: { user: User | null }) {
                   "Priority support"
                 ]}
                 cta="Start Enterprise"
-                onCta={() => {
-                  setTargetPlan('enterprise');
-                  setShowUpgrade(true);
-                }}
+                onCta={() => handleCheckout('enterprise', billingCycle)}
               />
             </div>
           </div>
@@ -639,10 +709,7 @@ function FeatureCard({ icon, title, description, badge }: { icon: React.ReactNod
   );
 }
 
-function PricingCard({ name, priceKey, yearlyPriceKey, features, cta, onCta, isPro, isEnterprise, currency, prices }: any) {
-  const priceVal = prices[currency]?.[priceKey] || '$0';
-  const yearlyVal = yearlyPriceKey ? prices[currency]?.[yearlyPriceKey] : null;
-
+function PricingCard({ name, price, yearlyPrice, features, cta, onCta, isPro, isEnterprise }: any) {
   // TODO: Add Lemon Squeezy integration for subscription syncing on checkout completion below
 
   return (
@@ -666,14 +733,14 @@ function PricingCard({ name, priceKey, yearlyPriceKey, features, cta, onCta, isP
           
           <div className="mb-8">
             <div className="text-4xl font-bold text-[#EEEEEE]">
-              {priceKey === 'free' ? 'Free' : priceVal}
+              {price}
             </div>
-            {priceKey === 'free' && (
+            {name === 'Free' && (
               <p className="text-xs text-[#444444] mt-1">forever</p>
             )}
-            {yearlyVal && (
+            {yearlyPrice && (
               <div className="text-xs text-[#444444] mt-1">
-                or {yearlyVal} / year
+                or {yearlyPrice} / year
               </div>
             )}
           </div>
