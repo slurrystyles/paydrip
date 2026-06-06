@@ -102,16 +102,13 @@ serve(async (req) => {
 
     // 2. Extract purchase/payment link info and resolve User ID
     const paymentLinkEntity = payload.payload?.payment_link?.entity;
-    if (!paymentLinkEntity) {
-      throw new Error("Malformed request syntax: missing payment_link.entity payload attributes.");
-    }
+    const paymentEntity = payload.payload?.payment?.entity;
 
-    const paymentLinkId = paymentLinkEntity.id;
-    const orderId = paymentLinkEntity.order_id;
-    const referenceId = paymentLinkEntity.reference_id;
-    const email = paymentLinkEntity.customer?.email;
-    const payments = paymentLinkEntity.payments;
-    const paymentId = (payments && payments.length > 0) ? payments[0].payment_id : null;
+    const paymentLinkId = paymentLinkEntity?.id || null;
+    const orderId = paymentLinkEntity?.order_id || null;
+    const referenceId = paymentLinkEntity?.reference_id || null;
+    const email = paymentLinkEntity?.customer?.email || paymentEntity?.email || null;
+    const paymentId = paymentEntity?.id || null;
 
     if (!email) {
       console.error("Unable to map webhook: customer email is missing in payload.");
