@@ -186,11 +186,6 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
       return;
     }
 
-    if (slug === 'enterprise') {
-      alert('Enterprise enquiries coming soon. Contact hello@paydripapp.com to upgrade.');
-      return;
-    }
-
     const key = `${slug}-${
       cycle === 'yearly' ? 'annual' : 'monthly'
     }`;

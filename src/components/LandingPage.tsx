@@ -165,11 +165,6 @@ export default function LandingPage({ user }: { user: User | null }) {
       return;
     }
 
-    if (slug === 'enterprise') {
-      alert('Enterprise enquiries coming soon. Contact hello@paydripapp.com to upgrade.');
-      return;
-    }
-
     const key = `${slug}-${
       cycle === 'yearly' ? 'annual' : 'monthly'
     }`;
