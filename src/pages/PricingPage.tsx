@@ -13,7 +13,8 @@ import {
   Users,
   ArrowUpRight,
   Menu,
-  X
+  X,
+  Plus
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -21,57 +22,78 @@ import { User } from '@supabase/supabase-js';
 import { useNavigate, Link } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
+import { useCurrency } from '../contexts/CurrencyContext';
+import AuthView from '../components/AuthView';
+
+function savePendingCheckout(url: string) {
+  sessionStorage.setItem(
+    'pendingCheckout', url
+  );
+}
+
+function getPendingCheckout(): string | null {
+  return sessionStorage.getItem(
+    'pendingCheckout'
+  );
+}
+
+function clearPendingCheckout() {
+  sessionStorage.removeItem('pendingCheckout');
+}
 
 const PRICING_PLANS = [
   {
     name: 'Free',
-    monthlyPrice: 0,
-    yearlyPrice: 0,
     description: 'Perfect for exploring the power of automated collection.',
     features: [
-      '5 active clients',
-      '10 invoices per month',
-      'Manual email reminders',
-      'Standard dashboard',
-      'Basic analytics',
-      'Community support'
+      '10 invoices / month',
+      '5 clients',
+      'AI messages (5/month)',
+      '2 active sequences',
+      'Email + WhatsApp delivery',
+      'Public payment portal',
+      'UPI QR code',
+      'Basic analytics'
     ],
-    cta: 'Get Started Free',
-    href: '/signup',
+    cta: 'Get started free',
+    slug: 'free',
     color: 'slate'
   },
   {
     name: 'Pro',
-    monthlyPrice: 12,
-    yearlyPrice: 99,
     description: 'The standard for growing businesses and professional operators.',
     features: [
-      'Everything in Free',
+      '500 invoices / month',
       'Unlimited clients',
-      'Unlimited invoices',
-      'Automated sequences',
-      'AI-powered messages',
-      'WhatsApp prompts',
-      'Custom branding'
+      'AI messages (100/month)',
+      '50 active sequences',
+      'Email + SMS + WhatsApp',
+      'Custom email templates',
+      'Full analytics',
+      '3 team seats',
+      'No Paydrip branding'
     ],
-    cta: 'Coming Soon',
+    cta: 'Start Pro',
+    slug: 'pro',
     highlight: true,
     color: 'indigo'
   },
   {
     name: 'Enterprise',
-    monthlyPrice: 39,
-    yearlyPrice: 299,
     description: 'Advanced features for maximum control and scalability.',
     features: [
-      'Everything in Pro',
+      'Unlimited everything',
+      'WhatsApp Business API',
+      'AI messages (unlimited)',
+      '20 team seats',
+      'RBAC & SSO/SAML',
+      'Webhooks',
       'White-label portal',
-      'API & Webhooks',
-      'Advanced RBAC',
-      'SLA guarantee',
-      'Dedicated manager'
+      'Custom domain',
+      'Priority support'
     ],
-    cta: 'Coming Soon',
+    cta: 'Start Enterprise',
+    slug: 'enterprise',
     color: 'slate'
   }
 ];
@@ -83,7 +105,7 @@ const FAQS = [
   },
   {
     q: "When will paid plans be available?",
-    a: "We are currently in early access. Paid plans will launch soon with full subscription management."
+    a: "Paid plans are active! We support Lemon Squeezy for global checkouts and Razorpay for users in India."
   },
   {
     q: "Can I use Paydrip for international clients?",
@@ -91,7 +113,7 @@ const FAQS = [
   },
   {
     q: "What payment methods do you support?",
-    a: "During early access, we facilitate UPI, Bank Transfer, and Credit Cards via our partner integrations."
+    a: "We support UPI, Netbanking, Credit/Debit cards, Apple Pay, and Google Pay through our secure payment gateway partners."
   }
 ];
 
@@ -99,13 +121,81 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
   const [isYearly, setIsYearly] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const navigate = useNavigate();
+  const { currency, prices: PRICES, isIndia } = useCurrency();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      const pending = getPendingCheckout();
+      if (pending) {
+        clearPendingCheckout();
+        window.open(pending, '_blank');
+      }
+    }
+  }, [user]);
+
+  const handleCheckout = (
+    slug: string,
+    cycle: 'monthly' | 'yearly'
+  ) => {
+    if (slug === 'free') {
+      if (!user) {
+        setShowAuth(true);
+        return;
+      }
+      navigate('/dashboard');
+      return;
+    }
+
+    if (slug === 'enterprise') {
+      alert('Enterprise enquiries coming soon. Contact hello@paydripapp.com to upgrade.');
+      return;
+    }
+
+    const key = `${slug}-${
+      cycle === 'yearly' ? 'annual' : 'monthly'
+    }`;
+
+    let checkoutUrl = '';
+
+    if (isIndia) {
+      const razorpayLinks: Record<string, string> = {
+        'pro-monthly': import.meta.env.VITE_RAZORPAY_PRO_MONTHLY,
+        'pro-annual': import.meta.env.VITE_RAZORPAY_PRO_ANNUAL,
+        'ent-monthly': import.meta.env.VITE_RAZORPAY_ENT_MONTHLY,
+        'ent-annual': import.meta.env.VITE_RAZORPAY_ENT_ANNUAL,
+      };
+      checkoutUrl = razorpayLinks[key] || '';
+    } else {
+      const variantMap: Record<string, string> = {
+        'pro-monthly': import.meta.env.VITE_LEMONSQUEEZY_PRO_MONTHLY_VARIANT,
+        'pro-annual': import.meta.env.VITE_LEMONSQUEEZY_PRO_ANNUAL_VARIANT,
+        'ent-monthly': import.meta.env.VITE_LEMONSQUEEZY_ENT_MONTHLY_VARIANT,
+        'ent-annual': import.meta.env.VITE_LEMONSQUEEZY_ENT_ANNUAL_VARIANT,
+      };
+      const variantId = variantMap[key];
+      checkoutUrl = variantId 
+        ? `https://paydripapp.lemonsqueezy.com/checkout/buy/${variantId}`
+        : '';
+    }
+
+    if (!checkoutUrl) return;
+
+    if (!user) {
+      savePendingCheckout(checkoutUrl);
+      setShowAuth(true);
+      return;
+    }
+
+    window.open(checkoutUrl, '_blank');
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -290,11 +380,21 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                      <div className="mb-8">
                         <div className="flex items-baseline gap-1">
                            <span className="text-4xl font-bold text-[#EEEEEE] tracking-tight">
-                              ${isYearly ? p.yearlyPrice : p.monthlyPrice}
+                              {p.slug === 'free' 
+                                ? PRICES[currency]?.free 
+                                : p.slug === 'pro' 
+                                  ? (isYearly ? PRICES[currency]?.pro_annual : PRICES[currency]?.pro_monthly) 
+                                  : (isYearly ? PRICES[currency]?.ent_annual : PRICES[currency]?.ent_monthly)}
                            </span>
                            <span className="text-xs font-bold text-[#888888]">/{isYearly ? 'yr' : 'mo'}</span>
                         </div>
-                        {isYearly && p.monthlyPrice > 0 && (
+                        
+                        {!isYearly && p.slug !== 'free' && (
+                           <p className="text-[10px] font-bold text-[#C8FF00] uppercase tracking-widest mt-2 shrink-0">
+                              Yearly: {p.slug === 'pro' ? PRICES[currency]?.pro_annual : PRICES[currency]?.ent_annual}
+                           </p>
+                        )}
+                        {isYearly && p.slug !== 'free' && (
                            <p className="text-[10px] font-bold text-[#C8FF00] uppercase tracking-widest mt-2 shrink-0">
                               Billed annually
                            </p>
@@ -312,24 +412,17 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                         ))}
                      </div>
 
-                     {p.monthlyPrice === 0 ? (
-                       <button 
-                         onClick={() => {
-                           if (user) {
-                             navigate('/dashboard');
-                           } else {
-                             navigate('/');
-                           }
-                         }}
-                         className="w-full py-4 bg-[#161616] border border-[#222222] text-[#EEEEEE] rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] hover:border-[#C8FF00] transition-colors"
-                       >
-                         {p.cta}
-                       </button>
-                     ) : (
-                       <button className="w-full py-4 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] transition-all bg-[#161616] border border-[#222222] text-[#888888] cursor-not-allowed">
-                         {p.cta}
-                       </button>
-                     )}
+                     <button 
+                        onClick={() => handleCheckout(p.slug, isYearly ? 'yearly' : 'monthly')}
+                        className={cn(
+                           "w-full py-4 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-200 cursor-pointer text-center",
+                           p.highlight 
+                              ? "bg-[#C8FF00] text-[#080808] hover:bg-[#b8ef00] hover:shadow-lg hover:shadow-[#C8FF00]/10" 
+                              : "bg-[#161616] border border-[#222222] text-[#EEEEEE] hover:border-[#C8FF00]"
+                        )}
+                     >
+                        {p.cta}
+                     </button>
                   </motion.div>
                ))}
             </div>
@@ -407,7 +500,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
                      Ready to Automate Your Collection?
                   </h2>
                   <button 
-                    onClick={() => navigate('/')}
+                    onClick={() => user ? navigate('/dashboard') : setShowAuth(true)}
                     className="px-8 py-4 bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] rounded-xl text-xs font-bold uppercase tracking-widest transition-all cursor-pointer"
                   >
                      Join the Early Access
@@ -421,6 +514,32 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
 
       {/* Footer */}
       {!isNested && <PublicFooter />}
+
+      {/* Auth Modal Overlay */}
+      <AnimatePresence>
+        {showAuth && (
+          <div className="fixed inset-0 bg-[#080808]/80 backdrop-blur-md flex items-center justify-center p-4 z-[999] pointer-events-auto">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#111111] border border-[#222222] rounded-[2rem] p-8 max-w-lg w-full relative flex flex-col justify-start max-h-[90vh]"
+            >
+              <div className="absolute top-6 right-6 z-20">
+                <button 
+                  onClick={() => setShowAuth(false)} 
+                  className="p-2 bg-[#111111] border border-[#222222] text-[#888888] rounded-full hover:bg-[#1a1a1a] hover:text-[#EEEEEE] transition-all pointer-events-auto active:scale-90 shadow-sm cursor-pointer flex items-center justify-center"
+                >
+                  <Plus className="rotate-45" size={18} />
+                </button>
+              </div>
+              <div className="overflow-y-auto flex-1 scrollbar-hide">
+                 <AuthView onClose={() => setShowAuth(false)} />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

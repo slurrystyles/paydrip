@@ -67,6 +67,7 @@ export default function DashboardView() {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
 
   async function fetchData() {
     if (!currentOrganization) return;
@@ -134,6 +135,24 @@ export default function DashboardView() {
     }
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(
+      window.location.search
+    );
+    if (params.get('upgraded') === 'true') {
+      // Remove the query param from URL 
+      // without page reload
+      window.history.replaceState(
+        {}, '', '/dashboard'
+      );
+      // Show success toast/banner
+      setUpgradeSuccess(true);
+      setTimeout(() => {
+        setUpgradeSuccess(false);
+      }, 5000);
+    }
+  }, []);
+
   const totalOutstanding = invoices
     .reduce((sum, i) => sum + (i.remainingBalance ?? i.amount), 0);
 
@@ -195,54 +214,70 @@ export default function DashboardView() {
   // SECTION 1: ONBOARDING EXPERIENCE
   if (invoices.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-xl w-full bento-card p-12 bg-[#111111] border border-[#222222] rounded-xl"
-        >
-          <div className="w-16 h-16 bg-[#111111] border border-[#222222] rounded-xl flex items-center justify-center text-[#C8FF00] mx-auto mb-8">
-            <FileText size={32} />
+      <>
+        {upgradeSuccess && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 bg-[#111111] border border-[#C8FF00] text-[#EEEEEE] px-6 py-3 rounded-xl shadow-2xl shadow-[#C8FF00]/10 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="w-2 h-2 rounded-full bg-[#C8FF00]" />
+            <p className="text-sm font-medium">
+              Your plan has been upgraded successfully!
+            </p>
+            <button 
+              onClick={() => setUpgradeSuccess(false)}
+              className="text-[#888888] hover:text-[#EEEEEE] ml-2 transition-colors"
+            >
+              ✕
+            </button>
           </div>
-          <h2 className="text-3xl font-bold text-[#EEEEEE] tracking-tight mb-4">Get paid faster</h2>
-          <p className="text-[#888888] font-normal text-sm mb-12">Create and send your first invoice in under a minute.</p>
-          
-          <div className="space-y-4 text-left mb-12 max-w-sm mx-auto flex flex-col">
-            {[
-              "Update your Settings",
-              "Add a client",
-              "Create an invoice",
-              "Send via WhatsApp"
-            ].map((step, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#222222] flex items-center justify-center text-[#EEEEEE] font-medium text-sm">{i + 1}</div>
-                <span className="font-medium text-[#888888] text-sm">{step}</span>
-              </div>
-            ))}
-          </div>
-
-          <button 
-            onClick={() => {
-              if (isLimitReached) {
-                setShowUpgradeModal(true);
-              } else {
-                setIsInvoiceModalOpen(true);
-              }
-            }}
-            className="w-full bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] py-4 rounded-lg font-semibold text-sm transition-all"
+        )}
+        <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-xl w-full bento-card p-12 bg-[#111111] border border-[#222222] rounded-xl"
           >
-            Create First Invoice
-          </button>
-          <p className="mt-4 text-xs text-[#444444] uppercase tracking-widest font-semibold">No setup required</p>
-        </motion.div>
+            <div className="w-16 h-16 bg-[#111111] border border-[#222222] rounded-xl flex items-center justify-center text-[#C8FF00] mx-auto mb-8">
+              <FileText size={32} />
+            </div>
+            <h2 className="text-3xl font-bold text-[#EEEEEE] tracking-tight mb-4">Get paid faster</h2>
+            <p className="text-[#888888] font-normal text-sm mb-12">Create and send your first invoice in under a minute.</p>
+            
+            <div className="space-y-4 text-left mb-12 max-w-sm mx-auto flex flex-col">
+              {[
+                "Update your Settings",
+                "Add a client",
+                "Create an invoice",
+                "Send via WhatsApp"
+              ].map((step, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#222222] flex items-center justify-center text-[#EEEEEE] font-medium text-sm">{i + 1}</div>
+                  <span className="font-medium text-[#888888] text-sm">{step}</span>
+                </div>
+              ))}
+            </div>
 
-        <InvoiceModal 
-          isOpen={isInvoiceModalOpen}
-          onClose={() => setIsInvoiceModalOpen(false)}
-          clients={clients}
-          onSuccess={fetchData}
-        />
-      </div>
+            <button 
+              onClick={() => {
+                if (isLimitReached) {
+                  setShowUpgradeModal(true);
+                } else {
+                  setIsInvoiceModalOpen(true);
+                }
+              }}
+              className="w-full bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] py-4 rounded-lg font-semibold text-sm transition-all"
+            >
+              Create First Invoice
+            </button>
+            <p className="mt-4 text-xs text-[#444444] uppercase tracking-widest font-semibold">No setup required</p>
+          </motion.div>
+
+          <InvoiceModal 
+            isOpen={isInvoiceModalOpen}
+            onClose={() => setIsInvoiceModalOpen(false)}
+            clients={clients}
+            onSuccess={fetchData}
+          />
+        </div>
+      </>
     );
   }
 
@@ -267,6 +302,20 @@ export default function DashboardView() {
 
   return (
     <div className="space-y-4 pb-8">
+      {upgradeSuccess && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 bg-[#111111] border border-[#C8FF00] text-[#EEEEEE] px-6 py-3 rounded-xl shadow-2xl shadow-[#C8FF00]/10 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="w-2 h-2 rounded-full bg-[#C8FF00]" />
+          <p className="text-sm font-medium">
+            Your plan has been upgraded successfully!
+          </p>
+          <button 
+            onClick={() => setUpgradeSuccess(false)}
+            className="text-[#888888] hover:text-[#EEEEEE] ml-2 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* SECTION 7: AUTOMATION NUDGE */}
       {overdueCount > 0 && canUpdate && (
         <motion.div 
