@@ -39,15 +39,31 @@ async function verifySignature(rawBody: string, signature: string, secret: strin
   return result === 0;
 }
 
-/**
- * Map Razorpay payment link reference_id to DB Plan Slug
- */
-const planMap: Record<string, "pro" | "enterprise"> = {
-  "paydrip-pro-monthly": "pro",
-  "paydrip-pro-annual": "pro",
-  "paydrip-ent-monthly": "enterprise",
-  "paydrip-ent-annual": "enterprise",
+const planMap: Record<string, {
+  plan: 'pro' | 'enterprise',
+  interval: 'monthly' | 'annual'
+}> = {
+  'plan_SyJNyVp4K5qcL2': { 
+    plan: 'pro', interval: 'monthly' 
+  },
+  'plan_SyJOoiKBiTmW8v': { 
+    plan: 'pro', interval: 'annual' 
+  },
+  'plan_SyJPyzAjDNMvBj': { 
+    plan: 'enterprise', interval: 'monthly' 
+  },
+  'plan_SyJPcIxk8lHQz5': { 
+    plan: 'enterprise', interval: 'annual' 
+  },
 };
+
+const supportedEvents = [
+  "subscription.activated",
+  "subscription.charged",
+  "subscription.cancelled",
+  "subscription.expired",
+  "subscription.halted"
+];
 
 serve(async (req) => {
   try {
@@ -86,9 +102,8 @@ serve(async (req) => {
     
     console.log(`Received verified Razorpay webhook event: "${eventName}"`);
 
-    // We only process specific payment link paid events
-    if (eventName !== "payment_link.paid") {
-      console.log(`Skipping event "${eventName}" as it matches no payment tracking criteria.`);
+    if (!supportedEvents.includes(eventName)) {
+      console.log(`Skipping event "${eventName}" as it matches no subscription tracking criteria.`);
       return new Response(JSON.stringify({ success: true, message: `Ignored unhandled event: ${eventName}` }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -100,14 +115,18 @@ serve(async (req) => {
       throw new Error("Missing Supabase configuration. URL or service role key is undefined.");
     }
 
-    // 2. Extract purchase/payment link info and resolve User ID
-    const paymentLinkEntity = payload.payload?.payment_link?.entity;
+    // 2. Extract subscription payment info and resolve User ID
+    const subscriptionEntity = payload.payload?.subscription?.entity;
     const paymentEntity = payload.payload?.payment?.entity;
 
-    const paymentLinkId = paymentLinkEntity?.id || null;
-    const orderId = paymentLinkEntity?.order_id || null;
-    const referenceId = paymentLinkEntity?.reference_id || null;
-    const email = paymentLinkEntity?.customer?.email || paymentEntity?.email || null;
+    const email =
+      subscriptionEntity?.notes?.email ||
+      paymentEntity?.email ||
+      subscriptionEntity?.customer_email ||
+      null;
+
+    const planId = subscriptionEntity?.plan_id || null;
+    const razorpaySubscriptionId = subscriptionEntity?.id || null;
     const paymentId = paymentEntity?.id || null;
 
     if (!email) {
@@ -121,13 +140,13 @@ serve(async (req) => {
       });
     }
 
-    const mappedPlan = referenceId ? planMap[referenceId] : null;
+    const planInfo = planId ? planMap[planId] : null;
 
-    if (!mappedPlan) {
-      console.error(`Unable to map referenceId: "${referenceId}" to any active subscription plans.`);
+    if (!planInfo) {
+      console.error(`Unable to map planId: "${planId}" to any active subscription plans.`);
       return new Response(JSON.stringify({ 
         success: false, 
-        message: `Signature verified but referenceId "${referenceId}" is unmapped.` 
+        message: `Signature verified but planId "${planId}" is unmapped.` 
       }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -160,24 +179,35 @@ serve(async (req) => {
       });
     }
 
-    // Determine period end based on monthly vs yearly configuration
-    const isAnnual = referenceId ? referenceId.endsWith("-annual") : false;
+    const mappedPlan = planInfo.plan;
+    const isAnnual = planInfo.interval === 'annual';
     const currentPeriodStart = new Date().toISOString();
     const currentPeriodEnd = new Date(Date.now() + (isAnnual ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString();
 
-    console.log(`Mapping user ${userId} to plan "${mappedPlan}" (isAnnual: ${isAnnual})`);
+    // 3. Update the profile 'plan' column in public.users if active/charged or expired
+    if (eventName === 'subscription.activated' || eventName === 'subscription.charged') {
+      console.log(`Mapping user ${userId} to plan "${mappedPlan}"`);
+      const { error: userUpdateError } = await supabase
+        .from("users")
+        .update({ plan: mappedPlan })
+        .eq("id", userId);
 
-    // 3. Update the profile 'plan' column in public.users
-    const { error: userUpdateError } = await supabase
-      .from("users")
-      .update({ plan: mappedPlan })
-      .eq("id", userId);
+      if (userUpdateError) {
+        console.error(`Failed to update public.users.plan for user ${userId}:`, userUpdateError);
+        throw userUpdateError;
+      }
+    } else if (eventName === 'subscription.expired') {
+      console.log(`Downgrading user ${userId} to plan "free"`);
+      const { error: userUpdateError } = await supabase
+        .from("users")
+        .update({ plan: 'free' })
+        .eq("id", userId);
 
-    if (userUpdateError) {
-      console.error(`Failed to update public.users.plan for user ${userId}:`, userUpdateError);
-      throw userUpdateError;
+      if (userUpdateError) {
+        console.error(`Failed to update public.users.plan for user ${userId}:`, userUpdateError);
+        throw userUpdateError;
+      }
     }
-    console.log(`Successfully updated public.users.plan to "${mappedPlan}" for user ${userId}`);
 
     // Create a server client point into 'security' schema to interface with plans & subscriptions
     const supabaseSecurity = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -199,16 +229,17 @@ serve(async (req) => {
       console.log(`Found associated organization ID ${orgId} for user ${userId}`);
 
       // Query the plan ID based on mapped slug in security.plans
+      const targetSlug = (eventName === 'subscription.expired') ? 'free' : mappedPlan;
       const { data: planRow, error: planError } = await supabaseSecurity
         .from("plans")
         .select("id")
-        .eq("slug", mappedPlan)
+        .eq("slug", targetSlug)
         .maybeSingle();
 
       if (planError) {
-        console.error(`Failed to locate plan with slug "${mappedPlan}" in security.plans:`, planError);
+        console.error(`Failed to locate plan with slug "${targetSlug}" in security.plans:`, planError);
       } else if (planRow) {
-        const planId = planRow.id;
+        const dbPlanId = planRow.id;
         
         // Check if there is an existing subscription for this organization
         const { data: existingSub, error: subSelectError } = await supabaseSecurity
@@ -218,30 +249,57 @@ serve(async (req) => {
           .maybeSingle();
 
         const subscriptionMetadata = {
-          user_id: userId,
-          plan: mappedPlan,
+          razorpay_subscription_id: razorpaySubscriptionId,
+          razorpay_plan_id: planId,
           razorpay_payment_id: paymentId,
-          razorpay_payment_link_id: paymentLinkId,
-          razorpay_order_id: orderId,
-          reference_id: referenceId,
-          email: email
+          plan: mappedPlan,
+          interval: planInfo.interval,
+          email: email,
+          user_id: userId
         };
+
+        let status = 'active';
+        let cancelAtPeriodEnd = false;
+        let pEnd = null;
+
+        if (eventName === 'subscription.activated' || eventName === 'subscription.charged') {
+          status = 'active';
+          cancelAtPeriodEnd = false;
+          pEnd = currentPeriodEnd;
+        } else if (eventName === 'subscription.cancelled') {
+          status = 'canceled';
+          cancelAtPeriodEnd = true;
+        } else if (eventName === 'subscription.expired') {
+          status = 'canceled';
+          cancelAtPeriodEnd = false;
+        } else if (eventName === 'subscription.halted') {
+          status = 'past_due';
+          cancelAtPeriodEnd = false;
+        }
 
         if (subSelectError) {
           console.error("Failed querying existing subscription record:", subSelectError);
         } else if (existingSub) {
-          // Update the existing active subscription
+          // Update the existing subscription
+          const updateData: Record<string, any> = {
+            status: status,
+            cancel_at_period_end: cancelAtPeriodEnd,
+            metadata: subscriptionMetadata,
+            updated_at: new Date().toISOString()
+          };
+
+          if (dbPlanId) {
+            updateData.plan_id = dbPlanId;
+          }
+
+          if (pEnd) {
+            updateData.current_period_start = currentPeriodStart;
+            updateData.current_period_end = pEnd;
+          }
+
           const { error: updateSubError } = await supabaseSecurity
             .from("subscriptions")
-            .update({
-              plan_id: planId,
-              status: "active",
-              current_period_start: currentPeriodStart,
-              current_period_end: currentPeriodEnd,
-              cancel_at_period_end: false,
-              metadata: subscriptionMetadata,
-              updated_at: new Date().toISOString()
-            })
+            .update(updateData)
             .eq("organization_id", orgId);
 
           if (updateSubError) {
@@ -255,11 +313,11 @@ serve(async (req) => {
             .from("subscriptions")
             .insert({
               organization_id: orgId,
-              plan_id: planId,
-              status: "active",
+              plan_id: dbPlanId,
+              status: status,
               current_period_start: currentPeriodStart,
-              current_period_end: currentPeriodEnd,
-              cancel_at_period_end: false,
+              current_period_end: pEnd || currentPeriodEnd,
+              cancel_at_period_end: cancelAtPeriodEnd,
               metadata: subscriptionMetadata,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()

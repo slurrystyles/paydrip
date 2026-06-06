@@ -41,6 +41,36 @@ function clearPendingCheckout() {
   sessionStorage.removeItem('pendingCheckout');
 }
 
+async function createRazorpaySubscription(
+  planId: string,
+  userEmail: string,
+  userName: string,
+  accessToken: string
+): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-razorpay-subscription`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          planId,
+          userEmail,
+          userName
+        })
+      }
+    );
+    const data = await response.json();
+    return data.short_url || null;
+  } catch {
+    return null;
+  }
+}
+
+
 const PRICING_PLANS = [
   {
     name: 'Free',
@@ -122,7 +152,9 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
   const [user, setUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const navigate = useNavigate();
+
   const { currency, prices: PRICES, isIndia } = useCurrency();
 
   useEffect(() => {
@@ -141,7 +173,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
     }
   }, [user]);
 
-  const handleCheckout = (
+  const handleCheckout = async (
     slug: string,
     cycle: 'monthly' | 'yearly'
   ) => {
@@ -163,28 +195,66 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
       cycle === 'yearly' ? 'annual' : 'monthly'
     }`;
 
-    let checkoutUrl = '';
-
     if (isIndia) {
-      const razorpayLinks: Record<string, string> = {
-        'pro-monthly': import.meta.env.VITE_RAZORPAY_PRO_MONTHLY,
-        'pro-annual': import.meta.env.VITE_RAZORPAY_PRO_ANNUAL,
-        'ent-monthly': import.meta.env.VITE_RAZORPAY_ENT_MONTHLY,
-        'ent-annual': import.meta.env.VITE_RAZORPAY_ENT_ANNUAL,
+      const razorpayPlanMap: 
+        Record<string, string> = {
+        'pro-monthly': import.meta.env
+          .VITE_RAZORPAY_PRO_MONTHLY,
+        'pro-annual': import.meta.env
+          .VITE_RAZORPAY_PRO_ANNUAL,
+        'ent-monthly': import.meta.env
+          .VITE_RAZORPAY_ENT_MONTHLY,
+        'ent-annual': import.meta.env
+          .VITE_RAZORPAY_ENT_ANNUAL,
       };
-      checkoutUrl = razorpayLinks[key] || '';
-    } else {
-      const variantMap: Record<string, string> = {
-        'pro-monthly': import.meta.env.VITE_LEMONSQUEEZY_PRO_MONTHLY_VARIANT,
-        'pro-annual': import.meta.env.VITE_LEMONSQUEEZY_PRO_ANNUAL_VARIANT,
-        'ent-monthly': import.meta.env.VITE_LEMONSQUEEZY_ENT_MONTHLY_VARIANT,
-        'ent-annual': import.meta.env.VITE_LEMONSQUEEZY_ENT_ANNUAL_VARIANT,
-      };
-      const variantId = variantMap[key];
-      checkoutUrl = variantId 
-        ? `https://paydripapp.lemonsqueezy.com/checkout/buy/${variantId}`
-        : '';
+
+      const planId = razorpayPlanMap[key];
+      if (!planId) return;
+
+      setCheckoutLoading(true);
+      try {
+        const { data: { session } } = 
+          await supabase.auth.getSession();
+        
+        if (!session) {
+          setShowAuth(true);
+          return;
+        }
+
+        const shortUrl = 
+          await createRazorpaySubscription(
+            planId,
+            user?.email || '',
+            user?.user_metadata?.name || 
+              user?.email?.split('@')[0] || '',
+            session.access_token
+          );
+
+        if (shortUrl) {
+          window.open(shortUrl, '_blank');
+        } else {
+          alert(
+            'Could not create subscription. ' +
+            'Please try again or contact ' +
+            'hello@paydripapp.com'
+          );
+        }
+      } finally {
+        setCheckoutLoading(false);
+      }
+      return;
     }
+
+    const variantMap: Record<string, string> = {
+      'pro-monthly': import.meta.env.VITE_LEMONSQUEEZY_PRO_MONTHLY_VARIANT,
+      'pro-annual': import.meta.env.VITE_LEMONSQUEEZY_PRO_ANNUAL_VARIANT,
+      'ent-monthly': import.meta.env.VITE_LEMONSQUEEZY_ENT_MONTHLY_VARIANT,
+      'ent-annual': import.meta.env.VITE_LEMONSQUEEZY_ENT_ANNUAL_VARIANT,
+    };
+    const variantId = variantMap[key];
+    const checkoutUrl = variantId 
+      ? `https://paydripapp.lemonsqueezy.com/checkout/buy/${variantId}`
+      : '';
 
     if (!checkoutUrl) return;
 
@@ -414,14 +484,16 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
 
                      <button 
                         onClick={() => handleCheckout(p.slug, isYearly ? 'yearly' : 'monthly')}
+                        disabled={p.slug !== 'free' && checkoutLoading}
                         className={cn(
                            "w-full py-4 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-200 cursor-pointer text-center",
                            p.highlight 
                               ? "bg-[#C8FF00] text-[#080808] hover:bg-[#b8ef00] hover:shadow-lg hover:shadow-[#C8FF00]/10" 
-                              : "bg-[#161616] border border-[#222222] text-[#EEEEEE] hover:border-[#C8FF00]"
+                              : "bg-[#161616] border border-[#222222] text-[#EEEEEE] hover:border-[#C8FF00]",
+                           (p.slug !== 'free' && checkoutLoading) && "opacity-50 cursor-not-allowed"
                         )}
                      >
-                        {p.cta}
+                        {p.slug === 'free' ? p.cta : checkoutLoading ? 'Processing...' : p.cta}
                      </button>
                   </motion.div>
                ))}

@@ -13,6 +13,36 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { supabase } from '../lib/supabase';
+
+async function createRazorpaySubscription(
+  planId: string,
+  userEmail: string,
+  userName: string,
+  accessToken: string
+): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-razorpay-subscription`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          planId,
+          userEmail,
+          userName
+        })
+      }
+    );
+    const data = await response.json();
+    return data.short_url || null;
+  } catch {
+    return null;
+  }
+}
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -23,6 +53,15 @@ interface UpgradeModalProps {
 export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
   const [activeMobileTab, setActiveMobileTab] = React.useState(1); // Default to 'Pro' (index 1)
   const [billingCycle, setBillingCycle] = React.useState<'monthly' | 'yearly'>('monthly');
+  const [user, setUser] = React.useState<any>(null);
+  const [checkoutLoading, setCheckoutLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+  }, []);
+
   const { currency, prices, isIndia } = useCurrency();
   const [ready, setReady] = React.useState(false);
 
@@ -92,13 +131,11 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
   // After successful payment, Lemon Squeezy 
   // redirects to /dashboard?upgraded=true
   // The dashboard handles showing a success message
-  const handleUpgrade = (
+  const handleUpgrade = async (
     slug: string, 
     cycle: 'monthly' | 'yearly'
   ) => {
     if (slug === 'enterprise') {
-      // TODO: Replace with active enterprise 
-      // contact or dedicated enterprise flow
       alert('Enterprise enquiries coming soon. Contact hello@paydripapp.com to upgrade.');
       return;
     }
@@ -106,15 +143,52 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
     const key = `${slug}-${cycle === 'yearly' ? 'annual' : 'monthly'}`;
 
     if (isIndia) {
-      // Razorpay payment links for INR
-      const razorpayLinks: Record<string, string> = {
-        'pro-monthly': import.meta.env.VITE_RAZORPAY_PRO_MONTHLY,
-        'pro-annual': import.meta.env.VITE_RAZORPAY_PRO_ANNUAL,
-        'ent-monthly': import.meta.env.VITE_RAZORPAY_ENT_MONTHLY,
-        'ent-annual': import.meta.env.VITE_RAZORPAY_ENT_ANNUAL,
+      const razorpayPlanMap: 
+        Record<string, string> = {
+        'pro-monthly': import.meta.env
+          .VITE_RAZORPAY_PRO_MONTHLY,
+        'pro-annual': import.meta.env
+          .VITE_RAZORPAY_PRO_ANNUAL,
+        'ent-monthly': import.meta.env
+          .VITE_RAZORPAY_ENT_MONTHLY,
+        'ent-annual': import.meta.env
+          .VITE_RAZORPAY_ENT_ANNUAL,
       };
-      const link = razorpayLinks[key];
-      if (link) window.open(link, '_blank');
+
+      const planId = razorpayPlanMap[key];
+      if (!planId) return;
+
+      setCheckoutLoading(true);
+      try {
+        const { data: { session } } = 
+          await supabase.auth.getSession();
+        
+        if (!session) {
+          onClose();
+          return;
+        }
+
+        const shortUrl = 
+          await createRazorpaySubscription(
+            planId,
+            user?.email || '',
+            user?.user_metadata?.name || 
+              user?.email?.split('@')[0] || '',
+            session.access_token
+          );
+
+        if (shortUrl) {
+          window.open(shortUrl, '_blank');
+        } else {
+          alert(
+            'Could not create subscription. ' +
+            'Please try again or contact ' +
+            'hello@paydripapp.com'
+          );
+        }
+      } finally {
+        setCheckoutLoading(false);
+      }
       return;
     }
 
@@ -313,17 +387,19 @@ export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
 
                              <button 
                                 onClick={plan.current ? onClose : () => handleUpgrade(plan.slug, billingCycle)}
+                                disabled={!plan.current && checkoutLoading}
                                 className={cn(
                                    "w-full py-2.5 rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all",
                                    plan.current 
                                       ? "bg-[#161616] text-[#444444] cursor-default border border-[#222222]" 
                                       : plan.highlight 
                                          ? "bg-[#C8FF00] text-[#080808] hover:bg-[#b8ef00]" 
-                                         : "bg-[#161616] hover:bg-[#222222] text-[#EEEEEE] border border-[#222222]"
+                                         : "bg-[#161616] hover:bg-[#222222] text-[#EEEEEE] border border-[#222222]",
+                                   (!plan.current && checkoutLoading) && "opacity-50 cursor-not-allowed"
                                 )}
                                 type="button"
                              >
-                                {plan.cta}
+                                {plan.current ? plan.cta : checkoutLoading ? 'Processing...' : plan.cta}
                              </button>
                           </div>
                        ))}
