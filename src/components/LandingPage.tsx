@@ -23,26 +23,16 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 
-function savePendingCheckout(
-  slug: string, 
-  cycle: 'monthly' | 'yearly'
-) {
+function savePendingCheckout(url: string) {
   sessionStorage.setItem(
-    'pendingCheckout', 
-    JSON.stringify({ slug, cycle })
+    'pendingCheckout', url
   );
 }
 
-function getPendingCheckout(): {
-  slug: string, 
-  cycle: 'monthly' | 'yearly'
-} | null {
-  const raw = sessionStorage.getItem(
+function getPendingCheckout(): string | null {
+  return sessionStorage.getItem(
     'pendingCheckout'
   );
-  if (!raw) return null;
-  try { return JSON.parse(raw); } 
-  catch { return null; }
 }
 
 function clearPendingCheckout() {
@@ -134,13 +124,11 @@ export default function LandingPage({ user }: { user: User | null }) {
     slug: string,
     cycle: 'monthly' | 'yearly'
   ) => {
-    if (!user) {
-      savePendingCheckout(slug, cycle);
-      setShowAuth(true);
-      return;
-    }
-
     if (slug === 'free') {
+      if (!user) {
+        setShowAuth(true);
+        return;
+      }
       navigate('/dashboard');
       return;
     }
@@ -154,6 +142,8 @@ export default function LandingPage({ user }: { user: User | null }) {
       cycle === 'yearly' ? 'annual' : 'monthly'
     }`;
 
+    let checkoutUrl = '';
+
     if (isIndia) {
       const razorpayLinks: Record<string, string> = {
         'pro-monthly': import.meta.env.VITE_RAZORPAY_PRO_MONTHLY,
@@ -161,25 +151,29 @@ export default function LandingPage({ user }: { user: User | null }) {
         'ent-monthly': import.meta.env.VITE_RAZORPAY_ENT_MONTHLY,
         'ent-annual': import.meta.env.VITE_RAZORPAY_ENT_ANNUAL,
       };
-      const link = razorpayLinks[key];
-      if (link) window.open(link, '_blank');
+      checkoutUrl = razorpayLinks[key] || '';
+    } else {
+      const variantMap: Record<string, string> = {
+        'pro-monthly': import.meta.env.VITE_LEMONSQUEEZY_PRO_MONTHLY_VARIANT,
+        'pro-annual': import.meta.env.VITE_LEMONSQUEEZY_PRO_ANNUAL_VARIANT,
+        'ent-monthly': import.meta.env.VITE_LEMONSQUEEZY_ENT_MONTHLY_VARIANT,
+        'ent-annual': import.meta.env.VITE_LEMONSQUEEZY_ENT_ANNUAL_VARIANT,
+      };
+      const variantId = variantMap[key];
+      checkoutUrl = variantId 
+        ? `https://paydripapp.lemonsqueezy.com/checkout/buy/${variantId}`
+        : '';
+    }
+
+    if (!checkoutUrl) return;
+
+    if (!user) {
+      savePendingCheckout(checkoutUrl);
+      setShowAuth(true);
       return;
     }
 
-    const variantMap: Record<string, string> = {
-      'pro-monthly': import.meta.env.VITE_LEMONSQUEEZY_PRO_MONTHLY_VARIANT,
-      'pro-annual': import.meta.env.VITE_LEMONSQUEEZY_PRO_ANNUAL_VARIANT,
-      'ent-monthly': import.meta.env.VITE_LEMONSQUEEZY_ENT_MONTHLY_VARIANT,
-      'ent-annual': import.meta.env.VITE_LEMONSQUEEZY_ENT_ANNUAL_VARIANT,
-    };
-
-    const variantId = variantMap[key];
-    if (!variantId) return;
-
-    window.open(
-      `https://paydripapp.lemonsqueezy.com/checkout/buy/${variantId}`,
-      '_blank'
-    );
+    window.open(checkoutUrl, '_blank');
   };
 
   useEffect(() => {
@@ -187,7 +181,7 @@ export default function LandingPage({ user }: { user: User | null }) {
       const pending = getPendingCheckout();
       if (pending) {
         clearPendingCheckout();
-        handleCheckout(pending.slug, pending.cycle);
+        window.open(pending, '_blank');
       }
     }
   }, [user]);
