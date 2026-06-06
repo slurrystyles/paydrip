@@ -124,6 +124,16 @@ export default function DashboardView() {
     fetchData();
   }, [currentOrganization]);
 
+  useEffect(() => {
+    const pending = sessionStorage.getItem(
+      'pendingCheckout'
+    );
+    if (pending) {
+      sessionStorage.removeItem('pendingCheckout');
+      window.open(pending, '_blank');
+    }
+  }, []);
+
   const totalOutstanding = invoices
     .reduce((sum, i) => sum + (i.remainingBalance ?? i.amount), 0);
 
