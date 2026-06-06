@@ -23,6 +23,32 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 
+function savePendingCheckout(
+  slug: string, 
+  cycle: 'monthly' | 'yearly'
+) {
+  sessionStorage.setItem(
+    'pendingCheckout', 
+    JSON.stringify({ slug, cycle })
+  );
+}
+
+function getPendingCheckout(): {
+  slug: string, 
+  cycle: 'monthly' | 'yearly'
+} | null {
+  const raw = sessionStorage.getItem(
+    'pendingCheckout'
+  );
+  if (!raw) return null;
+  try { return JSON.parse(raw); } 
+  catch { return null; }
+}
+
+function clearPendingCheckout() {
+  sessionStorage.removeItem('pendingCheckout');
+}
+
 export default function LandingPage({ user }: { user: User | null }) {
   const [showAuth, setShowAuth] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -34,8 +60,6 @@ export default function LandingPage({ user }: { user: User | null }) {
   const { plan } = usePlan();
 
   const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
-  const [pendingCheckout, setPendingCheckout] = 
-    useState<{slug: string, cycle: 'monthly' | 'yearly'} | null>(null);
 
   useEffect(() => {
     async function getWaitlistCount() {
@@ -111,7 +135,7 @@ export default function LandingPage({ user }: { user: User | null }) {
     cycle: 'monthly' | 'yearly'
   ) => {
     if (!user) {
-      setPendingCheckout({ slug, cycle });
+      savePendingCheckout(slug, cycle);
       setShowAuth(true);
       return;
     }
@@ -159,12 +183,14 @@ export default function LandingPage({ user }: { user: User | null }) {
   };
 
   useEffect(() => {
-    if (user && pendingCheckout) {
-      const { slug, cycle } = pendingCheckout;
-      setPendingCheckout(null);
-      handleCheckout(slug, cycle);
+    if (user) {
+      const pending = getPendingCheckout();
+      if (pending) {
+        clearPendingCheckout();
+        handleCheckout(pending.slug, pending.cycle);
+      }
     }
-  }, [user, pendingCheckout]);
+  }, [user]);
 
   const easeExpo = [0.16, 1, 0.3, 1] as any;
 
