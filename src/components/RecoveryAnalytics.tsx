@@ -31,21 +31,20 @@ import { useOrganization } from '../contexts/OrganizationContext';
 export default function RecoveryAnalytics() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { plan } = usePlan();
+  const { plan, profile } = usePlan();
   const { currentOrganization } = useOrganization();
 
   useEffect(() => {
     async function loadStats() {
       if (!currentOrganization) return;
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!profile) return;
       
       const data = await recoveryService.getRecoveryStats(currentOrganization.id);
       setStats(data);
       setLoading(false);
     }
     loadStats();
-  }, [currentOrganization]);
+  }, [currentOrganization, profile]);
 
   if (loading) {
     return (

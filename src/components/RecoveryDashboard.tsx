@@ -19,9 +19,11 @@ import { supabase } from '../lib/supabase';
 import { formatCurrency, cn } from '../lib/utils';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { useUserRole } from '../hooks/useUserRole';
+import { usePlan } from '../contexts/PlanContext';
 import RecoveryAnalytics from './RecoveryAnalytics';
 
 export const RecoveryDashboard: React.FC = () => {
+  const { profile } = usePlan();
   const { currentOrganization } = useOrganization();
   const { capabilities = { canManageRecovery: false } } = useUserRole() || {};
   const canUpdate = capabilities.canManageRecovery;
@@ -33,8 +35,7 @@ export const RecoveryDashboard: React.FC = () => {
 
   const fetchStats = async () => {
     if (!currentOrganization) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!profile) return;
 
     const [statsData, events, riskScores] = await Promise.all([
       recoveryService.getRecoveryStats(currentOrganization.id),

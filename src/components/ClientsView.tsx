@@ -6,8 +6,10 @@ import { cn } from '../lib/utils';
 import { RiskBadge } from './RiskBadge';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { useUserRole } from '../hooks/useUserRole';
+import { usePlan } from '../contexts/PlanContext';
 
 export default function ClientsView() {
+  const { profile } = usePlan();
   const { currentOrganization } = useOrganization();
   const { capabilities = { canManageInvoices: false } } = useUserRole() || {};
   const canWrite = capabilities.canManageInvoices; 
@@ -28,8 +30,7 @@ export default function ClientsView() {
 
   async function fetchClients() {
     if (!currentOrganization) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!profile) return;
 
     const [clientsRes, riskRes] = await Promise.all([
       supabase.from('clients').select('*').eq('organization_id', currentOrganization.id).order('name'),
@@ -52,11 +53,10 @@ export default function ClientsView() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!currentOrganization) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!profile) return;
 
     const payload = { 
-      user_id: user.id, 
+      user_id: profile.id, 
       organization_id: currentOrganization.id,
       name, 
       email, 

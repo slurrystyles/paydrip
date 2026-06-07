@@ -2,12 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Bell, X, Check, CheckCircle, Archive, Trash2, ExternalLink, Mail, Zap, FileText, User as UserIcon, CreditCard, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { usePlan } from '../contexts/PlanContext';
 import { Notification } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
 export default function NotificationCenter() {
+  const { profile } = usePlan();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -19,25 +21,23 @@ export default function NotificationCenter() {
     if (!currentOrganization) return;
     
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!profile) return;
 
     // Fetch preferences first to filter
-    const { data: profile } = await supabase.from('users').select('notification_preferences').eq('id', user.id).single();
-    if (profile) setPreferences(profile.notification_preferences);
+    const prefs = (profile.notification_preferences || {}) as any;
+    setPreferences(prefs);
 
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
       .eq('organization_id', currentOrganization.id)
-      .eq('user_id', user.id)
+      .eq('user_id', profile.id)
       .order('created_at', { ascending: false })
       .limit(50);
 
     if (error) {
       console.error('Error fetching notifications:', error);
     } else {
-      const prefs = profile?.notification_preferences || {};
       const filtered = (data || []).filter(n => {
           if (n.type === 'email_delivery' && prefs.email_delivery === false) return false;
           if (n.type === 'payments' && prefs.payments === false) return false;
@@ -48,7 +48,7 @@ export default function NotificationCenter() {
       setUnreadCount(filtered.filter(n => !n.is_read).length);
     }
     setLoading(false);
-  }, [currentOrganization]);
+  }, [currentOrganization, profile]);
 
   useEffect(() => {
     fetchNotifications();
@@ -57,18 +57,17 @@ export default function NotificationCenter() {
     let channel: any = null;
 
     const setupSubscription = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || !currentOrganization) return;
+        if (!profile || !currentOrganization) return;
 
         channel = supabase
-            .channel(`notifications-${user.id}-${currentOrganization.id}`)
+            .channel(`notifications-${profile.id}-${currentOrganization.id}`)
             .on(
                 'postgres_changes',
                 {
                     event: '*', // Listen to all events: INSERT, UPDATE, DELETE
                     schema: 'public',
                     table: 'notifications',
-                    filter: `user_id=eq.${user.id}`,
+                    filter: `user_id=eq.${profile.id}`,
                 },
                 (payload) => {
                     if (payload.eventType === 'INSERT') {
@@ -111,7 +110,7 @@ export default function NotificationCenter() {
             supabase.removeChannel(channel);
         }
     };
-  }, [currentOrganization, fetchNotifications]);
+  }, [currentOrganization, fetchNotifications, profile]);
 
   const markAsRead = async (id: string) => {
     const { error } = await supabase
@@ -127,15 +126,13 @@ export default function NotificationCenter() {
 
   const markAllAsRead = async () => {
     if (!currentOrganization || notifications.length === 0) return;
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!profile) return;
 
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('organization_id', currentOrganization.id)
-      .eq('user_id', user.id)
+      .eq('user_id', profile.id)
       .eq('is_read', false);
 
     if (!error) {

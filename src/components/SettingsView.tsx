@@ -129,8 +129,7 @@ export default function SettingsView() {
 
       const compressedFile = await imageCompression(file, options);
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !currentOrganization) throw new Error('Unauthorized');
+      if (!profile || !currentOrganization) throw new Error('Unauthorized');
 
       const now = new Date();
       const monthYear = `${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}`;
@@ -168,8 +167,7 @@ export default function SettingsView() {
   };
 
   const updatePreference = async (key: string, value: boolean) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!profile) return;
 
     const newPrefs = { ...notificationPreferences, [key]: value };
     setNotificationPreferences(newPrefs);
@@ -178,7 +176,7 @@ export default function SettingsView() {
       const { error } = await supabase
         .from('users')
         .update({ notification_preferences: newPrefs })
-        .eq('id', user.id);
+        .eq('id', profile.id);
       
       if (error) throw error;
       setMessage({ type: 'success', text: 'Alert preferences updated.' });
@@ -302,14 +300,13 @@ export default function SettingsView() {
     e.preventDefault();
     setSaving(true);
     setMessage(null);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !currentOrganization) return;
+    if (!profile || !currentOrganization) return;
     try {
       const { error: userError } = await supabase
         .from('users')
         .upsert({
-          id: user.id,
-          email: user.email,
+          id: profile.id,
+          email: profile.email,
           name,
           upi_id: upiId,
           bank_details: bankDetails,
@@ -340,13 +337,12 @@ export default function SettingsView() {
     e.preventDefault();
     setSaving(true);
     setMessage(null);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!profile) return;
     try {
       const { error } = await supabase
         .from('users')
         .update({ whatsapp_templates: templates })
-        .eq('id', user.id);
+        .eq('id', profile.id);
       if (error) throw error;
       setMessage({ 
         type: 'success', 

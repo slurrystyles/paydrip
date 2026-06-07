@@ -13,6 +13,7 @@
   } from 'lucide-react';
   import { cn } from '../lib/utils';
   import { useCurrency } from '../contexts/CurrencyContext';
+  import { usePlan } from '../contexts/PlanContext';
   import { supabase } from '../lib/supabase';
 
   async function createRazorpaySubscription(
@@ -51,16 +52,11 @@
   }
 
   export function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalProps) {
+    const { profile } = usePlan();
+    const user = profile;
     const [activeMobileTab, setActiveMobileTab] = React.useState(1); // Default to 'Pro' (index 1)
     const [billingCycle, setBillingCycle] = React.useState<'monthly' | 'yearly'>('monthly');
-    const [user, setUser] = React.useState<any>(null);
     const [checkoutLoading, setCheckoutLoading] = React.useState(false);
-
-    React.useEffect(() => {
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        setUser(user);
-      });
-    }, []);
 
     const { currency, prices, isIndia } = useCurrency();
     const [ready, setReady] = React.useState(false);
@@ -162,7 +158,7 @@
             await createRazorpaySubscription(
               planId,
               user?.email || '',
-              user?.user_metadata?.name || 
+              user?.name || 
                 user?.email?.split('@')[0] || '',
               session.access_token
             );

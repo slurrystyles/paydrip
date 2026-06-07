@@ -32,7 +32,7 @@ import { useUserRole } from '../hooks/useUserRole';
 import { recoveryService } from '../lib/recoveryService';
 
 export default function InvoicesView() {
-  const { refreshPlanData } = usePlan();
+  const { profile, refreshPlanData } = usePlan();
   const { canCreateInvoice, refresh: refreshUsage } = useUsageLimits();
   const isLimitReached = !canCreateInvoice;
   const { currentOrganization } = useOrganization();
@@ -81,13 +81,11 @@ export default function InvoicesView() {
     if (!confirm(`Send invoice #${invoice.invoice_number} to ${clientInfo.name}?`)) return;
 
     try {
-      const { data: profile } = await supabase.from('users').select('business_name').eq('id', invoice.user_id).single();
-      
       await recoveryService.sendInvoice({
         to: clientInfo.email,
         invoice_id: invoice.id,
         invoice_number: invoice.invoice_number,
-        business_name: profile?.business_name || 'Business',
+        business_name: currentOrganization?.name || 'Business',
         organization_id: invoice.organization_id
       });
       fetchData();
@@ -112,13 +110,12 @@ export default function InvoicesView() {
         paid_at: new Date().toISOString()
       }]);
 
-      const { data: { user } } = await supabase.auth.getUser();
       await supabase.from('audit_log').insert({
         entity_id: invoice.id,
         entity_type: 'invoice',
         audit_type: 'invoice_paid',
         organization_id: invoice.organization_id,
-        user_id: user?.id,
+        user_id: profile?.id,
         meta: { method: 'manual', amount: invoice.amount }
       });
 
