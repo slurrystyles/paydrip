@@ -122,6 +122,10 @@ export default function DashboardView() {
   }
 
   useEffect(() => {
+    if (!currentOrganization) {
+      setLoading(false);
+      return;
+    }
     fetchData();
   }, [currentOrganization]);
 
@@ -173,17 +177,8 @@ export default function DashboardView() {
   const collectionRate = totalOverall > 0 ? Math.round((totalPaid / totalOverall) * 100) : 0;
   const overdueAmount = invoices.filter(isOverdue).reduce((sum, i) => sum + (i.remainingBalance ?? i.amount), 0);
 
-  if (loading) return (
-    <div className="animate-pulse space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[1, 2, 3].map(i => <div key={i} className="h-32 bg-[#111111] rounded-xl border border-[#222222]" />)}
-      </div>
-      <div className="h-96 bg-[#111111] border border-[#222222] rounded-xl" />
-    </div>
-  );
-
   // SECTION 0: NO ORGANIZATION STATE
-  if (!currentOrganization) {
+  if (!currentOrganization && !loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
         <motion.div 
@@ -210,6 +205,15 @@ export default function DashboardView() {
       </div>
     );
   }
+
+  if (loading) return (
+    <div className="animate-pulse space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map(i => <div key={i} className="h-32 bg-[#111111] rounded-xl border border-[#222222]" />)}
+      </div>
+      <div className="h-96 bg-[#111111] border border-[#222222] rounded-xl" />
+    </div>
+  );
 
   // SECTION 1: ONBOARDING EXPERIENCE
   if (invoices.length === 0) {
