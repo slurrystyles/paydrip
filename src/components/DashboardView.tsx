@@ -200,6 +200,16 @@ export default function DashboardView() {
             Create Organization
           </button>
         </motion.div>
+
+        {showCreateOrgModal && (
+          <CreateOrganizationModal 
+            onClose={() => setShowCreateOrgModal(false)}
+            onSuccess={() => {
+              setShowCreateOrgModal(false);
+              window.location.reload();
+            }}
+          />
+        )}
       </div>
     );
   }
