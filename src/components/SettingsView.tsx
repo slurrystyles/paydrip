@@ -599,6 +599,8 @@ export default function SettingsView() {
             plan={plan}
             webhooks={webhooks}
             setShowUpgradeModal={setShowUpgradeModal}
+            organizationId={currentOrganization?.id || null}
+            onRefresh={fetchSecurityData}
           />
         )}
 
