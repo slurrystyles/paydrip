@@ -39,6 +39,7 @@ let globalCachedOrgId: string | null = null;
 
 export default function DashboardView() {
   const { plan, refreshPlanData } = usePlan();
+  const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
   const { limits, canCreateInvoice, isLoading: isUsageLoading } = useUsageLimits();
   const isLimitReached = !canCreateInvoice;
   const { currentOrganization } = useOrganization();
@@ -189,14 +190,11 @@ export default function DashboardView() {
           <div className="w-16 h-16 bg-[#111111] border border-[#222222] rounded-xl flex items-center justify-center text-[#C8FF00] mx-auto mb-8">
             <Zap size={32} />
           </div>
-          <h2 className="text-3xl font-bold text-[#EEEEEE] tracking-tight mb-4">Initialize your workspace</h2>
-          <p className="text-[#888888] font-normal text-sm mb-12">You are currently in a disconnected state. Establish an organization to begin.</p>
+          <h2 className="text-3xl font-bold text-[#EEEEEE] tracking-tight mb-4">Welcome to Paydrip</h2>
+          <p className="text-[#888888] font-normal text-sm mb-12">Set up your workspace to start creating invoices and recovering payments.</p>
           
           <button 
-            onClick={() => {
-              const el = document.querySelector('[id^="org-switcher-button"]') as HTMLButtonElement;
-              el?.click();
-            }}
+            onClick={() => setShowCreateOrgModal(true)}
             className="w-full bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] py-4 rounded-lg font-semibold text-sm transition-all"
           >
             Create Organization
@@ -544,32 +542,6 @@ export default function DashboardView() {
               ></div>
             </div>
           </div>
-
-          {/* System Status Info */}
-          <div className="bento-card p-5 bg-[#111111] border border-[#222222] rounded-xl text-left">
-            <h4 className="font-semibold text-xs text-[#888888] uppercase tracking-wider mb-1">System Security</h4>
-            <p className="text-[10px] text-[#444444] font-mono mb-4 uppercase">Status: Connected</p>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#161616] border border-[#222222] flex items-center justify-center text-[#888888]">
-                  <CheckCircle2 size={14} />
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold text-[#EEEEEE] leading-none">AES-256 E2E</p>
-                  <p className="text-[10px] text-[#888888] mt-0.5 uppercase tracking-wider font-mono">Encrypted Data</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#161616] border border-[#222222] flex items-center justify-center text-[#888888]">
-                  <TrendingUp size={14} />
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold text-[#EEEEEE] leading-none">Instant Backups</p>
-                  <p className="text-[10px] text-[#C8FF0015] mt-0.5 text-xs text-[#C8FF00] uppercase font-mono tracking-wider">Synced</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -593,6 +565,87 @@ export default function DashboardView() {
           onUpdate={fetchData}
         />
       )}
+
+      {showCreateOrgModal && (
+        <CreateOrganizationModal 
+          onClose={() => setShowCreateOrgModal(false)}
+          onSuccess={() => {
+            setShowCreateOrgModal(false);
+            window.location.reload();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateOrganizationModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const { createOrganization } = useOrganization();
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await createOrganization(name.trim());
+      onSuccess();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Failed to establish workspace');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-[#080808]/85 backdrop-blur-sm">
+      <div className="bg-[#111111] w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden relative z-10 border border-[#222222] p-8 space-y-6">
+        <div>
+          <h3 className="font-black text-2xl tracking-tighter text-[#EEEEEE] italic uppercase">Create Workspace</h3>
+          <p className="text-[10px] font-black text-[#888888] uppercase tracking-widest mt-1 font-mono">Multi-Tenant Isolation Protocol</p>
+        </div>
+
+        {error && (
+          <p className="text-xs text-[#EF4444] font-mono">{error}</p>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 font-mono">
+          <div>
+            <label className="block text-[9px] font-black text-[#888888] uppercase tracking-widest mb-1.5 px-1 font-mono font-bold">Workspace Name</label>
+            <input 
+              autoFocus
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-5 py-3 bg-[#161616] border border-[#222222] rounded-2xl focus:border-[#C8FF00] focus:bg-[#161616] outline-none transition-all font-bold text-[#EEEEEE]"
+              placeholder="e.g. Acme Agency"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button 
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 px-4 bg-[#161616] hover:bg-[#222222] text-[#888888] rounded-xl font-black uppercase tracking-[0.15em] text-[10px] transition-all border border-[#222222]"
+            >
+              Cancel
+            </button>
+            <button 
+              disabled={loading}
+              type="submit"
+              className="flex-1 py-3 px-4 bg-[#C8FF00] text-[#080808] rounded-xl font-black uppercase tracking-[0.15em] text-[10px] hover:bg-[#b8ef00] transition-all flex items-center justify-center gap-2 font-mono font-bold"
+            >
+              {loading ? (
+                <div className="w-3.5 h-3.5 border-2 border-[#080808] border-t-transparent rounded-full animate-spin"></div>
+              ) : 'Deploy'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
