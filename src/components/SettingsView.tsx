@@ -79,8 +79,7 @@ export default function SettingsView() {
     const { data: webData } = await supabase
       .from('webhook_endpoints')
       .select('*')
-      .eq('organization_id', currentOrganization.id)
-      .limit(5);
+      .eq('organization_id', currentOrganization.id);
     setWebhooks(webData || []);
   };
 
