@@ -20,10 +20,11 @@ import LandingPage from './components/LandingPage';
 import PublicInvoiceView from './components/PublicInvoiceView';
 import RecoveryOpsCenter from './components/RecoveryOpsCenter';
 import TemplateManager from './components/TemplateManager';
-import PrivacyPage from './components/PrivacyPage';
-import TermsPage from './components/TermsPage';
 import ContactPage from './components/ContactPage';
 import PricingPage from './pages/PricingPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import RefundPolicy from './pages/RefundPolicy';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -83,8 +84,9 @@ export default function App() {
                 <Route path="/" element={<LandingPage user={user} />} />
                 <Route path="/pay/:token" element={<PublicInvoiceView />} />
                 <Route path="/v/:token" element={<PublicInvoiceView />} />
-                <Route path="/privacy" element={<PrivacyPage />} />
-                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/refund-policy" element={<RefundPolicy />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/pricing" element={user ? <AuthenticatedLayout><PricingPage isNested /></AuthenticatedLayout> : <PricingPage />} />
                 
