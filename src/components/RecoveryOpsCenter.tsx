@@ -26,9 +26,11 @@ import { EscalationQueueItem, Invoice, AuditLog, SecurityAbuseFlag } from '../ty
 import { formatCurrency, cn } from '../lib/utils';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { useUserRole } from '../hooks/useUserRole';
+import { usePlan } from '../contexts/PlanContext';
 import OperationsHealth from './OperationsHealth';
 
 export default function RecoveryOpsCenter() {
+  const { profile } = usePlan();
   const { currentOrganization } = useOrganization();
   const { capabilities = { canManageRecovery: false } } = useUserRole() || {};
   const canUpdate = capabilities.canManageRecovery;
@@ -42,8 +44,7 @@ export default function RecoveryOpsCenter() {
   const fetchData = async () => {
     if (!currentOrganization) return;
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!profile) return;
 
     const [queueData, invoiceData, auditData, abuseData] = await Promise.all([
       supabase.from('escalation_queue').select('*').eq('organization_id', currentOrganization.id).order('scheduled_at', { ascending: true }),

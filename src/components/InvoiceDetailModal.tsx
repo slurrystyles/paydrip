@@ -78,7 +78,7 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
   const [sequence, setSequence] = useState<FollowUpSequence | null>(null);
   const [sequenceSteps, setSequenceSteps] = useState<FollowUpStep[]>([]);
 
-  const { plan } = usePlan();
+  const { plan, profile } = usePlan();
   const { isFreePlan } = useUsageLimits();
   const [recommendation, setRecommendation] = useState<any>(null);
   const [eventLogs, setEventLogs] = useState<any[]>([]);
@@ -328,13 +328,12 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
         }));
 
         // 3. Log Audit
-        const { data: { user } } = await supabase.auth.getUser();
         await supabase.from('audit_log').insert({
           entity_id: invoice.id,
           entity_type: 'invoice',
           audit_type: 'payment_confirmed',
           organization_id: invoice.organization_id,
-          user_id: user?.id,
+          user_id: profile?.id,
           meta: { payment_reference: invoice.payment_reference }
         });
         
@@ -358,13 +357,12 @@ export default function InvoiceDetailModal({ invoice: propInvoice, onClose, onUp
           automation_paused: false 
         }));
 
-        const { data: { user } } = await supabase.auth.getUser();
         await supabase.from('audit_log').insert({
           entity_id: invoice.id,
           entity_type: 'invoice',
           audit_type: 'payment_rejected',
           organization_id: invoice.organization_id,
-          user_id: user?.id,
+          user_id: profile?.id,
           meta: { payment_reference: invoice.payment_reference }
         });
 

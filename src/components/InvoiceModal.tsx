@@ -17,7 +17,7 @@ interface Props {
 }
 
 export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Props) {
-  const { plan } = usePlan();
+  const { profile, plan } = usePlan();
   const { canCreateInvoice, refresh: refreshUsage, isFreePlan } = useUsageLimits();
   const { currentOrganization } = useOrganization();
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -41,8 +41,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
     setLoading(true);
     setError(null);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!profile) return;
 
     // Fetch limit check relative to organization
     const { count, error: countError } = await supabase
@@ -71,7 +70,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
     const { data: newInvoice, error: insertError } = await supabase
       .from('invoices')
       .insert([{
-        user_id: user.id,
+        user_id: profile.id,
         organization_id: currentOrganization.id,
         client_id: clientId,
         invoice_number: invoiceNumber,
@@ -89,15 +88,14 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
       // Production Audit: Log Event
       await supabase.from('invoice_events').insert([{
         invoice_id: newInvoice.id,
-        user_id: user.id,
+        user_id: profile.id,
         organization_id: currentOrganization.id,
         event_type: 'creation',
         metadata: { amount: parseFloat(amount) }
       }]);
 
       if (submitMode === 'send') {
-        const { data: profile } = await supabase.from('users').select('business_name').eq('id', user.id).single();
-        if (clientData.email && profile) {
+        if (clientData.email) {
           try {
             await recoveryService.sendInvoice({
               to: clientData.email,
@@ -105,7 +103,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
               delivery_channel: isFreePlan ? 'email' : deliveryChannel,
               invoice_id: newInvoice.id,
               invoice_number: invoiceNumber,
-              business_name: profile.business_name,
+              business_name: currentOrganization.name,
               organization_id: currentOrganization.id
             });
           } catch (e) {

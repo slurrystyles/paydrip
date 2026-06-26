@@ -86,38 +86,22 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   const currentMembership = memberships.find(m => m.organization_id === currentOrganization?.id);
   const role = currentMembership?.role;
 
-  const createOrganization = async (name: string, type: string = 'standard') => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+  const createOrganization = async (
+    name: string, 
+    type: string = 'standard'
+  ) => {
+    const { data, error } = await supabase
+      .rpc('create_organization', {
+        org_name: name,
+        org_type: type
+      });
 
-    // 1. Create Organization
-    const { data: org, error: orgError } = await supabase
-      .from('organizations')
-      .insert([{
-        name,
-        type,
-        is_active: true
-      }])
-      .select()
-      .single();
+    if (error) throw error;
 
-    if (orgError) throw orgError;
-
-    // 2. Create Membership (as owner)
-    const { error: memError } = await supabase
-      .from('memberships')
-      .insert([{
-        organization_id: org.id,
-        user_id: user.id,
-        role: 'owner',
-        is_active: true
-      }]);
-
-    if (memError) throw memError;
-
-    // 3. Refresh and select
     await fetchMemberships();
-    await setOrganization(org.id);
+    if (data?.id) {
+      await setOrganization(data.id);
+    }
   };
 
   const isAdmin = role === 'admin' || role === 'owner';

@@ -23,6 +23,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { usePlan } from '../contexts/PlanContext';
 import AuthView from '../components/AuthView';
 
 function savePendingCheckout(url: string) {
@@ -148,20 +149,16 @@ const FAQS = [
 ];
 
 export default function PricingPage({ isNested = false }: { isNested?: boolean }) {
+  const { profile } = usePlan();
+  const user = profile;
+
   const [isYearly, setIsYearly] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const navigate = useNavigate();
 
   const { currency, prices: PRICES, isIndia } = useCurrency();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-    });
-  }, []);
 
   useEffect(() => {
     if (user) {
@@ -183,11 +180,6 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
         return;
       }
       navigate('/dashboard');
-      return;
-    }
-
-    if (slug === 'enterprise') {
-      alert('Enterprise enquiries coming soon. Contact hello@paydripapp.com to upgrade.');
       return;
     }
 
@@ -225,7 +217,7 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
           await createRazorpaySubscription(
             planId,
             user?.email || '',
-            user?.user_metadata?.name || 
+            user?.name || 
               user?.email?.split('@')[0] || '',
             session.access_token
           );

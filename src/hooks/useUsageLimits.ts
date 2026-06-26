@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { usePlan } from '../contexts/PlanContext';
 
 export interface UsageLimit {
   current: number;
@@ -66,6 +67,7 @@ function notifyListeners() {
 
 export function useUsageLimits() {
   const { currentOrganization } = useOrganization();
+  const { plan: userPlan } = usePlan();
   const [usage, setUsage] = useState<OrganizationUsage>(globalUsage);
 
   const fetchUsage = useCallback(async (force = false) => {
@@ -191,8 +193,81 @@ export function useUsageLimits() {
     return () => clearInterval(interval);
   }, [fetchUsage, currentOrganization]);
 
-  return {
+  const effectivePlan = (userPlan && userPlan !== 'free') ? userPlan : usage.plan;
+  const isFreePlan = effectivePlan === 'free';
+  const isProPlan = effectivePlan === 'pro';
+  const isEnterprise = effectivePlan === 'enterprise';
+
+  const modifiedLimits = { ...usage.limits };
+  
+  if (effectivePlan !== usage.plan) {
+    if (effectivePlan === 'pro') {
+      modifiedLimits.invoices_month = {
+        current: usage.limits.invoices_month?.current || 0,
+        limit: 500,
+        allowed: (usage.limits.invoices_month?.current || 0) < 500,
+        percentage: Math.min(100, ((usage.limits.invoices_month?.current || 0) / 500) * 100)
+      };
+      modifiedLimits.team_seats = {
+        current: usage.limits.team_seats?.current || 0,
+        limit: 3,
+        allowed: (usage.limits.team_seats?.current || 0) < 3,
+        percentage: Math.min(100, ((usage.limits.team_seats?.current || 0) / 3) * 100)
+      };
+      modifiedLimits.ai_generations = {
+        current: usage.limits.ai_generations?.current || 0,
+        limit: 100,
+        allowed: (usage.limits.ai_generations?.current || 0) < 100,
+        percentage: Math.min(100, ((usage.limits.ai_generations?.current || 0) / 100) * 100)
+      };
+      modifiedLimits.automations_active = {
+        current: usage.limits.automations_active?.current || 0,
+        limit: 50,
+        allowed: (usage.limits.automations_active?.current || 0) < 50,
+        percentage: Math.min(100, ((usage.limits.automations_active?.current || 0) / 50) * 100)
+      };
+    } else if (effectivePlan === 'enterprise') {
+      modifiedLimits.invoices_month = {
+        current: usage.limits.invoices_month?.current || 0,
+        limit: -1,
+        allowed: true,
+        percentage: 0
+      };
+      modifiedLimits.team_seats = {
+        current: usage.limits.team_seats?.current || 0,
+        limit: -1,
+        allowed: true,
+        percentage: 0
+      };
+      modifiedLimits.ai_generations = {
+        current: usage.limits.ai_generations?.current || 0,
+        limit: -1,
+        allowed: true,
+        percentage: 0
+      };
+      modifiedLimits.automations_active = {
+        current: usage.limits.automations_active?.current || 0,
+        limit: -1,
+        allowed: true,
+        percentage: 0
+      };
+    }
+  }
+
+  const finalUsage = {
     ...usage,
+    plan: effectivePlan,
+    limits: modifiedLimits,
+    isFreePlan,
+    isProPlan,
+    isEnterprise,
+    canCreateInvoice: !isFreePlan || modifiedLimits.invoices_month.allowed,
+    canAddMember: !isFreePlan || modifiedLimits.team_seats.allowed,
+    canCreateAutomation: !isFreePlan || modifiedLimits.automations_active.allowed,
+  };
+
+  return {
+    ...finalUsage,
     refresh: () => fetchUsage(true),
   };
 }
