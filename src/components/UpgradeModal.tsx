@@ -126,7 +126,8 @@
       slug: string, 
       cycle: 'monthly' | 'yearly'
     ) => {
-      const key = `${slug}-${cycle === 'yearly' ? 'annual' : 'monthly'}`;
+      const normalizedSlug = slug === 'enterprise' ? 'ent' : slug;
+      const key = `${normalizedSlug}-${cycle === 'yearly' ? 'annual' : 'monthly'}`;
 
       if (isIndia) {
         const razorpayPlanMap: 

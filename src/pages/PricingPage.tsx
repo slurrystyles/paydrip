@@ -183,7 +183,8 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
       return;
     }
 
-    const key = `${slug}-${
+    const normalizedSlug = slug === 'enterprise' ? 'ent' : slug;
+    const key = `${normalizedSlug}-${
       cycle === 'yearly' ? 'annual' : 'monthly'
     }`;
 

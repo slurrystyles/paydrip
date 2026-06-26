@@ -165,7 +165,8 @@ export default function LandingPage({ user }: { user: User | null }) {
       return;
     }
 
-    const key = `${slug}-${
+    const normalizedSlug = slug === 'enterprise' ? 'ent' : slug;
+    const key = `${normalizedSlug}-${
       cycle === 'yearly' ? 'annual' : 'monthly'
     }`;
 
