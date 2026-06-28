@@ -205,7 +205,7 @@ export default function InvoiceModal({ isOpen, onClose, clients, onSuccess }: Pr
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono px-1">Selected Counterparty</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono px-1">Selected Client</label>
                     <select
                       required
                       value={clientId}

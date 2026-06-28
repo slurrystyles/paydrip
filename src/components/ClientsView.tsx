@@ -38,8 +38,8 @@ export default function ClientsView() {
     ]);
     
     if (!clientsRes.error && clientsRes.data) {
-      const clientsWithRisk = clientsRes.data.map(client => {
-        const risk = riskRes.data?.find(r => r.client_id === client.id);
+      const clientsWithRisk = clientsRes.data.map((client: { id: any; }) => {
+        const risk = riskRes.data?.find((r: { client_id: any; }) => r.client_id === client.id);
         return {
           ...client,
           risk_score: risk?.risk_score || 'low'
@@ -130,7 +130,7 @@ export default function ClientsView() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#444444] group-focus-within:text-[#C8FF00] transition-colors" size={14} />
           <input 
             type="text" 
-            placeholder="Search Counterparties..." 
+            placeholder="Search Clients..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-11 pr-4 py-2 bg-[#111111] border border-[#222222] rounded-lg focus:border-[#444444] outline-none transition-all text-xs font-medium text-[#EEEEEE] placeholder:text-[#444444]"
@@ -142,7 +142,7 @@ export default function ClientsView() {
             className="bg-[#C8FF00] text-[#080808] px-4 py-2 rounded-lg font-semibold text-xs flex items-center justify-center space-x-2 hover:bg-[#b8ef00] transition-all"
           >
             <Plus size={14} />
-            <span>New Counterparty</span>
+            <span>New Client</span>
           </button>
         )}
       </div>
@@ -169,7 +169,7 @@ export default function ClientsView() {
                       </div>
                       <div>
                         <p className="font-semibold text-[#EEEEEE] text-sm leading-none">{client.name}</p>
-                        <p className="text-[10px] text-[#444444] font-semibold uppercase tracking-wider mt-1">Counterparty</p>
+                        <p className="text-[10px] text-[#444444] font-semibold uppercase tracking-wider mt-1">Client</p>
                       </div>
                     </div>
                   </td>
@@ -221,13 +221,13 @@ export default function ClientsView() {
                       <div className="w-12 h-12 bg-[#161616] border border-[#222222] rounded-xl flex items-center justify-center text-[#888888] mb-4">
                         <Mail size={22} />
                       </div>
-                      <h3 className="text-base font-semibold text-[#EEEEEE] mb-1">No counterparties found</h3>
-                      <p className="text-[#888888] text-xs font-normal mb-6">Add a counterparty to start issuing invoices.</p>
+                      <h3 className="text-base font-semibold text-[#EEEEEE] mb-1">No Clients found</h3>
+                      <p className="text-[#888888] text-xs font-normal mb-6">Add a client to start issuing invoices.</p>
                       <button 
                         onClick={() => openModal()}
                         className="bg-[#C8FF00] hover:bg-[#b8ef00] text-[#080808] px-4 py-2 rounded-lg font-semibold text-xs transition-all"
                       >
-                        Add Counterparty
+                        Add Client
                       </button>
                     </div>
                   </td>
@@ -252,7 +252,7 @@ export default function ClientsView() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold text-[#EEEEEE] truncate text-sm">{client.name}</p>
-                  <p className="text-[10px] text-[#888888] font-bold uppercase tracking-wider">Counterparty</p>
+                  <p className="text-[10px] text-[#888888] font-bold uppercase tracking-wider">Client</p>
                 </div>
               </div>
               <RiskBadge level={client.risk_score as any} />
@@ -295,7 +295,7 @@ export default function ClientsView() {
         {filteredClients.length === 0 && (
           <div className="py-12 px-6 text-center bg-[#111111] border border-[#222222] rounded-xl">
              <Mail className="mx-auto text-[#444444] mb-4" size={32} />
-             <p className="text-[#888888] font-semibold tracking-wider text-xs uppercase">No counterparties found</p>
+             <p className="text-[#888888] font-semibold tracking-wider text-xs uppercase">No clients found</p>
           </div>
         )}
       </div>
@@ -306,8 +306,8 @@ export default function ClientsView() {
           <div className="bg-[#111111] border border-[#222222] w-full max-w-md rounded-xl shadow-2xl overflow-hidden text-left">
             <div className="p-5 border-b border-[#222222] flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-base text-[#EEEEEE]">{editingId ? 'Edit Counterparty' : 'Add New Counterparty'}</h3>
-                <p className="text-[10px] text-[#888888] uppercase tracking-wider mt-0.5">Counterparty Details Profile</p>
+                <h3 className="font-semibold text-base text-[#EEEEEE]">{editingId ? 'Edit Client' : 'Add New Client'}</h3>
+                <p className="text-[10px] text-[#888888] uppercase tracking-wider mt-0.5">Client Details Profile</p>
               </div>
               <button onClick={closeModal} className="p-1 bg-[#161616] border border-[#222222] rounded-lg text-[#888888] hover:text-[#EEEEEE] transition-all">
                 <Plus size={16} className="rotate-45" />

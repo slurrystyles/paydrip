@@ -43,7 +43,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-bold text-[#C8FF00] mb-3 uppercase tracking-wide">4. Rerouting & Verification (No Spam Policy)</h2>
           <p>
-            Paydrip has an absolute zero-tolerance policy for harassment, spam, and unsolicited communications. Invoices, reminders, and escalation logs must only be dispatched to legitimate counterparties who have prior commercial relationships. We actively log delivery statistics and rate levels to comply with international anti-spam standards.
+            Paydrip has an absolute zero-tolerance policy for harassment, spam, and unsolicited communications. Invoices, reminders, and escalation logs must only be dispatched to legitimate clients who have prior commercial relationships. We actively log delivery statistics and rate levels to comply with international anti-spam standards.
           </p>
         </section>
 

@@ -166,7 +166,7 @@ export default function InvoicesView() {
       ]);
       
       if (!invRes.error && invRes.data) {
-        const computedInvoices = invRes.data.map(inv => {
+        const computedInvoices = invRes.data.map((inv: { payments: never[]; amount: number; }) => {
           const invPayments = inv.payments || [];
           const totalPaid = invPayments.reduce((sum: number, p: any) => sum + p.amount, 0);
           return {
@@ -260,7 +260,7 @@ export default function InvoicesView() {
                       className="rounded border-[#222222] bg-[#080808] text-[#C8FF00] focus:ring-0 checked:bg-[#C8FF00]"
                     />
                   </th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#888888] uppercase tracking-wider font-mono">Counterparty</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#888888] uppercase tracking-wider font-mono">Client</th>
                   <th className="px-5 py-3 text-xs font-semibold text-[#888888] uppercase tracking-wider font-mono">Amount</th>
                   <th className="px-5 py-3 text-xs font-semibold text-[#888888] uppercase tracking-wider font-mono text-center">Risk</th>
                   <th className="px-5 py-3 text-xs font-semibold text-[#888888] uppercase tracking-wider font-mono">Due Date</th>

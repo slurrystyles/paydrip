@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /refund-policy
+Disallow: /dashboard
+Disallow: /invoices
+Disallow: /clients
+Disallow: /settings
+Disallow: /analytics
+Disallow: /notifications
+Disallow: /team
+Disallow: /webhooks
+Disallow: /recovery
+Disallow: /operations
+Disallow: /templates
+Disallow: /pay/
+Disallow: /v/
+Disallow: /login
+Disallow: /signup
+Disallow: /auth/
+Disallow: /api/
+
+Sitemap: https://paydripapp.com/sitemap.xml
