@@ -61,6 +61,7 @@ export default function PublicFooter() {
           <Link to="/privacy" className="hover:text-[#888888] transition-colors text-xs">Privacy</Link>
           <Link to="/terms" className="hover:text-[#888888] transition-colors text-xs">Terms</Link>
           <Link to="/refund-policy" className="hover:text-[#888888] transition-colors text-xs">Refund Policy</Link>
+          <Link to="/blog" className="hover:text-[#C8FF00] transition-colors text-xs">Blog</Link>
           <Link to="/contact" className="hover:text-[#888888] transition-[#C8FF00] text-xs">Contact</Link>
         </div>
 
