@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { Helmet } from 'react-helmet-async';
-import PublicHeader from '../components/PublicHeader';
-import PublicFooter from '../components/PublicFooter';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import { Helmet } from "react-helmet-async";
+import ReactMarkdown from "react-markdown";
+import PublicHeader from "../components/PublicHeader";
+import PublicFooter from "../components/PublicFooter";
 
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -17,10 +18,10 @@ export default function BlogPostPage() {
       if (!slug) return;
       try {
         const { data, error } = await supabase
-          .from('blogs')
-          .select('*')
-          .eq('slug', slug)
-          .eq('is_published', true)
+          .from("blogs")
+          .select("*")
+          .eq("slug", slug)
+          .eq("is_published", true)
           .single();
 
         if (error || !data) {
@@ -29,7 +30,7 @@ export default function BlogPostPage() {
           setBlog(data);
         }
       } catch (err) {
-        console.error('Error fetching blog post:', err);
+        console.error("Error fetching blog post:", err);
         setNotFound(true);
       } finally {
         setLoading(false);
@@ -39,17 +40,16 @@ export default function BlogPostPage() {
     fetchBlog();
   }, [slug]);
 
-  // Format full date
   const formatFullDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
+      return date.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
       });
     } catch {
-      return '';
+      return "";
     }
   };
 
@@ -85,13 +85,15 @@ export default function BlogPostPage() {
               ⚠️
             </div>
             <div>
-              <h1 className="text-xl font-bold text-[#EEEEEE] mb-2">Post Not Found</h1>
+              <h1 className="text-xl font-bold text-[#EEEEEE] mb-2">
+                Post Not Found
+              </h1>
               <p className="text-[#888888] text-sm leading-relaxed">
                 This article doesn't exist or has been removed.
               </p>
             </div>
             <button
-              onClick={() => navigate('/blog')}
+              onClick={() => navigate("/blog")}
               className="px-6 py-2.5 bg-[#C8FF00] text-[#080808] rounded-xl text-xs font-semibold hover:bg-[#b8ef00] transition-colors cursor-pointer"
             >
               Back to Blog
@@ -108,101 +110,29 @@ export default function BlogPostPage() {
       <Helmet>
         <title>{blog.title} — Paydrip</title>
         <meta name="description" content={blog.excerpt} />
-        <link rel="canonical" href={`https://paydripapp.com/blog/${blog.slug}`} />
+        <link
+          rel="canonical"
+          href={`https://paydripapp.com/blog/${blog.slug}`}
+        />
         <meta name="robots" content="index, follow" />
         <meta property="og:title" content={`${blog.title} — Paydrip`} />
         <meta property="og:description" content={blog.excerpt} />
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={`https://paydripapp.com/blog/${blog.slug}`} />
-        {blog.cover_image_url && <meta property="og:image" content={blog.cover_image_url} />}
+        <meta
+          property="og:url"
+          content={`https://paydripapp.com/blog/${blog.slug}`}
+        />
+        {blog.cover_image_url && (
+          <meta property="og:image" content={blog.cover_image_url} />
+        )}
       </Helmet>
-
-      {/* Styled Embed for the Post Content */}
-      <style>{`
-        .prose-paydrip {
-          color: #888888;
-          line-height: 1.8;
-          font-size: 0.9375rem;
-        }
-        .prose-paydrip h2 {
-          color: #EEEEEE;
-          font-size: 1.5rem;
-          font-weight: 700;
-          margin-top: 2.5rem;
-          margin-bottom: 1rem;
-        }
-        .prose-paydrip h3 {
-          color: #EEEEEE;
-          font-size: 1.25rem;
-          font-weight: 600;
-          margin-top: 2rem;
-          margin-bottom: 0.75rem;
-        }
-        .prose-paydrip p {
-          margin-bottom: 1.25rem;
-        }
-        .prose-paydrip ul, 
-        .prose-paydrip ol {
-          margin-bottom: 1.25rem;
-          padding-left: 1.5rem;
-        }
-        .prose-paydrip ul {
-          list-style-type: disc;
-        }
-        .prose-paydrip ol {
-          list-style-type: decimal;
-        }
-        .prose-paydrip li {
-          margin-bottom: 0.5rem;
-        }
-        .prose-paydrip strong {
-          color: #EEEEEE;
-          font-weight: 600;
-        }
-        .prose-paydrip a {
-          color: #C8FF00;
-          text-decoration: underline;
-          text-underline-offset: 3px;
-        }
-        .prose-paydrip a:hover {
-          opacity: 0.8;
-        }
-        .prose-paydrip code {
-          background: #111111;
-          border: 1px solid #222222;
-          border-radius: 4px;
-          padding: 0.2em 0.4em;
-          font-size: 0.875em;
-          color: #C8FF00;
-          font-family: monospace;
-        }
-        .prose-paydrip pre {
-          background: #111111;
-          border: 1px solid #222222;
-          border-radius: 8px;
-          padding: 1.25rem;
-          overflow-x: auto;
-          margin-bottom: 1.25rem;
-        }
-        .prose-paydrip blockquote {
-          border-left: 3px solid #C8FF00;
-          padding-left: 1rem;
-          color: #888888;
-          font-style: italic;
-          margin-bottom: 1.25rem;
-        }
-        .prose-paydrip hr {
-          border-color: #222222;
-          margin: 2rem 0;
-        }
-      `}</style>
 
       <PublicHeader />
 
       <main className="max-w-3xl mx-auto px-6 py-20 flex-grow w-full">
         {/* Back Link */}
         <button
-          onClick={() => navigate('/blog')}
+          onClick={() => navigate("/blog")}
           className="flex items-center gap-2 text-xs text-[#888888] hover:text-[#C8FF00] transition-colors mb-12 font-mono uppercase tracking-widest cursor-pointer"
         >
           ← Back to Blog
@@ -244,12 +174,100 @@ export default function BlogPostPage() {
           />
         ) : (
           <div className="bg-[#161616] h-64 w-full rounded-xl flex items-center justify-center select-none mb-10 border border-[#222222]">
-            <span className="text-6xl font-extrabold text-[#C8FF00] font-mono tracking-tighter">P</span>
+            <span className="text-6xl font-extrabold text-[#C8FF00] font-mono tracking-tighter">
+              P
+            </span>
           </div>
         )}
 
-        {/* Content Body */}
-        <div className="prose-paydrip" dangerouslySetInnerHTML={{ __html: blog.content }} />
+        {/* Content Body — ReactMarkdown */}
+        <ReactMarkdown
+          components={{
+            h2: ({ children }) => (
+              <h2 className="text-2xl font-bold text-[#EEEEEE] mt-10 mb-4">
+                {children}
+              </h2>
+            ),
+            h3: ({ children }) => (
+              <h3 className="text-xl font-semibold text-[#EEEEEE] mt-8 mb-3">
+                {children}
+              </h3>
+            ),
+            h4: ({ children }) => (
+              <h4 className="text-base font-semibold text-[#EEEEEE] mt-6 mb-2">
+                {children}
+              </h4>
+            ),
+            p: ({ children }) => (
+              <p className="text-[#888888] text-[0.9375rem] leading-[1.8] mb-5">
+                {children}
+              </p>
+            ),
+            ul: ({ children }) => (
+              <ul className="list-disc pl-6 mb-5 space-y-2 text-[#888888] text-[0.9375rem] leading-[1.8]">
+                {children}
+              </ul>
+            ),
+            ol: ({ children }) => (
+              <ol className="list-decimal pl-6 mb-5 space-y-2 text-[#888888] text-[0.9375rem] leading-[1.8]">
+                {children}
+              </ol>
+            ),
+            li: ({ children }) => (
+              <li className="text-[#888888]">{children}</li>
+            ),
+            strong: ({ children }) => (
+              <strong className="text-[#EEEEEE] font-semibold">
+                {children}
+              </strong>
+            ),
+            a: ({ href, children }) => (
+              <a
+                href={href}
+                className="text-[#C8FF00] underline underline-offset-[3px] hover:opacity-80 transition-opacity"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {children}
+              </a>
+            ),
+            code: ({ children }) => (
+              <code className="bg-[#111111] border border-[#222222] rounded px-1.5 py-0.5 text-[#C8FF00] text-[0.875em] font-mono">
+                {children}
+              </code>
+            ),
+            pre: ({ children }) => (
+              <pre className="bg-[#111111] border border-[#222222] rounded-lg p-5 overflow-x-auto mb-5 text-sm">
+                {children}
+              </pre>
+            ),
+            blockquote: ({ children }) => (
+              <blockquote className="border-l-[3px] border-[#C8FF00] pl-4 text-[#888888] italic mb-5">
+                {children}
+              </blockquote>
+            ),
+            hr: () => <hr className="border-[#222222] my-8" />,
+            table: ({ children }) => (
+              <div className="overflow-x-auto mb-5">
+                <table className="w-full text-sm text-[#888888] border-collapse">
+                  {children}
+                </table>
+              </div>
+            ),
+            th: ({ children }) => (
+              <th className="text-left text-[#EEEEEE] font-semibold border-b border-[#222222] pb-2 pr-6">
+                {children}
+              </th>
+            ),
+            td: ({ children }) => (
+              <td className="border-b border-[#111111] py-2 pr-6">
+                {children}
+              </td>
+            ),
+          }}
+        >
+          {blog.content}
+        </ReactMarkdown>
 
         {/* Bottom CTA */}
         <div className="mt-20 pt-10 border-t border-[#222222] text-center">

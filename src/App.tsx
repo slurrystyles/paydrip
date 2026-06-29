@@ -52,13 +52,13 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } } : any) => {
       const newUser = session?.user ?? null;
       setUser(prev => prev?.id === newUser?.id ? prev : newUser);
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       const newUser = session?.user ?? null;
       setUser(prev => prev?.id === newUser?.id ? prev : newUser);
     });

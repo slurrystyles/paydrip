@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { Helmet } from 'react-helmet-async';
-import PublicHeader from '../components/PublicHeader';
-import PublicFooter from '../components/PublicFooter';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import { Helmet } from "react-helmet-async";
+import PublicHeader from "../components/PublicHeader";
+import PublicFooter from "../components/PublicFooter";
 
 export default function BlogsPage() {
   const navigate = useNavigate();
@@ -15,18 +15,20 @@ export default function BlogsPage() {
     async function fetchBlogs() {
       try {
         const { data, error } = await supabase
-          .from('blogs')
-          .select('id, title, slug, excerpt, cover_image_url, author_name, published_at, tags')
-          .eq('is_published', true)
-          .order('published_at', { ascending: false });
+          .from("blogs")
+          .select(
+            "id, title, slug, excerpt, cover_image_url, author_name, published_at, tags",
+          )
+          .eq("is_published", true)
+          .order("published_at", { ascending: false });
 
         if (error) {
-          console.error('Error fetching blogs:', error);
+          console.error("Error fetching blogs:", error);
         } else {
           setBlogs(data || []);
         }
       } catch (err) {
-        console.error('Unexpected error fetching blogs:', err);
+        console.error("Unexpected error fetching blogs:", err);
       } finally {
         setLoading(false);
       }
@@ -37,7 +39,7 @@ export default function BlogsPage() {
 
   // Extract all unique tags
   const allTags = Array.from(
-    new Set(blogs.flatMap((blog) => blog.tags || []))
+    new Set(blogs.flatMap((blog) => blog.tags || [])),
   ) as string[];
 
   // Filter blogs based on selected tag
@@ -49,35 +51,42 @@ export default function BlogsPage() {
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        year: "numeric",
+      });
     } catch {
-      return '';
+      return "";
     }
   };
 
   return (
     <div className="min-h-screen bg-[#080808] text-[#EEEEEE] flex flex-col font-sans selection:bg-[#C8FF00] selection:text-[#080808]">
       <Helmet>
-        <title>Paydrip — Get Paid Faster | Invoice Recovery for Freelancers</title>
-        <meta name="description" content="Paydrip helps freelancers recover overdue invoices with automated Email, SMS, and WhatsApp reminders. Track payments, score client risk, and collect via UPI or card. Built for India, available worldwide." />
-        <link rel="canonical" href="https://paydripapp.com/" />
-        <meta property="og:title" content="Paydrip — Get Paid Faster | Invoice Recovery for Freelancers" />
-        <meta property="og:description" content="Automate your invoice follow-ups and recover overdue payments with Paydrip. Email, SMS, and WhatsApp reminders. UPI and card payments." />
-        <meta property="og:url" content="https://paydripapp.com/" />
-        <meta property="og:image" content="https://paydripapp.com/og-image.png" />
+        <title>
+          Blog — Paydrip | Invoice Recovery Insights for Freelancers
+        </title>
+        <meta
+          name="description"
+          content="Tips on invoice recovery, freelance finance, and getting paid faster. Practical guides for freelancers who want to stop chasing payments."
+        />
+        <link rel="canonical" href="https://paydripapp.com/blog" />
+        <meta name="robots" content="index, follow" />
       </Helmet>
-
       <PublicHeader />
 
       <main className="max-w-6xl mx-auto px-6 py-20 flex-grow w-full">
         {/* Page Header */}
         <div className="mb-16 text-center">
-          <p className="text-xs text-[#888888] uppercase tracking-widest mb-3 font-mono">Blog</p>
+          <p className="text-xs text-[#888888] uppercase tracking-widest mb-3 font-mono">
+            Blog
+          </p>
           <h1 className="text-4xl md:text-5xl font-bold text-[#EEEEEE] tracking-tight">
             Insights & Updates
           </h1>
           <p className="text-[#888888] text-base mt-4 max-w-xl mx-auto leading-relaxed">
-            Tips on invoice recovery, freelance finance, and getting paid faster.
+            Tips on invoice recovery, freelance finance, and getting paid
+            faster.
           </p>
         </div>
 
@@ -88,8 +97,8 @@ export default function BlogsPage() {
               onClick={() => setSelectedTag(null)}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 selectedTag === null
-                  ? 'bg-[#C8FF00] text-[#080808]'
-                  : 'bg-[#111111] border border-[#222222] text-[#888888] hover:text-[#EEEEEE]'
+                  ? "bg-[#C8FF00] text-[#080808]"
+                  : "bg-[#111111] border border-[#222222] text-[#888888] hover:text-[#EEEEEE]"
               }`}
             >
               All
@@ -100,8 +109,8 @@ export default function BlogsPage() {
                 onClick={() => setSelectedTag(tag)}
                 className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   selectedTag === tag
-                    ? 'bg-[#C8FF00] text-[#080808]'
-                    : 'bg-[#111111] border border-[#222222] text-[#888888] hover:text-[#EEEEEE]'
+                    ? "bg-[#C8FF00] text-[#080808]"
+                    : "bg-[#111111] border border-[#222222] text-[#888888] hover:text-[#EEEEEE]"
                 }`}
               >
                 {tag}
@@ -132,12 +141,19 @@ export default function BlogsPage() {
           </div>
         ) : filteredBlogs.length === 0 ? (
           <div className="text-center py-20 bg-[#111111] border border-[#222222] rounded-2xl p-8 max-w-md mx-auto">
-            <p className="text-[#888888] text-sm">No posts yet. Check back soon.</p>
+            <p className="text-[#888888] text-sm">
+              No posts yet. Check back soon.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBlogs.map((blog) => (
-              <BlogCard key={blog.id} blog={blog} formatDate={formatDate} navigate={navigate} />
+              <BlogCard
+                key={blog.id}
+                blog={blog}
+                formatDate={formatDate}
+                navigate={navigate}
+              />
             ))}
           </div>
         )}
@@ -172,7 +188,9 @@ function BlogCard({
         />
       ) : (
         <div className="bg-[#161616] h-48 w-full flex items-center justify-center select-none group-hover:scale-[1.02] transition-transform duration-300">
-          <span className="text-4xl font-extrabold text-[#C8FF00] font-mono tracking-tighter">P</span>
+          <span className="text-4xl font-extrabold text-[#C8FF00] font-mono tracking-tighter">
+            P
+          </span>
         </div>
       )}
 
@@ -204,8 +222,12 @@ function BlogCard({
 
         {/* Footer Row */}
         <div className="mt-auto pt-4 border-t border-[#222222]/50 flex items-center justify-between">
-          <span className="text-xs text-[#444444] font-medium">{blog.author_name}</span>
-          <span className="text-xs text-[#444444] font-mono">{formatDate(blog.published_at)}</span>
+          <span className="text-xs text-[#444444] font-medium">
+            {blog.author_name}
+          </span>
+          <span className="text-xs text-[#444444] font-mono">
+            {formatDate(blog.published_at)}
+          </span>
         </div>
       </div>
     </div>
