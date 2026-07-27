@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import InfoPageLayout from './InfoPageLayout';
 import { Send, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Helmet } from 'react-helmet-async';
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -12,10 +13,26 @@ export default function ContactPage() {
   };
 
   return (
-    <InfoPageLayout 
-      title="Contact Support" 
-      subtitle="Questions, feature requests, or custom deployment configurations."
-    >
+    <>
+      <Helmet>
+        <title>Contact Support — Paydrip</title>
+        <meta
+          name="description"
+          content="Get in touch with the Paydrip team for questions, feature requests, or custom deployment configurations."
+        />
+        <link rel="canonical" href="https://paydripapp.com/contact" />
+        <meta name="robots" content="index, follow" />
+        <meta property="og:title" content="Contact Support — Paydrip" />
+        <meta
+          property="og:description"
+          content="Get in touch with the Paydrip team for questions, feature requests, or custom deployment configurations."
+        />
+        <meta property="og:url" content="https://paydripapp.com/contact" />
+      </Helmet>
+      <InfoPageLayout 
+        title="Contact Support" 
+        subtitle="Questions, feature requests, or custom deployment configurations."
+      >
       <div className="max-w-md">
         <AnimatePresence mode="wait">
           {!submitted ? (
@@ -82,8 +99,9 @@ export default function ContactPage() {
               </button>
             </motion.div>
           )}
-        </AnimatePresence>
-      </div>
-    </InfoPageLayout>
+          </AnimatePresence>
+        </div>
+      </InfoPageLayout>
+    </>
   );
 }

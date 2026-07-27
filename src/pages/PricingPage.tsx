@@ -20,6 +20,7 @@ import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { useNavigate, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -268,6 +269,23 @@ export default function PricingPage({ isNested = false }: { isNested?: boolean }
 
   return (
     <div className={cn("min-h-screen selection:bg-[#C8FF00] selection:text-[#080808] text-[#EEEEEE]", isNested ? "bg-transparent" : "bg-[#080808]")}>
+      {!isNested && (
+        <Helmet>
+          <title>Pricing — Paydrip</title>
+          <meta
+            name="description"
+            content="Simple, transparent pricing for Paydrip's invoice recovery platform. Free, Pro, and Enterprise plans in USD and INR, built for freelancers."
+          />
+          <link rel="canonical" href="https://paydripapp.com/pricing" />
+          <meta name="robots" content="index, follow" />
+          <meta property="og:title" content="Pricing — Paydrip" />
+          <meta
+            property="og:description"
+            content="Simple, transparent pricing for Paydrip's invoice recovery platform. Free, Pro, and Enterprise plans in USD and INR."
+          />
+          <meta property="og:url" content="https://paydripapp.com/pricing" />
+        </Helmet>
+      )}
       {/* Navigation */}
       {!isNested && <PublicHeader />}
 
